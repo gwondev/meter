@@ -3,6 +3,7 @@ package com.meter.backend.controller;
 import com.meter.backend.entity.User;
 import com.meter.backend.repository.UserRepository;
 import com.meter.backend.service.GeminiVisionService;
+import com.meter.backend.service.MeterChatService;
 import com.meter.backend.util.UserRoleUtil;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -26,6 +27,7 @@ public class AiController {
 
     private final UserRepository userRepository;
     private final GeminiVisionService geminiVisionService;
+    private final MeterChatService meterChatService;
 
     /** Gemini 키·모델 연결 상태 (배포 후 https://meter.gwon.run/api/ai/status 로 확인) */
     @GetMapping("/status")
@@ -36,6 +38,11 @@ public class AiController {
         out.put("models", geminiVisionService.configuredModels());
         out.put("probes", geminiVisionService.probeModels());
         return out;
+    }
+
+    @PostMapping("/chat")
+    public Map<String, Object> chat(@RequestBody Map<String, String> body) {
+        return meterChatService.chat(body.get("message"));
     }
 
     @PostMapping(value = "/analyze", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)
@@ -99,8 +106,6 @@ public class AiController {
         result.put("rawSnippet", guidance != null && guidance.length() > 500 ? guidance.substring(0, 500) + "…" : guidance);
         result.put("cameraDailyCount", admin ? null : user.getCameraDailyCount());
         result.put("remainingToday", remainingTodayFor(user, admin));
-        result.put("rewardGranted", admin ? 0 : 1);
-        result.put("nowRewards", user.getNowRewards());
         result.put("rateLimitBypassed", admin);
 
         log.info(
@@ -147,8 +152,6 @@ public class AiController {
         result.put("model", "hint-fallback");
         result.put("cameraDailyCount", admin ? null : user.getCameraDailyCount());
         result.put("remainingToday", remainingTodayFor(user, admin));
-        result.put("rewardGranted", admin ? 0 : 1);
-        result.put("nowRewards", user.getNowRewards());
         result.put("rateLimitBypassed", admin);
         return result;
     }
@@ -197,8 +200,6 @@ public class AiController {
         }
         user.setCameraDailyCount(user.getCameraDailyCount() + 1);
         user.setLastCameraAt(now);
-        user.setNowRewards(user.getNowRewards() + 1);
-        user.setTotalRewards(user.getTotalRewards() + 1);
         userRepository.save(user);
     }
 
@@ -208,7 +209,7 @@ public class AiController {
         }
         String u = raw.trim().toUpperCase(Locale.ROOT);
         return switch (u) {
-            case "CAN", "GENERAL", "PET", "HAZARD" -> u;
+            case "CLOTHING", "PLASTIC", "CAN", "MEDICINE", "PET", "GENERAL", "HAZARD" -> u;
             default -> null;
         };
     }

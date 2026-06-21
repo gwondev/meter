@@ -87,8 +87,6 @@ public class AuthController {
         userDTO.put("nickname", user.getNickname());
         userDTO.put("role", user.getRole());
         userDTO.put("status", user.getStatus());
-        userDTO.put("nowRewards", user.getNowRewards());
-        userDTO.put("totalRewards", user.getTotalRewards());
         userDTO.put("createdAt", user.getCreatedAt());
         userDTO.put("lastLoginAt", user.getLastLoginAt());
         userDTO.put("cameraDailyCount", user.getCameraDailyCount());

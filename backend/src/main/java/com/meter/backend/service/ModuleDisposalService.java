@@ -2,11 +2,9 @@ package com.meter.backend.service;
 
 import com.meter.backend.entity.DisposalRecord;
 import com.meter.backend.entity.Module;
-import com.meter.backend.entity.RewardHistory;
 import com.meter.backend.entity.User;
 import com.meter.backend.repository.DisposalRecordRepository;
 import com.meter.backend.repository.ModuleRepository;
-import com.meter.backend.repository.RewardHistoryRepository;
 import com.meter.backend.repository.UserRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -22,13 +20,10 @@ import java.util.Map;
 @RequiredArgsConstructor
 @Slf4j
 public class ModuleDisposalService {
-    /** CHECK 완료(배출 검증 성공) 시 지급 포인트 */
-    private static final int DISPOSAL_REWARD = 10;
 
     private final ModuleRepository moduleRepository;
     private final UserRepository userRepository;
     private final DisposalRecordRepository disposalRecordRepository;
-    private final RewardHistoryRepository rewardHistoryRepository;
 
     @Transactional
     public Map<String, Object> completeDisposalCheck(String serialNumber, String nickname) {
@@ -47,12 +42,8 @@ public class ModuleDisposalService {
 
         record.setStatus("SUCCESS");
         record.setVerifiedAt(LocalDateTime.now());
-        record.setRewardAmount(DISPOSAL_REWARD);
+        record.setRewardAmount(0);
         disposalRecordRepository.save(record);
-
-        user.setNowRewards(user.getNowRewards() + DISPOSAL_REWARD);
-        user.setTotalRewards(user.getTotalRewards() + DISPOSAL_REWARD);
-        userRepository.save(user);
 
         module.setTotalDisposalCount(module.getTotalDisposalCount() + 1);
         module.setStatus("CHECK");
@@ -60,27 +51,11 @@ public class ModuleDisposalService {
         moduleRepository.save(module);
         log.info("module status CHECK serial={} user={}", serialNumber, nickname);
 
-        RewardHistory history = rewardHistoryRepository.findByDisposalRecord(record)
-                .orElseGet(() -> {
-                    RewardHistory newHistory = new RewardHistory();
-                    newHistory.setUser(user);
-                    newHistory.setDisposalRecord(record);
-                    return newHistory;
-                });
-        history.setPoints(DISPOSAL_REWARD);
-        history.setReason("쓰레기 투입 성공");
-        rewardHistoryRepository.save(history);
-
         module.setStatus("DEFAULT");
         moduleRepository.save(module);
         log.info("module status DEFAULT serial={} after CHECK", serialNumber);
 
-        return Map.of(
-                "ok", true,
-                "reward", DISPOSAL_REWARD,
-                "nowRewards", user.getNowRewards(),
-                "totalRewards", user.getTotalRewards()
-        );
+        return Map.of("ok", true);
     }
 
     @Transactional

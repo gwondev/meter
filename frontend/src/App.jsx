@@ -15,6 +15,7 @@ import SmartDisposal from "./pages/features/SmartDisposal";
 import IotIntegration from "./pages/features/IotIntegration";
 import Reward from "./pages/features/Reward";
 import OperationsHub from "./pages/features/OperationsHub";
+import MyPage from "./pages/MyPage";
 import Mosquitto from "./pages/Mosquitto";
 import ModuleDB from "./pages/ModuleDB";
 import RouteGuide from "./pages/RouteGuide";
@@ -88,6 +89,7 @@ function App() {
           <Route path="/input" element={<ProtectedRoute><Input /></ProtectedRoute>} />
           <Route path="/db" element={<ProtectedRoute><ModuleDB /></ProtectedRoute>} />
           <Route path="/map/route" element={<ProtectedRoute><RouteGuide /></ProtectedRoute>} />
+          <Route path="/mypage" element={<ProtectedRoute><MyPage /></ProtectedRoute>} />
 
           {/* 관리자 전용 페이지 */}
           <Route path="/manage" element={<ProtectedRoute adminOnly><Manage /></ProtectedRoute>} />

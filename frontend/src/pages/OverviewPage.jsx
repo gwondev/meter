@@ -1,15 +1,15 @@
-import React, { useState } from "react";
+import { useState } from "react";
 import { Box, Button, Container, Stack, Typography } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import TeamIntro from "./TeamIntro";
 import ProjectIntro from "./ProjectIntro";
-import RecyclingGuide from "./RecyclingGuide";
+import ServiceFeatures from "./ServiceFeatures";
 import { meterColors } from "../theme/meterTheme";
 
 const tabItems = [
   { key: "project", label: "프로젝트 소개" },
   { key: "team", label: "팀 소개" },
-  { key: "guide", label: "분리수거 안내" },
+  { key: "features", label: "핵심 기능" },
 ];
 
 export default function OverviewPage() {
@@ -39,26 +39,11 @@ export default function OverviewPage() {
                     flex: 1,
                     minHeight: { xs: 48, sm: 56 },
                     borderRadius: 999,
-                    fontSize: { xs: "0.92rem", sm: "1.02rem" },
                     fontWeight: 900,
                     textTransform: "none",
-                    letterSpacing: "-0.01em",
                     ...(active
-                      ? {
-                          color: "#0a0a0a",
-                          border: `1px solid ${meterColors.borderStrong}`,
-                          bgcolor: meterColors.primary,
-                          "&:hover": { bgcolor: "#e8e8e8" },
-                        }
-                      : {
-                          color: meterColors.primaryMuted,
-                          borderColor: meterColors.border,
-                          bgcolor: meterColors.bgElevated,
-                          "&:hover": {
-                            borderColor: meterColors.borderStrong,
-                            bgcolor: "rgba(255,255,255,0.06)",
-                          },
-                        }),
+                      ? { color: "#0a0a0a", bgcolor: meterColors.primary, "&:hover": { bgcolor: "#e0e0e0" } }
+                      : { color: meterColors.primaryMuted, borderColor: meterColors.border }),
                   }}
                 >
                   {item.label}
@@ -72,7 +57,7 @@ export default function OverviewPage() {
       <Box sx={{ mt: 1.8 }}>
         {tab === "team" && <TeamIntro />}
         {tab === "project" && <ProjectIntro />}
-        {tab === "guide" && <RecyclingGuide />}
+        {tab === "features" && <ServiceFeatures />}
       </Box>
     </Box>
   );

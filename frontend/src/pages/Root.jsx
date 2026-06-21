@@ -33,8 +33,8 @@ const glowPulse = keyframes`
 
 const featureItems = [
   {
-    title: "AI 카메라 자원 분류",
-    subtitle: "촬영 → 유형 판별 → 모듈 안내",
+    title: "AI 카메라",
+    subtitle: "유형 판별 · 거점 안내",
     icon: <PhotoCameraRoundedIcon sx={{ fontSize: 26 }} />,
     path: "/features/smart-disposal",
   },

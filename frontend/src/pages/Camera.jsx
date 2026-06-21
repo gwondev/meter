@@ -70,10 +70,6 @@ const Camera = () => {
       }
       const data = await apiFetchMultipart("/ai/analyze", fd);
       setResult(data);
-      const granted = Number(data?.rewardGranted ?? 0);
-      if (granted > 0) {
-        sessionStorage.setItem("meter.pendingNotice", String(granted));
-      }
     } catch (e) {
       alert(e.message || "분석 실패");
     } finally {
@@ -114,7 +110,7 @@ const Camera = () => {
           sx={{ width: "min(100%, 520px)", mx: "auto" }}
         >
           <Typography variant="h4" sx={{ fontWeight: 900, letterSpacing: "-0.03em" }}>
-            자원 촬영 · 분류
+            AI 카메라
           </Typography>
           <Typography sx={{ color: "rgba(255,255,255,0.72)", lineHeight: 1.55, px: { xs: 0.4, sm: 1 }, fontSize: { xs: "0.86rem", sm: "1rem" } }}>
             AI가 자원 유형을 판별합니다. 지도에서 맞는 METER 모듈 거점을 찾아 투입하세요.

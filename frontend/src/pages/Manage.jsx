@@ -37,8 +37,8 @@ import ArrowBackIosNewRoundedIcon from "@mui/icons-material/ArrowBackIosNewRound
 const cellHead = {
   color: "#ffffff",
   fontWeight: 800,
-  borderColor: "rgba(124,255,114,0.2)",
-  bgcolor: "rgba(124,255,114,0.08)",
+  borderColor: "rgba(255,255,255,0.12)",
+  bgcolor: "rgba(255,255,255,0.06)",
 };
 const cellBody = {
   color: "rgba(255,255,255,0.92)",
@@ -58,7 +58,6 @@ const Manage = () => {
     users: [],
     modules: [],
     disposalRecords: [],
-    rewardHistories: [],
   });
   const [mqttLogs, setMqttLogs] = useState([]);
 
@@ -68,8 +67,6 @@ const Manage = () => {
     nickname: "",
     role: "USER",
     status: "ACTIVE",
-    totalRewards: 0,
-    nowRewards: 0,
   });
   const [userDeleteTarget, setUserDeleteTarget] = useState(null);
 
@@ -99,7 +96,6 @@ const Manage = () => {
         users: data?.users || [],
         modules: data?.modules || [],
         disposalRecords: data?.disposalRecords || [],
-        rewardHistories: data?.rewardHistories || [],
       });
       setMqttLogs(Array.isArray(logs) ? logs : []);
     } catch (e) {
@@ -200,8 +196,6 @@ const Manage = () => {
       nickname: u.nickname ?? "",
       role: u.role === "ADMIN" ? "ADMIN" : "USER",
       status: u.status ?? "ACTIVE",
-      totalRewards: u.totalRewards ?? 0,
-      nowRewards: u.nowRewards ?? 0,
     });
     setUserEditOpen(true);
   };
@@ -216,8 +210,6 @@ const Manage = () => {
           nickname: userForm.nickname.trim() || null,
           role: userForm.role,
           status: userForm.status.trim() || "ACTIVE",
-          totalRewards: Number(userForm.totalRewards) || 0,
-          nowRewards: Number(userForm.nowRewards) || 0,
         }),
       });
       setUserEditOpen(false);
@@ -337,8 +329,6 @@ const Manage = () => {
                 <TableCell sx={cellHead}>닉네임</TableCell>
                 <TableCell sx={cellHead}>ROLE</TableCell>
                 <TableCell sx={cellHead}>상태</TableCell>
-                <TableCell sx={cellHead}>NOW</TableCell>
-                <TableCell sx={cellHead}>TOTAL</TableCell>
                 <TableCell sx={cellHead} align="right">
                   작업
                 </TableCell>
@@ -351,8 +341,6 @@ const Manage = () => {
                   <TableCell sx={cellBody}>{u.nickname || "-"}</TableCell>
                   <TableCell sx={cellBody}>{u.role}</TableCell>
                   <TableCell sx={cellBody}>{u.status}</TableCell>
-                  <TableCell sx={cellBody}>{u.nowRewards ?? 0}</TableCell>
-                  <TableCell sx={cellBody}>{u.totalRewards ?? 0}</TableCell>
                   <TableCell sx={cellBody} align="right">
                     <IconButton size="small" sx={{ color: "#ffffff" }} onClick={() => openUserEdit(u)}>
                       <EditRoundedIcon fontSize="small" />
@@ -471,30 +459,17 @@ const Manage = () => {
 
         <Divider sx={{ borderColor: "rgba(255,255,255,0.15)", my: 2 }} />
 
-        <Stack direction={{ xs: "column", md: "row" }} spacing={{ xs: 1.5, md: 2 }}>
-          <Paper sx={{ p: { xs: 1.25, sm: 2 }, bgcolor: "rgba(255,255,255,0.04)", flex: 1, maxHeight: { xs: 240, sm: 320 }, overflow: "auto", WebkitOverflowScrolling: "touch" }}>
+        <Paper sx={{ p: { xs: 1.25, sm: 2 }, bgcolor: "rgba(255,255,255,0.04)", maxHeight: { xs: 240, sm: 320 }, overflow: "auto", WebkitOverflowScrolling: "touch" }}>
             <Typography sx={{ color: "#ffffff", fontWeight: 800, mb: 1, fontSize: { xs: "0.85rem", sm: "1rem" } }}>배출 기록(최근)</Typography>
             {overview.disposalRecords
               .slice(-20)
               .reverse()
               .map((r) => (
                 <Typography key={r.id} sx={{ fontSize: { xs: 11, sm: 13 }, mb: 0.5, lineHeight: 1.45, wordBreak: "break-all" }}>
-                  #{r.id} user:{r.userId} module:{r.moduleId} {r.status} +{r.rewardAmount}
+                  #{r.id} user:{r.userId} module:{r.moduleId} {r.status}
                 </Typography>
               ))}
           </Paper>
-          <Paper sx={{ p: { xs: 1.25, sm: 2 }, bgcolor: "rgba(255,255,255,0.04)", flex: 1, maxHeight: { xs: 240, sm: 320 }, overflow: "auto", WebkitOverflowScrolling: "touch" }}>
-            <Typography sx={{ color: "#ffffff", fontWeight: 800, mb: 1, fontSize: { xs: "0.85rem", sm: "1rem" } }}>리워드 내역(최근)</Typography>
-            {overview.rewardHistories
-              .slice(-20)
-              .reverse()
-              .map((h) => (
-                <Typography key={h.id} sx={{ fontSize: { xs: 11, sm: 13 }, mb: 0.5, lineHeight: 1.45, wordBreak: "break-all" }}>
-                  #{h.id} user:{h.userId} record:{h.disposalRecordId} points:{h.points} ({h.reason})
-                </Typography>
-              ))}
-          </Paper>
-        </Stack>
       </Container>
 
       <Dialog open={userEditOpen} onClose={() => !saving && setUserEditOpen(false)} fullWidth maxWidth="sm" PaperProps={{ sx: { bgcolor: "#121816", color: "#fff", border: "1px solid rgba(124,255,114,0.25)" } }}>
@@ -509,10 +484,6 @@ const Manage = () => {
             </Select>
           </FormControl>
           <TextField label="상태" value={userForm.status} onChange={(e) => setUserForm((f) => ({ ...f, status: e.target.value }))} fullWidth sx={{ input: { color: "#fff" } }} />
-          <Stack direction="row" spacing={2}>
-            <TextField label="누적 리워드" type="number" value={userForm.totalRewards} onChange={(e) => setUserForm((f) => ({ ...f, totalRewards: e.target.value }))} fullWidth sx={{ input: { color: "#fff" } }} />
-            <TextField label="현재 리워드" type="number" value={userForm.nowRewards} onChange={(e) => setUserForm((f) => ({ ...f, nowRewards: e.target.value }))} fullWidth sx={{ input: { color: "#fff" } }} />
-          </Stack>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={() => setUserEditOpen(false)} disabled={saving}>

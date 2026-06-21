@@ -3,9 +3,7 @@ package com.meter.backend.controller;
 import com.meter.backend.entity.DisposalRecord;
 import com.meter.backend.entity.User;
 import com.meter.backend.repository.DisposalRecordRepository;
-import com.meter.backend.repository.RewardHistoryRepository;
 import com.meter.backend.repository.UserRepository;
-import com.meter.backend.service.RewardMailService;
 import com.meter.backend.service.TableIdCompactionService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -23,8 +21,6 @@ public class UserController {
 
     private final UserRepository userRepository;
     private final DisposalRecordRepository disposalRecordRepository;
-    private final RewardHistoryRepository rewardHistoryRepository;
-    private final RewardMailService rewardMailService;
     private final TableIdCompactionService tableIdCompactionService;
 
     @GetMapping
@@ -33,37 +29,12 @@ public class UserController {
     }
 
     /**
-     * 지도 페이지로 들어올 때 1회만 +1 (유저별). 실제 배출 검증 10점은 CHECK(MQTT) 완료 시에만 {@link com.meter.backend.service.ModuleDisposalService}.
+     * @deprecated METER에는 리워드 시스템이 없습니다.
      */
     @PostMapping("/claim-map-entry-reward")
     @Transactional
     public Map<String, Object> claimMapEntryReward(@RequestBody Map<String, String> body) {
-        String oauthId = body.get("oauthId");
-        if (oauthId == null || oauthId.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "oauthId is required");
-        }
-        User user = userRepository.findByOauthId(oauthId.trim())
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-        if (user.isMapEntryRewardClaimed()) {
-            return Map.of(
-                    "ok", true,
-                    "reward", 0,
-                    "alreadyClaimed", true,
-                    "nowRewards", user.getNowRewards(),
-                    "totalRewards", user.getTotalRewards()
-            );
-        }
-        user.setMapEntryRewardClaimed(true);
-        user.setNowRewards(user.getNowRewards() + 1);
-        user.setTotalRewards(user.getTotalRewards() + 1);
-        userRepository.save(user);
-        return Map.of(
-                "ok", true,
-                "reward", 1,
-                "alreadyClaimed", false,
-                "nowRewards", user.getNowRewards(),
-                "totalRewards", user.getTotalRewards()
-        );
+        return Map.of("ok", true, "deprecated", true);
     }
 
     @PutMapping("/{id}")
@@ -109,20 +80,6 @@ public class UserController {
             }
         }
 
-        if (body.containsKey("totalRewards")) {
-            Object v = body.get("totalRewards");
-            if (v instanceof Number n) {
-                user.setTotalRewards(Math.max(0, n.intValue()));
-            }
-        }
-
-        if (body.containsKey("nowRewards")) {
-            Object v = body.get("nowRewards");
-            if (v instanceof Number n) {
-                user.setNowRewards(Math.max(0, n.intValue()));
-            }
-        }
-
         return userRepository.save(user);
     }
 
@@ -134,7 +91,6 @@ public class UserController {
 
         List<DisposalRecord> records = disposalRecordRepository.findByUser_IdOrderByCreatedAtDesc(user.getId());
         for (DisposalRecord dr : records) {
-            rewardHistoryRepository.findByDisposalRecord(dr).ifPresent(rewardHistoryRepository::delete);
             disposalRecordRepository.delete(dr);
         }
         userRepository.delete(user);
@@ -142,65 +98,20 @@ public class UserController {
         tableIdCompactionService.compactAllAfterDelete();
     }
 
-    /** oauthId 기준 교환 — localStorage id가 DB 재정렬 후 틀어져도 안전 */
+    /** @deprecated METER에는 리워드 교환 기능이 없습니다. */
     @PostMapping("/exchange")
     @Transactional
     public Map<String, Object> exchangeRewardByOauth(@RequestBody Map<String, Object> body) {
-        String oauthId = body.get("oauthId") == null ? "" : body.get("oauthId").toString().trim();
-        if (oauthId.isBlank()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "oauthId is required");
-        }
-        User user = userRepository.findByOauthId(oauthId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-        return exchangeRewardForUser(user, body);
+        throw new ResponseStatusException(HttpStatus.GONE, "리워드 기능은 METER에서 제공하지 않습니다.");
     }
 
+    /** @deprecated */
     @PostMapping("/{id}/exchange")
     @Transactional
     public Map<String, Object> exchangeReward(
             @PathVariable Long id,
             @RequestBody Map<String, Object> body
     ) {
-        User user = userRepository.findById(id)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "User not found"));
-        return exchangeRewardForUser(user, body);
-    }
-
-    private Map<String, Object> exchangeRewardForUser(User user, Map<String, Object> body) {
-        int cost = parseInt(body.get("cost"), 0);
-        if (cost <= 0) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "cost must be positive");
-        }
-        if (user.getNowRewards() < cost) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "not enough rewards");
-        }
-
-        user.setNowRewards(user.getNowRewards() - cost);
-        userRepository.save(user);
-
-        String item = body.get("item") == null ? "" : body.get("item").toString().trim();
-        Map<String, Object> mailInfo = rewardMailService.sendRewardExchangeMail(user, item, cost);
-        return Map.of(
-                "ok", true,
-                "item", item,
-                "cost", cost,
-                "nowRewards", user.getNowRewards(),
-                "sentTo", String.valueOf(mailInfo.getOrDefault("email", "")),
-                "rewardCode", String.valueOf(mailInfo.getOrDefault("code", "")),
-                "mailSent", Boolean.TRUE.equals(mailInfo.get("sent")),
-                "mailMessage", String.valueOf(mailInfo.getOrDefault("message", "")),
-                "mailReasonCode", String.valueOf(mailInfo.getOrDefault("reasonCode", "")),
-                "mailReasonDetail", String.valueOf(mailInfo.getOrDefault("reasonDetail", ""))
-        );
-    }
-
-    private static int parseInt(Object raw, int fallback) {
-        if (raw == null) return fallback;
-        if (raw instanceof Number n) return n.intValue();
-        try {
-            return Integer.parseInt(raw.toString().trim());
-        } catch (NumberFormatException e) {
-            return fallback;
-        }
+        throw new ResponseStatusException(HttpStatus.GONE, "리워드 기능은 METER에서 제공하지 않습니다.");
     }
 }
