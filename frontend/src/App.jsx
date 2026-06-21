@@ -4,7 +4,6 @@ import { ThemeProvider, createTheme, CssBaseline } from "@mui/material";
 import { meterThemeOptions } from "./theme/meterTheme";
 import Root from "./pages/Root";
 import Manage from "./pages/Manage";
-import DB from "./pages/DB";
 import Nickname from "./pages/Nickname";
 import Map from "./pages/Map";
 import MapGuide from "./pages/MapGuide";
@@ -17,7 +16,8 @@ import IotIntegration from "./pages/features/IotIntegration";
 import Reward from "./pages/features/Reward";
 import OperationsHub from "./pages/features/OperationsHub";
 import Mosquitto from "./pages/Mosquitto";
-import RewardMarket from "./pages/RewardMarket";
+import ModuleDB from "./pages/ModuleDB";
+import RouteGuide from "./pages/RouteGuide";
 import Test from "./pages/Test";
 import TeamIntro from "./pages/TeamIntro";
 import ProjectIntro from "./pages/ProjectIntro";
@@ -86,10 +86,10 @@ function App() {
           <Route path="/map/recycling-guide" element={<ProtectedRoute><RecyclingGuide /></ProtectedRoute>} />
           <Route path="/camera" element={<ProtectedRoute><Camera /></ProtectedRoute>} />
           <Route path="/input" element={<ProtectedRoute><Input /></ProtectedRoute>} />
-          <Route path="/reward_market" element={<ProtectedRoute><RewardMarket /></ProtectedRoute>} />
+          <Route path="/db" element={<ProtectedRoute><ModuleDB /></ProtectedRoute>} />
+          <Route path="/map/route" element={<ProtectedRoute><RouteGuide /></ProtectedRoute>} />
 
           {/* 관리자 전용 페이지 */}
-          <Route path="/db" element={<ProtectedRoute adminOnly><DB /></ProtectedRoute>} />
           <Route path="/manage" element={<ProtectedRoute adminOnly><Manage /></ProtectedRoute>} />
           <Route path="/mosquitto" element={<ProtectedRoute adminOnly><Mosquitto /></ProtectedRoute>} />
 

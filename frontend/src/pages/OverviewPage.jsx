@@ -4,6 +4,7 @@ import { useNavigate } from "react-router-dom";
 import TeamIntro from "./TeamIntro";
 import ProjectIntro from "./ProjectIntro";
 import RecyclingGuide from "./RecyclingGuide";
+import { meterColors } from "../theme/meterTheme";
 
 const tabItems = [
   { key: "project", label: "프로젝트 소개" },
@@ -16,13 +17,13 @@ export default function OverviewPage() {
   const [tab, setTab] = useState("project");
 
   return (
-    <Box sx={{ minHeight: "100dvh", bgcolor: "#000", color: "#fff", py: { xs: 2.2, sm: 3 } }}>
+    <Box sx={{ minHeight: "100dvh", bgcolor: meterColors.bg, color: meterColors.primary, py: { xs: 2.2, sm: 3 } }}>
       <Container maxWidth="lg">
         <Stack spacing={2}>
           <Stack direction="row" justifyContent="space-between" alignItems="center">
             <Typography sx={{ fontWeight: 900, fontSize: { xs: "1.1rem", sm: "1.35rem" } }}>서비스개요</Typography>
-            <Button size="small" onClick={() => navigate("/map")} sx={{ color: "#7CFF72", textTransform: "none" }}>
-              Map으로
+            <Button size="small" onClick={() => navigate("/map")} sx={{ color: meterColors.primaryMuted, textTransform: "none" }}>
+              지도로
             </Button>
           </Stack>
 
@@ -44,19 +45,18 @@ export default function OverviewPage() {
                     letterSpacing: "-0.01em",
                     ...(active
                       ? {
-                          color: "#e8ffe1",
-                          border: "1px solid rgba(124,255,114,0.75)",
-                          bgcolor: "rgba(20,28,20,0.92)",
-                          boxShadow: "0 10px 24px rgba(124,255,114,0.22)",
-                          "&:hover": { bgcolor: "rgba(26,34,26,0.96)" },
+                          color: "#0a0a0a",
+                          border: `1px solid ${meterColors.borderStrong}`,
+                          bgcolor: meterColors.primary,
+                          "&:hover": { bgcolor: "#e8e8e8" },
                         }
                       : {
-                          color: "rgba(216,255,208,0.9)",
-                          borderColor: "rgba(124,255,114,0.42)",
-                          bgcolor: "rgba(12,12,12,0.9)",
+                          color: meterColors.primaryMuted,
+                          borderColor: meterColors.border,
+                          bgcolor: meterColors.bgElevated,
                           "&:hover": {
-                            borderColor: "rgba(124,255,114,0.7)",
-                            bgcolor: "rgba(20,20,20,0.95)",
+                            borderColor: meterColors.borderStrong,
+                            bgcolor: "rgba(255,255,255,0.06)",
                           },
                         }),
                   }}

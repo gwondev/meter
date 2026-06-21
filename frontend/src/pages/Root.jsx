@@ -33,26 +33,26 @@ const glowPulse = keyframes`
 
 const featureItems = [
   {
-    title: "AI 카메라 배출 안내",
-    subtitle: "촬영 → 분류 → 올바른 수거 안내",
+    title: "AI 카메라 자원 분류",
+    subtitle: "촬영 → 유형 판별 → 모듈 안내",
     icon: <PhotoCameraRoundedIcon sx={{ fontSize: 26 }} />,
     path: "/features/smart-disposal",
   },
   {
     title: "IoT 실시간 적재 측정",
-    subtitle: "초음파 · MQTT · LED 상태 표시",
+    subtitle: "초음파 · MQTT · LED",
     icon: <SensorsRoundedIcon sx={{ fontSize: 26 }} />,
     path: "/features/iot",
   },
   {
     title: "데이터 분석 & 수거 동선",
-    subtitle: "적재량 예측 · Gemini 챗봇",
+    subtitle: "만재 우선 · 최적 경로",
     icon: <InsightsRoundedIcon sx={{ fontSize: 26 }} />,
     path: "/features/reward",
   },
   {
     title: "통합 관제 플랫폼",
-    subtitle: "지도 · 모듈 상태 · 수거 우선순위",
+    subtitle: "지도 · DB · 모듈 점검",
     icon: <DashboardRoundedIcon sx={{ fontSize: 26 }} />,
     path: "/features/operations",
   },

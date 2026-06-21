@@ -4,7 +4,7 @@ import FeatureIntroLayout from "../../components/FeatureIntroLayout";
 export default function SmartDisposal() {
   return (
     <FeatureIntroLayout
-      badge="AI · 시민 안내"
+      badge="AI · 자원 분류"
       icon={
         <PhotoCameraRoundedIcon
           sx={{
@@ -16,15 +16,14 @@ export default function SmartDisposal() {
           }}
         />
       }
-      title="AI 카메라 배출 안내"
-      subtitle="Gemini Vision · 모듈별 분류 · 거점 안내"
-      description="시민이 품목을 촬영하면 AI가 의류·플라스틱·캔·폐의약품을 구분하고, 올바른 배출 방법과 인근 METER 거점을 안내합니다."
-      highlights={["의류수거함", "플라스틱", "캔", "폐의약품"]}
+      title="AI 카메라 자원 분류"
+      subtitle="촬영 → 유형 판별 → 모듈 안내"
+      description="촬영한 자원의 유형을 AI가 판별하고, 지도에서 맞는 METER 모듈 거점을 찾도록 돕습니다."
+      highlights={["의류", "플라스틱", "캔", "폐의약품"]}
       bullets={[
-        "촬영한 이미지를 Gemini API로 분석해 4종 모듈 유형에 맞는 배출 가이드를 제공합니다.",
-        "단순 분류를 넘어 라벨·뚜껑 분리 등 구체적인 배출 방법을 문장으로 안내합니다.",
-        "지도와 연동해 가까운 수거 모듈 위치와 적재 상태를 함께 확인할 수 있습니다.",
-        "시민 참여형 자원순환 서비스로 확장 가능한 AI 안내 기능입니다.",
+        "Gemini Vision으로 4종 모듈 유형을 자동 분류합니다.",
+        "분류 결과를 지도와 연동해 해당 모듈만 필터링합니다.",
+        "분리수거 방법 안내가 아닌, 올바른 투입 거점 안내에 초점을 둡니다.",
       ]}
     />
   );

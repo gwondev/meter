@@ -114,15 +114,10 @@ const Camera = () => {
           sx={{ width: "min(100%, 520px)", mx: "auto" }}
         >
           <Typography variant="h4" sx={{ fontWeight: 900, letterSpacing: "-0.03em" }}>
-            쓰레기 촬영 · 분류
+            자원 촬영 · 분류
           </Typography>
           <Typography sx={{ color: "rgba(255,255,255,0.72)", lineHeight: 1.55, px: { xs: 0.4, sm: 1 }, fontSize: { xs: "0.86rem", sm: "1rem" } }}>
-            <Box component="span" sx={{ display: { xs: "inline", sm: "none" } }}>
-              모바일은 촬영, PC는 파일 선택 후 분석하세요.
-            </Box>
-            <Box component="span" sx={{ display: { xs: "none", sm: "inline" } }}>
-              쓰레기를 AI를 통해 분석하고 분류합니다.
-            </Box>
+            AI가 자원 유형을 판별합니다. 지도에서 맞는 METER 모듈 거점을 찾아 투입하세요.
           </Typography>
 
           <input
@@ -195,12 +190,12 @@ const Camera = () => {
             disabled={loading || !file}
             variant="contained"
             onClick={analyze}
-            sx={{ bgcolor: "#1a2e1a", color: "#ffffff", border: "1px solid rgba(255,255,255,0.4)", fontWeight: 800, minWidth: 220 }}
+            sx={{ bgcolor: "#1a1a1a", color: "#ffffff", border: "1px solid rgba(255,255,255,0.35)", fontWeight: 800, minWidth: 220 }}
           >
             {loading ? "분석 중…" : "분석"}
           </Button>
 
-          {result && (
+              {result && (
             <Paper sx={{ p: 2, bgcolor: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.2)", width: "100%", textAlign: "left" }}>
               <Typography sx={{ color: "#ffffff", fontWeight: 800, mb: 1, textAlign: "center" }}>
                 AI 예측: {TYPE_LABELS[result.predictedType] ?? result.predictedType}
@@ -210,16 +205,14 @@ const Camera = () => {
                   인식: {result.recognizedItem}
                 </Typography>
               )}
-              {(result.guidance || result.rawSnippet) && (
-                <Box sx={{ mt: 0.5 }}>
-                  <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.75)", fontWeight: 700, display: "block", mb: 0.5 }}>
-                    배출 안내
-                  </Typography>
-                  <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.65)", whiteSpace: "pre-wrap", lineHeight: 1.6 }}>
-                    {result.guidance || result.rawSnippet}
-                  </Typography>
-                </Box>
-              )}
+              <Box sx={{ mt: 0.5 }}>
+                <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.75)", fontWeight: 700, display: "block", mb: 0.5 }}>
+                  투입 안내
+                </Typography>
+                <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.65)", lineHeight: 1.6, textAlign: "center" }}>
+                  {TYPE_LABELS[finalType] ?? finalType} 모듈이 있는 가까운 거점을 지도에서 확인하세요.
+                </Typography>
+              </Box>
               <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.5)", display: "block", mt: 1, textAlign: "center" }}>
                 {result.rateLimitBypassed
                   ? "오늘 남은 분석: 무제한 (관리자)"
@@ -243,7 +236,7 @@ const Camera = () => {
                     color: override === key ? "#000" : "#fff",
                     bgcolor: override === key ? "#ffffff" : "rgba(255,255,255,0.06)",
                     fontWeight: 700,
-                    "&:hover": { bgcolor: override === key ? "#8fff85" : "rgba(255,255,255,0.12)" },
+                    "&:hover": { bgcolor: override === key ? "#e0e0e0" : "rgba(255,255,255,0.12)" },
                   }}
                   variant={override === key ? "filled" : "outlined"}
                 />

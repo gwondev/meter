@@ -35,8 +35,15 @@ export const meterThemeOptions = {
 };
 
 /** 모듈 lastHeartbeat → 연결 상태 문구 */
+export function isModuleOffline(lastHeartbeat) {
+  if (!lastHeartbeat) return true;
+  const diffMs = Date.now() - new Date(lastHeartbeat).getTime();
+  if (Number.isNaN(diffMs) || diffMs < 0) return true;
+  return diffMs >= 24 * 60 * 60 * 1000;
+}
+
 export function formatModuleConnectivity(lastHeartbeat) {
-  if (!lastHeartbeat) return "연결 정보 없음";
+  if (!lastHeartbeat) return "오프라인";
   const diffMs = Date.now() - new Date(lastHeartbeat).getTime();
   if (Number.isNaN(diffMs) || diffMs < 0) return "연결 정보 없음";
   if (diffMs >= 24 * 60 * 60 * 1000) return "모듈점검필요";
@@ -53,7 +60,7 @@ export function fillLevelFromHeight(heightCm) {
     return { label: "측정 대기", color: meterColors.secondary, level: "unknown" };
   }
   const h = Number(heightCm);
-  if (h <= 10) return { label: "적재 위험 (10cm 이하)", color: meterColors.fillRed, level: "critical" };
+  if (h <= 10) return { label: "적재 100% (만재)", color: meterColors.fillRed, level: "critical" };
   if (h <= 30) return { label: "주의 (30cm 이하)", color: meterColors.fillOrange, level: "warning" };
   if (h <= 50) return { label: "여유 (50cm 이하)", color: meterColors.fillGreen, level: "ok" };
   return { label: "여유 충분", color: meterColors.primaryMuted, level: "good" };

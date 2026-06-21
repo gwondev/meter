@@ -77,10 +77,10 @@ public class ModuleController {
                 .lat(35.1462000)
                 .lon(126.9229000)
                 .type("CAN")
-                .status("DEFAULT")
-                .heightCm(45.0)
+                .status("FULL")
+                .heightCm(5.0)
                 .totalDisposalCount(0)
-                .lastHeartbeat(LocalDateTime.now())
+                .lastHeartbeat(null)
                 .build();
         moduleRepository.save(m1);
 
@@ -90,10 +90,10 @@ public class ModuleController {
                 .lat(35.1474000)
                 .lon(126.9242000)
                 .type("PLASTIC")
-                .status("DEFAULT")
-                .heightCm(38.0)
+                .status("FULL")
+                .heightCm(5.0)
                 .totalDisposalCount(0)
-                .lastHeartbeat(LocalDateTime.now())
+                .lastHeartbeat(null)
                 .build();
         moduleRepository.save(m2);
 
@@ -103,10 +103,10 @@ public class ModuleController {
                 .lat(35.1458000)
                 .lon(126.9235000)
                 .type("CLOTHING")
-                .status("DEFAULT")
-                .heightCm(52.0)
+                .status("FULL")
+                .heightCm(5.0)
                 .totalDisposalCount(0)
-                .lastHeartbeat(LocalDateTime.now())
+                .lastHeartbeat(null)
                 .build();
         moduleRepository.save(m3);
 
@@ -116,10 +116,10 @@ public class ModuleController {
                 .lat(35.1469000)
                 .lon(126.9218000)
                 .type("MEDICINE")
-                .status("DEFAULT")
-                .heightCm(28.0)
+                .status("FULL")
+                .heightCm(5.0)
                 .totalDisposalCount(0)
-                .lastHeartbeat(LocalDateTime.now())
+                .lastHeartbeat(null)
                 .build();
         moduleRepository.save(m4);
 

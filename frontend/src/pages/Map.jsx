@@ -9,7 +9,8 @@ import { keyframes } from "@emotion/react";
 import AdminPanelSettingsRoundedIcon from "@mui/icons-material/AdminPanelSettingsRounded";
 import PhotoCameraRoundedIcon from "@mui/icons-material/PhotoCameraRounded";
 import InfoRoundedIcon from "@mui/icons-material/InfoRounded";
-import StorefrontRoundedIcon from "@mui/icons-material/StorefrontRounded";
+import StorageRoundedIcon from "@mui/icons-material/StorageRounded";
+import RouteRoundedIcon from "@mui/icons-material/RouteRounded";
 
 const MapView = lazy(() => import("./MapView.jsx"));
 
@@ -420,29 +421,11 @@ const Map = () => {
           zIndex: 1410,
         }}
       >
-        <Box
-          sx={{
-            px: { xs: 1.2, sm: 1.4 },
-            py: { xs: 0.45, sm: 0.55 },
-            minHeight: { xs: 34, sm: 38 },
-            borderRadius: 999,
-            border: "1px solid rgba(255,255,255,0.26)",
-            background: "rgba(0,0,0,0.86)",
-            color: "#ffffff",
-            fontWeight: 900,
-            fontSize: { xs: "0.74rem", sm: "0.84rem" },
-            display: "flex",
-            alignItems: "center",
-            whiteSpace: "nowrap",
-          }}
-        >
-          현재 리워드 {myRewards}
-        </Box>
         <Button
           size="small"
           variant="contained"
-          startIcon={<StorefrontRoundedIcon sx={{ fontSize: 16 }} />}
-          onClick={() => navigate("/reward_market")}
+          startIcon={<StorageRoundedIcon sx={{ fontSize: 16 }} />}
+          onClick={() => navigate("/db")}
           sx={{
             minHeight: { xs: 34, sm: 38 },
             borderRadius: 999,
@@ -451,12 +434,12 @@ const Map = () => {
             fontWeight: 800,
             textTransform: "none",
             bgcolor: "#ffffff",
-            color: "#0a0f0a",
-            "&:hover": { bgcolor: "#9dff92" },
+            color: "#0a0a0a",
+            "&:hover": { bgcolor: "#e0e0e0" },
             whiteSpace: "nowrap",
           }}
         >
-          리워드마켓
+          DB 조회
         </Button>
       </Stack>
       {!isLocalNoEnv && heldType && modules.length > modulesForMap.length && (
@@ -467,7 +450,7 @@ const Map = () => {
             flexShrink: 0,
             py: { xs: 0.5, sm: 1 },
             bgcolor: "rgba(255,255,255,0.1)",
-            color: "#e8ffe8",
+            color: "rgba(255,255,255,0.88)",
             border: "1px solid rgba(255,255,255,0.28)",
             fontSize: { xs: "0.75rem", sm: "0.875rem" },
             "& .MuiAlert-message": { width: "100%" },
@@ -564,16 +547,16 @@ const Map = () => {
                 py: { xs: 0.9, sm: 1.05 },
                 borderRadius: 2,
                 border: "1px solid rgba(255,255,255,0.36)",
-                bgcolor: "rgba(4,11,4,0.76)",
+                bgcolor: "rgba(14,14,14,0.76)",
                 backdropFilter: "blur(6px)",
                 boxShadow: "0 8px 28px rgba(0,0,0,0.35)",
                 minWidth: 0,
               }}
             >
-              <Typography sx={{ color: "rgba(186,255,162,0.9)", fontWeight: 800, fontSize: { xs: "0.64rem", sm: "0.7rem" }, letterSpacing: "0.05em" }}>
+              <Typography sx={{ color: "rgba(255,255,255,0.55)", fontWeight: 800, fontSize: { xs: "0.64rem", sm: "0.7rem" }, letterSpacing: "0.05em" }}>
                 HOLDING
               </Typography>
-              <Typography sx={{ color: "#e8ffe1", fontWeight: 900, fontSize: { xs: "0.8rem", sm: "0.9rem" }, lineHeight: 1.35, mt: 0.15 }}>
+              <Typography sx={{ color: meterColors.primaryMuted, fontWeight: 900, fontSize: { xs: "0.8rem", sm: "0.9rem" }, lineHeight: 1.35, mt: 0.15 }}>
                 들고있는 쓰레기: {heldTypeSummary}
               </Typography>
             </Box>
@@ -590,8 +573,8 @@ const Map = () => {
                 height: "auto",
                 borderRadius: 2,
                 border: "1px solid rgba(255,255,255,0.36)",
-                bgcolor: "rgba(4,11,4,0.76)",
-                color: "#b8ff9e",
+                bgcolor: "rgba(14,14,14,0.76)",
+                color: meterColors.primaryMuted,
                 backdropFilter: "blur(6px)",
                 boxShadow: "0 8px 28px rgba(0,0,0,0.35)",
                 fontWeight: 900,
@@ -602,8 +585,8 @@ const Map = () => {
                 textTransform: "none",
                 "&:hover": {
                   borderColor: "rgba(255,255,255,0.55)",
-                  color: "#e8ffe1",
-                  bgcolor: "rgba(8,18,8,0.9)",
+                  color: meterColors.primaryMuted,
+                  bgcolor: "rgba(18,18,18,0.9)",
                 },
               }}
             >
@@ -676,7 +659,7 @@ const Map = () => {
               boxShadow: "0 2px 10px rgba(0,0,0,0.35)",
               "&:hover": {
                 borderColor: "rgba(255,255,255,0.45)",
-                color: "#b8ff9e",
+                color: meterColors.primaryMuted,
                 bgcolor: "rgba(0,0,0,0.9)",
               },
             }}
@@ -703,6 +686,32 @@ const Map = () => {
           alignItems="center"
           sx={{ width: "100%", justifyContent: "center", px: { xs: 0.8, sm: 0.4 }, mt: { xs: 0.4, sm: 0.2 }, mb: { xs: 0.2, sm: 0.1 } }}
         >
+          <Button
+            variant="outlined"
+            size="large"
+            startIcon={<RouteRoundedIcon sx={{ fontSize: { xs: 24, sm: 28 } }} />}
+            onClick={() => navigate("/map/route")}
+            sx={{
+              px: { xs: 1.5, sm: 2.2 },
+              py: { xs: 1.5, sm: 1.75 },
+              flex: 1,
+              minWidth: 0,
+              borderRadius: 999,
+              fontSize: "clamp(0.68rem, 1.5vw, 0.95rem)",
+              fontWeight: 900,
+              minHeight: { xs: 48, sm: 56 },
+              color: meterColors.primaryMuted,
+              borderColor: meterColors.border,
+              bgcolor: "rgba(14,14,14,0.88)",
+              textTransform: "none",
+              "&:hover": {
+                borderColor: meterColors.borderStrong,
+                bgcolor: "rgba(24,24,24,0.94)",
+              },
+            }}
+          >
+            최적경로
+          </Button>
           <Button
             variant="outlined"
             size="large"
@@ -748,7 +757,7 @@ const Map = () => {
               letterSpacing: "-0.02em",
               color: "#ffffff",
               borderColor: "rgba(255,255,255,0.45)",
-              backgroundImage: "linear-gradient(120deg, rgba(255,255,255,0.1) 0%, rgba(157,255,146,0.14) 50%, rgba(255,255,255,0.1) 100%)",
+              backgroundImage: "linear-gradient(120deg, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.12) 50%, rgba(255,255,255,0.08) 100%)",
               backgroundSize: "180% 100%",
               position: "relative",
               overflow: "hidden",

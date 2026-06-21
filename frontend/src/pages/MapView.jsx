@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Box } from "@mui/material";
 import { moduleTypeLabel } from "../constants/wasteLabels";
-import { formatModuleConnectivity, fillLevelFromHeight, meterColors } from "../theme/meterTheme";
+import { formatModuleConnectivity, fillLevelFromHeight, isModuleOffline, meterColors } from "../theme/meterTheme";
 
 const KAKAO_APP_KEY = import.meta.env.VITE_KAKAO_API || import.meta.env.KAKAO_API || "";
 const KAKAO_SDK_URL = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_APP_KEY}&autoload=false`;
@@ -123,8 +123,10 @@ export default function MapView({ userPos, modules, onDispose, centerTrigger = 0
       const typeTitle = moduleTypeLabel(m.type);
       const typeSymbol = TYPE_SYMBOLS[typeKey] || "📍";
       const connectivity = formatModuleConnectivity(m.lastHeartbeat);
+      const offline = isModuleOffline(m.lastHeartbeat);
       const needsCheck = connectivity === "모듈점검필요";
       const fill = fillLevelFromHeight(m.heightCm);
+      const grayed = offline || isFull || fill.level === "critical";
       const position = new window.kakao.maps.LatLng(m.lat, m.lon);
 
       const marker = new window.kakao.maps.Marker({
@@ -137,14 +139,16 @@ export default function MapView({ userPos, modules, onDispose, centerTrigger = 0
       const badge = document.createElement("div");
       badge.style.padding = "3px 8px";
       badge.style.borderRadius = "999px";
-      badge.style.border = `1px solid ${needsCheck ? meterColors.danger : meterColors.borderStrong}`;
-      badge.style.background = "rgba(0,0,0,0.85)";
-      badge.style.color = needsCheck ? meterColors.danger : meterColors.primary;
+      badge.style.border = `1px solid ${grayed ? "rgba(140,140,140,0.55)" : needsCheck ? meterColors.danger : meterColors.borderStrong}`;
+      badge.style.background = grayed ? "rgba(60,60,60,0.9)" : "rgba(0,0,0,0.85)";
+      badge.style.color = grayed ? "rgba(200,200,200,0.85)" : needsCheck ? meterColors.danger : meterColors.primary;
       badge.style.fontWeight = "800";
       badge.style.fontSize = "11px";
       badge.style.whiteSpace = "nowrap";
-      badge.style.boxShadow = "0 4px 12px rgba(0,0,0,0.35)";
-      badge.textContent = `${typeSymbol} ${typeTitle}`;
+      badge.style.boxShadow = grayed ? "none" : "0 4px 12px rgba(0,0,0,0.35)";
+      badge.style.opacity = grayed ? "0.72" : "1";
+      badge.style.filter = grayed ? "grayscale(0.75)" : "none";
+      badge.textContent = `${typeSymbol} ${typeTitle}${offline ? " · 오프라인" : ""}`;
 
       const labelOverlay = new window.kakao.maps.CustomOverlay({
         position,
@@ -159,8 +163,8 @@ export default function MapView({ userPos, modules, onDispose, centerTrigger = 0
         info.style.minWidth = "200px";
         info.style.maxWidth = "260px";
         info.style.padding = "12px 14px";
-        info.style.background = "#111";
-        info.style.border = `1px solid ${meterColors.borderStrong}`;
+        info.style.background = grayed ? "#1a1a1a" : "#111";
+        info.style.border = `1px solid ${grayed ? "rgba(120,120,120,0.4)" : meterColors.borderStrong}`;
         info.style.borderRadius = "12px";
         info.style.color = meterColors.primaryMuted;
         info.style.fontSize = "12px";
@@ -181,7 +185,7 @@ export default function MapView({ userPos, modules, onDispose, centerTrigger = 0
 
         const connLine = document.createElement("div");
         connLine.style.fontWeight = "700";
-        connLine.style.color = needsCheck ? meterColors.danger : meterColors.primaryMuted;
+        connLine.style.color = offline ? meterColors.secondary : needsCheck ? meterColors.danger : meterColors.primaryMuted;
         connLine.style.marginBottom = "4px";
         connLine.textContent = connectivity;
 
@@ -210,11 +214,11 @@ export default function MapView({ userPos, modules, onDispose, centerTrigger = 0
         action.style.borderRadius = "8px";
         action.style.padding = "10px 12px";
         action.style.fontWeight = "800";
-        action.style.cursor = needsCheck || isFull ? "not-allowed" : "pointer";
-        action.style.background = needsCheck || isFull ? "rgba(255,255,255,0.12)" : meterColors.primary;
-        action.style.color = needsCheck || isFull ? "rgba(255,255,255,0.5)" : "#0a0a0a";
-        action.disabled = needsCheck || isFull;
-        action.textContent = needsCheck ? "점검 필요" : isFull ? "적재 위험 (FULL)" : "버리기";
+        action.style.cursor = needsCheck || isFull || offline ? "not-allowed" : "pointer";
+        action.style.background = needsCheck || isFull || offline ? "rgba(255,255,255,0.12)" : meterColors.primary;
+        action.style.color = needsCheck || isFull || offline ? "rgba(255,255,255,0.5)" : "#0a0a0a";
+        action.disabled = needsCheck || isFull || offline;
+        action.textContent = offline ? "오프라인" : needsCheck ? "점검 필요" : isFull ? "만재 (FULL)" : "버리기";
         action.addEventListener("click", () => {
           if (!action.disabled) onDispose(m.serialNumber);
         });

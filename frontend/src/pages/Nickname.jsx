@@ -6,8 +6,8 @@ import AccountCircleRoundedIcon from "@mui/icons-material/AccountCircleRounded";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
 import { getUser, saveUser, ensureSession, clearAuth } from "../services/auth";
 import { apiFetch } from "../services/api";
+import { meterColors } from "../theme/meterTheme";
 
-// Guide.jsx에서 가져온 등장 애니메이션
 const fadeInUp = keyframes`
   from { opacity: 0; transform: translateY(20px); }
   to { opacity: 1; transform: translateY(0); }
@@ -50,7 +50,6 @@ const NicknamePage = () => {
       alert("로그인이 필요합니다.");
       return;
     }
-    // 닉네임 입력 안 했을 때 방어 로직 추가
     if (!nickname.trim()) {
       alert("사용하실 별명을 입력해주세요.");
       return;
@@ -60,16 +59,14 @@ const NicknamePage = () => {
       const response = await apiFetch("/auth/nickname", {
         method: "PUT",
         body: JSON.stringify({
-        oauthId: user.oauthId,
-        nickname: nickname.trim() // 앞뒤 공백 제거
+          oauthId: user.oauthId,
+          nickname: nickname.trim(),
         }),
       });
-      // 서버 기준 사용자 정보로 로컬 저장 동기화
       const updatedUser = response?.user || { ...user, nickname: nickname.trim() };
       saveUser(updatedUser);
-      // 성공하면 지도 페이지로 이동
       navigate("/map");
-    } catch (e) {
+    } catch {
       alert("이미 사용 중인 별명이거나 에러가 발생했습니다.");
     }
   };
@@ -78,8 +75,8 @@ const NicknamePage = () => {
     <Box
       sx={{
         minHeight: "100dvh",
-        bgcolor: "#030403", // Guide.jsx 배경색
-        color: "#fff",
+        bgcolor: meterColors.bg,
+        color: meterColors.primary,
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -88,16 +85,26 @@ const NicknamePage = () => {
         overflow: "hidden",
       }}
     >
-      {/* 배경 은은한 그리드 효과 (RootPage의 감성 살짝 추가) */}
-      <Box sx={{ position: "absolute", inset: 0, backgroundImage: `linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)`, backgroundSize: "40px 40px", opacity: 0.3, pointerEvents: "none" }} />
+      <Box
+        sx={{
+          position: "absolute",
+          inset: 0,
+          backgroundImage: `linear-gradient(rgba(255,255,255,0.02) 1px, transparent 1px), linear-gradient(90deg, rgba(255,255,255,0.02) 1px, transparent 1px)`,
+          backgroundSize: "40px 40px",
+          opacity: 0.3,
+          pointerEvents: "none",
+        }}
+      />
 
       <Container maxWidth="sm" sx={{ position: "relative", zIndex: 1 }}>
-        <Stack
-          spacing={5}
-          alignItems="center"
-          sx={{ animation: `${fadeInUp} 0.8s ease-out` }} // 애니메이션 적용
-        >
-          {/* 상단 아이콘 박스 (Guide.jsx 스타일) */}
+        <Stack spacing={5} alignItems="center" sx={{ animation: `${fadeInUp} 0.8s ease-out` }}>
+          <Box
+            component="img"
+            src="/meter-logo.png"
+            alt="METER"
+            sx={{ width: 56, height: 56, objectFit: "contain", mixBlendMode: "screen", opacity: 0.9 }}
+          />
+
           <Box
             sx={{
               width: 90,
@@ -106,48 +113,33 @@ const NicknamePage = () => {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              color: "#ffffff", // 네온 그린 포인트
-              background: "rgba(57,255,20,0.06)", // 은은한 녹색 배경
-              border: "1px solid rgba(57,255,20,0.15)", // 테두리
+              color: meterColors.primary,
+              background: "rgba(255,255,255,0.04)",
+              border: `1px solid ${meterColors.border}`,
               boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
             }}
           >
             <AccountCircleRoundedIcon sx={{ fontSize: 48 }} />
           </Box>
 
-          {/* 텍스트 영역 */}
           <Stack spacing={1.5}>
-            <Typography
-              variant="h3"
-              sx={{
-                fontWeight: 900,
-                letterSpacing: "-0.03em",
-                textShadow: "0 0 15px rgba(57,255,20,0.15)",
-              }}
-            >
-              GREENEYE 첫걸음
+            <Typography variant="h3" sx={{ fontWeight: 900, letterSpacing: "-0.03em" }}>
+              METER 시작하기
             </Typography>
-            <Typography
-              sx={{
-                color: "rgba(255,255,255,0.7)",
-                fontSize: "1.1rem",
-                lineHeight: 1.7,
-                maxWidth: 420,
-              }}
-            >
-              환영합니다! 별명을 설정해주세요.
+            <Typography sx={{ color: meterColors.secondary, fontSize: "1.1rem", lineHeight: 1.7, maxWidth: 420 }}>
+              환영합니다! 서비스에서 사용할 별명을 설정해 주세요.
             </Typography>
           </Stack>
 
-          {/* 세련된 스타일의 입력창 */}
           <TextField
             fullWidth
             variant="outlined"
-            placeholder="별명 입력 (예: 나는그린아이)"
+            placeholder="별명 입력 (예: meter_user)"
             value={nickname}
             onChange={(e) => setNickname(e.target.value)}
-            // 엔터키 쳐도 제출되게 추가
-            onKeyDown={(e) => { if (e.key === "Enter") handleSubmit(); }}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") handleSubmit();
+            }}
             InputProps={{
               startAdornment: (
                 <InputAdornment position="start">
@@ -157,61 +149,52 @@ const NicknamePage = () => {
             }}
             sx={{
               maxWidth: 400,
-              '& .MuiOutlinedInput-root': {
-                color: "#fff",
-                backgroundColor: "rgba(255,255,255,0.03)", // 살짝 투명한 배경
+              "& .MuiOutlinedInput-root": {
+                color: meterColors.primary,
+                backgroundColor: "rgba(255,255,255,0.03)",
                 fontSize: "1.1rem",
                 fontWeight: 600,
-                '& fieldset': {
-                  borderColor: "rgba(255,255,255,0.12)",
-                  borderRadius: 3, // 둥근 테두리
+                "& fieldset": {
+                  borderColor: meterColors.border,
+                  borderRadius: 3,
                   transition: "all 0.2s ease",
                 },
-                '&:hover fieldset': {
-                  borderColor: "rgba(255,255,255,0.3)",
-                },
-                '&.Mui-focused fieldset': {
-                  borderColor: "#ffffff", // 포커스시 네온 그린
+                "&:hover fieldset": { borderColor: meterColors.borderStrong },
+                "&.Mui-focused fieldset": {
+                  borderColor: meterColors.primary,
                   borderWidth: "1.5px",
-                  boxShadow: "0 0 12px rgba(57,255,20,0.15)",
                 },
               },
-              '& .MuiInputBase-input::placeholder': {
+              "& .MuiInputBase-input::placeholder": {
                 color: "rgba(255,255,255,0.3)",
                 opacity: 1,
               },
             }}
           />
 
-          {/* 시작하기 버튼 (Guide.jsx 돌아가기 버튼의 스타일을 CTA 버튼으로 어레인지) */}
           <Button
             fullWidth
             variant="contained"
             size="large"
             onClick={handleSubmit}
-            endIcon={<ArrowForwardRoundedIcon />} // 오른쪽에 화살표 추가
+            endIcon={<ArrowForwardRoundedIcon />}
             sx={{
               maxWidth: 320,
               height: 60,
-              borderRadius: 999, // 완전 둥글게
+              borderRadius: 999,
               fontSize: "1.2rem",
               fontWeight: 800,
-              letterSpacing: "-0.01em",
               color: "#000",
-              backgroundColor: "#ffffff", // 네온 그린 꽉 찬 버튼
-              boxShadow: "0 10px 25px rgba(57,255,20,0.15)",
-              transition: "all 0.3s ease",
-              textTransform: "none", // 대문자 강제 해제
+              backgroundColor: meterColors.primary,
+              textTransform: "none",
               "&:hover": {
-                backgroundColor: "#fff", // 호버시 흰색으로 변경
-                boxShadow: "0 10px 30px rgba(255,255,255,0.2)",
+                backgroundColor: "#e8e8e8",
                 transform: "translateY(-2px)",
               },
             }}
           >
-             GREENEYE 시작하기
+            METER 입장
           </Button>
-
         </Stack>
       </Container>
     </Box>

@@ -101,7 +101,6 @@ export default function Test() {
 
         <Stack spacing={6} alignItems="center">
 
-          {/* ✅ GreenEye 헤더 유지 */}
           <Stack spacing={2} alignItems="center">
             <Box sx={{
               display: "flex",
@@ -110,20 +109,20 @@ export default function Test() {
               px: 2,
               py: 0.5,
               borderRadius: "100px",
-              border: "1px solid rgba(124,255,114,0.35)",
+              border: "1px solid rgba(255,255,255,0.2)",
             }}>
               <Box sx={{
                 width: 8,
                 height: 8,
                 borderRadius: "50%",
-                bgcolor: "#7CFF72",
+                bgcolor: "#ffffff",
                 animation: "blink 2s infinite",
                 "@keyframes blink": {
                   "0%,100%": { opacity: 1 },
                   "50%": { opacity: 0.3 },
                 },
               }} />
-              <Typography sx={{ color: "#7CFF72", fontSize: "0.75rem", fontWeight: 700 }}>
+              <Typography sx={{ color: "rgba(255,255,255,0.7)", fontSize: "0.75rem", fontWeight: 700 }}>
                 Recycling Guide
               </Typography>
             </Box>
@@ -176,7 +175,7 @@ export default function Test() {
               bgcolor: "#111",
             }}
           >
-            <Typography sx={{ color: "#7CFF72", fontWeight: 700, mb: 1 }}>
+            <Typography sx={{ color: "rgba(255,255,255,0.85)", fontWeight: 700, mb: 1 }}>
               공식 출처
             </Typography>
 
@@ -192,7 +191,7 @@ export default function Test() {
                 target="_blank"
                 rel="noopener noreferrer"
                 sx={{
-                  color: "#7CFF72",
+                  color: "rgba(255,255,255,0.75)",
                   fontSize: "0.85rem",
                   fontWeight: 600,
                   textDecoration: "none",
@@ -215,11 +214,11 @@ export default function Test() {
   custom={7}
   sx={{
     width: "100%",
-    border: "1px solid rgba(124,255,114,0.18)",
+    border: "1px solid rgba(255,255,255,0.12)",
     borderRadius: 3,
     p: { xs: 2.5, sm: 3 },
     textAlign: "center",
-    bgcolor: "rgba(124,255,114,0.04)",
+    bgcolor: "rgba(255,255,255,0.03)",
   }}
 >
   <Typography
@@ -228,7 +227,7 @@ export default function Test() {
       fontWeight: 700,
       letterSpacing: "0.14em",
       textTransform: "uppercase",
-      color: "rgba(124,255,114,0.6)",
+      color: "rgba(255,255,255,0.45)",
       mb: 1.5,
     }}
   >
@@ -262,8 +261,8 @@ export default function Test() {
           transition: "all 0.2s ease",
           "&:hover": {
             transform: "translateY(-2px)",
-            borderColor: "rgba(124,255,114,0.4)",
-            color: "#7CFF72",
+            borderColor: "rgba(255,255,255,0.35)",
+            color: "rgba(255,255,255,0.9)",
           },
         }}
       >
