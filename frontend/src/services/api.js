@@ -5,6 +5,9 @@ const API_BASE_URL =
   (import.meta.env.PROD ? "https://meter.gwon.run/api" : "/api");
 
 function parseApiError(text, status) {
+  if (status === 502 || status === 503 || status === 504) {
+    return "백엔드(meter-backend)에 연결할 수 없습니다. 서버에서 ./scripts/diagnose.sh 를 실행해 주세요.";
+  }
   if (!text) return `서버 에러: ${status}`;
   const trimmed = text.trimStart();
   if (trimmed.startsWith("<!DOCTYPE") || trimmed.startsWith("<html")) {
@@ -15,9 +18,6 @@ function parseApiError(text, status) {
     if (typeof json.detail === "string" && json.detail) return json.detail;
     if (typeof json.message === "string" && json.message) return json.message;
     if (status === 429) return "요청이 너무 많습니다. 잠시 후 다시 시도해 주세요.";
-    if (status === 502 || status === 503 || status === 504) {
-      return "백엔드(meter-backend)에 연결할 수 없습니다. 서버에서 docker logs meter-backend 를 확인해 주세요.";
-    }
     if (typeof json.error === "string" && json.error && json.error !== "Too Many Requests") {
       return json.error;
     }

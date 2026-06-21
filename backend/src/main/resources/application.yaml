@@ -8,9 +8,13 @@ spring:
       max-request-size: 14MB
   datasource:
     url: jdbc:mysql://gwon-db:3306/meter?serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&useSSL=false&characterEncoding=UTF-8
-    username: ${DB_USERNAME:root}
+    username: ${DB_USERNAME:gwon}
     password: ${DB_PASSWORD}
+    hikari:
+      connection-timeout: 30000
+      initialization-fail-timeout: 120000
   jpa:
+    database-platform: org.hibernate.dialect.MySQLDialect
     hibernate:
       ddl-auto: update
     properties:
@@ -54,3 +58,12 @@ meter:
   iot:
     mqtt-host: mqtt-meter.gwon.run
     mqtt-port: 80
+
+server:
+  port: 8080
+  address: 0.0.0.0
+
+logging:
+  level:
+    com.zaxxer.hikari.pool.HikariPool: WARN
+    org.hibernate.engine.jdbc.spi.SqlExceptionHelper: WARN
