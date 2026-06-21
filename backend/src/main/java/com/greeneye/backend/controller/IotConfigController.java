@@ -15,10 +15,10 @@ import java.util.Map;
 @RequestMapping("/api/iot")
 public class IotConfigController {
 
-    @Value("${greeneye.iot.mqtt-host}")
+    @Value("${meter.iot.mqtt-host}")
     private String mqttHost;
 
-    @Value("${greeneye.iot.mqtt-port:80}")
+    @Value("${meter.iot.mqtt-port:80}")
     private int mqttPort;
 
     @GetMapping("/config")

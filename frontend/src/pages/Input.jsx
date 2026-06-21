@@ -5,7 +5,7 @@ import { getUser } from "../services/auth";
 import { apiFetch } from "../services/api";
 
 /** Map.jsx 과 동일 — 맵 복귀 시 +10 네온 효과 */
-const PENDING_REWARD_KEY = "greeneye.pendingReward";
+const PENDING_REWARD_KEY = "meter.pendingNotice";
 
 const POLL_MS = 2000;
 /** IoT READY 10s + 네트워크 여유 후 DEFAULT 이면 실패로 본다 */

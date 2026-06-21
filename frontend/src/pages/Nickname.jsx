@@ -106,7 +106,7 @@ const NicknamePage = () => {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              color: "#7CFF72", // 네온 그린 포인트
+              color: "#ffffff", // 네온 그린 포인트
               background: "rgba(57,255,20,0.06)", // 은은한 녹색 배경
               border: "1px solid rgba(57,255,20,0.15)", // 테두리
               boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
@@ -171,7 +171,7 @@ const NicknamePage = () => {
                   borderColor: "rgba(255,255,255,0.3)",
                 },
                 '&.Mui-focused fieldset': {
-                  borderColor: "#7CFF72", // 포커스시 네온 그린
+                  borderColor: "#ffffff", // 포커스시 네온 그린
                   borderWidth: "1.5px",
                   boxShadow: "0 0 12px rgba(57,255,20,0.15)",
                 },
@@ -198,7 +198,7 @@ const NicknamePage = () => {
               fontWeight: 800,
               letterSpacing: "-0.01em",
               color: "#000",
-              backgroundColor: "#7CFF72", // 네온 그린 꽉 찬 버튼
+              backgroundColor: "#ffffff", // 네온 그린 꽉 찬 버튼
               boxShadow: "0 10px 25px rgba(57,255,20,0.15)",
               transition: "all 0.3s ease",
               textTransform: "none", // 대문자 강제 해제

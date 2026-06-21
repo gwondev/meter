@@ -1,9 +1,10 @@
 import { Box, Typography, Container, Stack, Button } from "@mui/material";
-import MapRoundedIcon from "@mui/icons-material/MapRounded";
+import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { keyframes } from "@emotion/react";
+import { meterColors } from "../../theme/meterTheme";
 
 const scan = keyframes`
   0% { transform: translateX(-100%); opacity: 0; }
@@ -13,8 +14,9 @@ const scan = keyframes`
 `;
 
 const bullets = [
-  "분산된 스마트 쓰레기통 상태를 한 화면에서 봅니다.",
-  "하트비트·통계로 수거·운영 효율을 조정합니다.",
+  "의류·플라스틱·캔·폐의약품 모듈의 적재량을 실시간 모니터링합니다.",
+  "지도에서 모듈 연결 상태와 최적 수거 동선을 한 화면에서 확인합니다.",
+  "5분 하트비트·1분 높이 측정 데이터로 수거·운영 판단을 지원합니다.",
 ];
 
 const OperationsHub = () => {
@@ -24,8 +26,8 @@ const OperationsHub = () => {
     <Box
       sx={{
         minHeight: "100dvh",
-        bgcolor: "#030403",
-        color: "#fff",
+        bgcolor: meterColors.bg,
+        color: meterColors.primary,
         display: "flex",
         alignItems: "center",
         position: "relative",
@@ -62,7 +64,7 @@ const OperationsHub = () => {
               sx={{
                 position: "absolute",
                 inset: 0,
-                background: "linear-gradient(90deg, transparent, rgba(124,255,114,0.12), transparent)",
+                background: "linear-gradient(90deg, transparent, rgba(255,255,255,0.08), transparent)",
                 animation: `${scan} 3.5s ease-in-out infinite`,
               }}
             />
@@ -74,38 +76,38 @@ const OperationsHub = () => {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: "#7CFF72",
-                background: "linear-gradient(145deg, rgba(57,255,20,0.1), rgba(57,255,20,0.02))",
-                border: "1px solid rgba(57,255,20,0.22)",
+                color: meterColors.primary,
+                background: "linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.02))",
+                border: `1px solid ${meterColors.border}`,
               }}
             >
               <motion.div
                 animate={{ scale: [1, 1.06, 1] }}
                 transition={{ duration: 2.2, repeat: Infinity, ease: "easeInOut" }}
               >
-                <MapRoundedIcon sx={{ fontSize: 46 }} />
+                <DashboardRoundedIcon sx={{ fontSize: 46 }} />
               </motion.div>
             </Box>
           </Box>
 
           <Stack spacing={0.75}>
             <Typography variant="h4" sx={{ fontWeight: 900, letterSpacing: "-0.02em" }}>
-              쓰레기통 통합 관제
+              통합 관제 대시보드
             </Typography>
-            <Typography sx={{ color: "#7CFF72", fontWeight: 600, fontSize: "0.95rem" }}>
-              대시보드 · 모니터링
+            <Typography sx={{ color: meterColors.primaryMuted, fontWeight: 600, fontSize: "0.95rem" }}>
+              실시간 적재량 · 연결 상태 · 수거 동선
             </Typography>
           </Stack>
 
           <Typography
             sx={{
-              color: "rgba(255,255,255,0.72)",
+              color: meterColors.secondary,
               lineHeight: 1.75,
               wordBreak: "keep-all",
               maxWidth: 400,
             }}
           >
-            현장 전체를 묶어 운영 판단을 빠르게 내릴 수 있습니다.
+            분산된 AIoT 모듈 전체를 묶어 운영·수거 판단을 빠르게 내릴 수 있습니다.
           </Typography>
 
           <Stack spacing={1.2} sx={{ width: "100%", maxWidth: 420, textAlign: "left" }}>
@@ -122,11 +124,11 @@ const OperationsHub = () => {
                     gap: 1.25,
                     alignItems: "flex-start",
                     pl: 1,
-                    borderLeft: "3px solid rgba(124,255,114,0.45)",
+                    borderLeft: `3px solid ${meterColors.borderStrong}`,
                     py: 0.25,
                   }}
                 >
-                  <Typography sx={{ color: "rgba(255,255,255,0.78)", fontSize: "0.92rem", lineHeight: 1.65 }}>
+                  <Typography sx={{ color: meterColors.primaryMuted, fontSize: "0.92rem", lineHeight: 1.65 }}>
                     {text}
                   </Typography>
                 </Box>
@@ -140,12 +142,12 @@ const OperationsHub = () => {
               onClick={() => navigate("/")}
               sx={{
                 mt: 1,
-                color: "#fff",
-                border: "1px solid rgba(255,255,255,0.14)",
+                color: meterColors.primary,
+                border: `1px solid ${meterColors.border}`,
                 borderRadius: 999,
                 px: 4,
                 py: 1.2,
-                "&:hover": { borderColor: "#7CFF72", color: "#7CFF72" },
+                "&:hover": { borderColor: meterColors.borderStrong, bgcolor: "rgba(255,255,255,0.06)" },
               }}
             >
               돌아가기

@@ -7,7 +7,7 @@ import com.greeneye.backend.repository.DisposalRecordRepository;
 import com.greeneye.backend.repository.ModuleRepository;
 import com.greeneye.backend.repository.RewardHistoryRepository;
 import com.greeneye.backend.repository.UserRepository;
-import com.greeneye.backend.mqtt.GreeneyeMqttTopics;
+import com.greeneye.backend.mqtt.MeterMqttTopics;
 import com.greeneye.backend.service.ModuleDisposalService;
 import com.greeneye.backend.service.MqttPublisherService;
 import com.greeneye.backend.service.TableIdCompactionService;
@@ -71,31 +71,59 @@ public class ModuleController {
             return Map.of("seeded", false, "reason", "already exists");
         }
 
-        Module g1 = Module.builder()
-                .serialNumber("g1")
+        Module m1 = Module.builder()
+                .serialNumber("m1")
                 .organization("CHOSUN_IT")
                 .lat(35.1462000)
                 .lon(126.9229000)
                 .type("CAN")
                 .status("DEFAULT")
+                .heightCm(45.0)
                 .totalDisposalCount(0)
                 .lastHeartbeat(LocalDateTime.now())
                 .build();
-        moduleRepository.save(g1);
+        moduleRepository.save(m1);
 
-        Module g2 = Module.builder()
-                .serialNumber("g2")
+        Module m2 = Module.builder()
+                .serialNumber("m2")
                 .organization("CHOSUN_IT")
                 .lat(35.1474000)
                 .lon(126.9242000)
-                .type("PET")
+                .type("PLASTIC")
                 .status("DEFAULT")
+                .heightCm(38.0)
                 .totalDisposalCount(0)
                 .lastHeartbeat(LocalDateTime.now())
                 .build();
-        moduleRepository.save(g2);
+        moduleRepository.save(m2);
 
-        return Map.of("seeded", true, "serialNumbers", List.of(g1.getSerialNumber(), g2.getSerialNumber()));
+        Module m3 = Module.builder()
+                .serialNumber("m3")
+                .organization("CHOSUN_IT")
+                .lat(35.1458000)
+                .lon(126.9235000)
+                .type("CLOTHING")
+                .status("DEFAULT")
+                .heightCm(52.0)
+                .totalDisposalCount(0)
+                .lastHeartbeat(LocalDateTime.now())
+                .build();
+        moduleRepository.save(m3);
+
+        Module m4 = Module.builder()
+                .serialNumber("m4")
+                .organization("CHOSUN_IT")
+                .lat(35.1469000)
+                .lon(126.9218000)
+                .type("MEDICINE")
+                .status("DEFAULT")
+                .heightCm(28.0)
+                .totalDisposalCount(0)
+                .lastHeartbeat(LocalDateTime.now())
+                .build();
+        moduleRepository.save(m4);
+
+        return Map.of("seeded", true, "serialNumbers", List.of(m1.getSerialNumber(), m2.getSerialNumber(), m3.getSerialNumber(), m4.getSerialNumber()));
     }
 
     @PostMapping("/{serialNumber}/ready")
@@ -149,7 +177,7 @@ public class ModuleController {
                 .build();
         disposalRecordRepository.save(record);
 
-        String topic = GreeneyeMqttTopics.cmd(serialNumber);
+        String topic = MeterMqttTopics.cmd(serialNumber);
         long issuedAt = System.currentTimeMillis();
         String payload = String.format(Locale.US, "{\"userId\":\"%s\",\"issuedAt\":%d}",
                 escapeJson(nickname), issuedAt);
@@ -165,6 +193,22 @@ public class ModuleController {
     ) {
         String nickname = body.get("userId");
         return moduleDisposalService.completeDisposalCheck(serialNumber, nickname);
+    }
+
+    /** METER: 지도에서 버리기 — 투입 카운트만 증가 (리워드·MQTT 검증 없음) */
+    @PostMapping("/{serialNumber}/dispose")
+    @Transactional
+    public Map<String, Object> dispose(@PathVariable String serialNumber) {
+        Module module = moduleRepository.findBySerialNumber(serialNumber)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Module not found"));
+        module.setTotalDisposalCount(module.getTotalDisposalCount() + 1);
+        module.setLastHeartbeat(LocalDateTime.now());
+        moduleRepository.save(module);
+        return Map.of(
+                "ok", true,
+                "totalDisposalCount", module.getTotalDisposalCount(),
+                "serialNumber", module.getSerialNumber()
+        );
     }
 
     private String stringOrDefault(Object raw, String fallback) {

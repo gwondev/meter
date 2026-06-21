@@ -50,7 +50,7 @@ export function isDevBypass() {
 }
 
 /** 백엔드 DevUserBootstrap oauth-id와 동일 */
-export const DEV_OAUTH_ID = "dev-local-greeneye";
+export const DEV_OAUTH_ID = "dev-local-meter";
 
 export function isAuthenticated() {
   const u = getUser();

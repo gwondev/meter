@@ -27,7 +27,7 @@ public class AiController {
     private final UserRepository userRepository;
     private final GeminiVisionService geminiVisionService;
 
-    /** Gemini 키·모델 연결 상태 (배포 후 https://greeneye.gwon.run/api/ai/status 로 확인) */
+    /** Gemini 키·모델 연결 상태 (배포 후 https://meter.gwon.run/api/ai/status 로 확인) */
     @GetMapping("/status")
     public Map<String, Object> status() {
         Map<String, Object> out = new LinkedHashMap<>();

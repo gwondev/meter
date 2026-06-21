@@ -43,18 +43,19 @@ public class GeminiVisionService {
     );
 
     private static final String VISION_PROMPT = """
-            대한민국 분리배출 관점에서 이미지의 주된 폐기물을 분류하고 배출 안내를 작성하라.
+            METER 적재 자원 관리 관점에서 이미지의 주된 품목을 분류하고 올바른 배출·수거 안내를 작성하라.
 
             [출력 형식 — 아래 3줄을 반드시 모두 출력]
-            1줄: 분류 코드 하나만 — CAN, GENERAL, PET, HAZARD
+            1줄: 분류 코드 하나만 — CLOTHING, PLASTIC, CAN, MEDICINE
             2줄: 인식: (물품명. 브랜드가 보이면 함께)
-            3줄: 안내: (배출 방법 2~4문장. 라벨·뚜껑이 보이면 구체적으로)
+            3줄: 안내: (배출 방법 2~4문장. 가까운 METER 거점 이용 안내 포함)
 
             [규칙]
             - 마크다운·굵게(**)·목록 기호 금지. 평문만.
-            - PET: 내용물 비우기·헹굼. 라벨 있으면 제거. 뚜껑 분리 가능 시 분리 배출.
+            - CLOTHING: 깨끗한 의류만 수거함에. 오염·손상 의류는 별도 안내.
+            - PLASTIC: 내용물 비우기·헹굼. 라벨·뚜껑 분리 가능 시 분리.
             - CAN: 내용물 비우기·헹굼. 라벨·뚜껑 분리 안내.
-            - GENERAL·HAZARD: 해당 분류 주의 안내.""";
+            - MEDICINE: 폐의약품 전용 수거함. 일반 쓰레기와 혼합 금지.""";
 
     private final WebClient geminiWebClient;
     private final ObjectMapper objectMapper;
@@ -456,7 +457,7 @@ public class GeminiVisionService {
 
     private ParsedVision parseVisionText(String text) {
         if (text == null || text.isBlank()) {
-            return new ParsedVision("GENERAL", "", defaultGuidance("GENERAL", ""));
+            return new ParsedVision("PLASTIC", "", defaultGuidance("PLASTIC", ""));
         }
 
         String[] lines = text.trim().split("\\R");
@@ -505,18 +506,21 @@ public class GeminiVisionService {
         String item = recognizedItem == null ? "" : recognizedItem.trim();
         String subject = item.isBlank() ? "이 품목은" : item + "은(는)";
         return switch (type) {
-            case "CAN" -> subject + " 내용물을 완전히 비우고 가볍게 헹군 뒤 배출하세요. "
-                    + "라벨이 붙어 있으면 떼어 내고, 플라스틱 뚜껑이면 분리하여 배출하세요.";
-            case "PET" -> subject + " 내용물을 비우고 라벨을 떼어 낸 뒤 가볍게 헹구세요. "
-                    + "뚜껑과 몸통 재질이 다르면 분리하여 배출하세요.";
-            case "HAZARD" -> subject + " 일반 쓰레기와 섞지 말고 지정된 위험물·대형폐기물 수거함에 배출하세요.";
-            default -> subject + " 해당 지역의 분리배출 기준에 맞게 배출하세요.";
+            case "CLOTHING" -> subject + " 깨끗하고 건조한 상태의 의류만 의류수거함에 넣어 주세요. "
+                    + "오염·손상된 의류는 별도 폐기 방법을 확인하세요.";
+            case "PLASTIC" -> subject + " 내용물을 비우고 가볍게 헹군 뒤 플라스틱 쓰레기통에 배출하세요. "
+                    + "라벨·뚜껑은 분리 가능하면 분리하여 배출하세요.";
+            case "CAN" -> subject + " 내용물을 완전히 비우고 가볍게 헹군 뒤 캔 전용 수거함에 배출하세요. "
+                    + "라벨이 붙어 있으면 떼어 내세요.";
+            case "MEDICINE" -> subject + " 폐의약품 전용 수거함에만 배출하세요. "
+                    + "일반 쓰레기·하수구에 버리지 마세요.";
+            default -> subject + " METER 지도에서 가까운 적합 거점을 확인한 뒤 배출하세요.";
         };
     }
 
     private static boolean looksLikeTypeToken(String line) {
         String u = line.trim().toUpperCase(Locale.ROOT);
-        return u.equals("CAN") || u.equals("GENERAL") || u.equals("PET") || u.equals("HAZARD");
+        return u.equals("CLOTHING") || u.equals("PLASTIC") || u.equals("CAN") || u.equals("MEDICINE");
     }
 
     private static String stripMarkdown(String text) {
@@ -528,14 +532,14 @@ public class GeminiVisionService {
 
     private String normalizeTypeToken(String text) {
         if (text == null || text.isBlank()) {
-            return "GENERAL";
+            return "PLASTIC";
         }
         String firstLine = stripMarkdown(text.trim().split("\\R", 2)[0]).trim().toUpperCase(Locale.ROOT);
-        if (firstLine.contains("HAZARD")) return "HAZARD";
-        if (firstLine.contains("PET")) return "PET";
+        if (firstLine.contains("MEDICINE")) return "MEDICINE";
+        if (firstLine.contains("CLOTHING")) return "CLOTHING";
+        if (firstLine.contains("PLASTIC")) return "PLASTIC";
         if (firstLine.contains("CAN")) return "CAN";
-        if (firstLine.contains("GENERAL")) return "GENERAL";
-        return "GENERAL";
+        return "PLASTIC";
     }
 
     private static String summarize(String text, int max) {

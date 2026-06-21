@@ -1,21 +1,22 @@
 import { Box, Container, Stack, Typography, Button } from "@mui/material";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
+import { meterColors } from "../theme/meterTheme";
 
 const MEMBERS = [
   {
     name: "이성권",
     role: "PL · IOT · INFRA",
     avatar: "이",
-    color: "#7CFF72",
-    bg: "rgba(124,255,114,0.08)",
-    border: "rgba(124,255,114,0.28)",
+    color: meterColors.primary,
+    bg: "rgba(255,255,255,0.06)",
+    border: meterColors.border,
     sections: [
       { label: "Project Lead", items: ["프로젝트 총괄", "일정 조율", "기술 방향 설정"] },
       { label: "Full-stack Scaffolding", items: ["전체 프로젝트 초기 구조 설계", "개발환경 세팅"] },
       { label: "Architecture Design", items: ["웹·서버·IoT 시스템 아키텍처 설계"] },
       { label: "Infra & DevOps", items: ["Docker", "Docker Compose", "CI/CD", "Server Build", "Cloudflare Tunnel"] },
-      { label: "IoT & HW", items: ["센서 회로 설계", "Arduino", "MQTT", "하드웨어"] },
+      { label: "IoT & HW", items: ["센서 회로 설계", "ESP32", "MQTT", "하드웨어"] },
     ],
   },
   {
@@ -92,28 +93,56 @@ export default function TeamIntro() {
       <Container maxWidth="md">
         <Stack spacing={6} alignItems="center">
           <Stack component={motion.div} initial="hidden" animate="show" variants={fadeUp} custom={0} spacing={2} alignItems="center" textAlign="center">
-            <Box sx={{ display: "inline-flex", alignItems: "center", gap: 0.8, px: 1.75, py: 0.55, borderRadius: "100px", border: "1px solid rgba(124,255,114,0.35)", bgcolor: "rgba(124,255,114,0.07)" }}>
+            <Box
+              component="img"
+              src="/meter-logo.png"
+              alt="METER"
+              sx={{ width: 56, height: 56, objectFit: "contain" }}
+            />
+            <Box
+              sx={{
+                display: "inline-flex",
+                alignItems: "center",
+                gap: 0.8,
+                px: 1.75,
+                py: 0.55,
+                borderRadius: "100px",
+                border: `1px solid ${meterColors.border}`,
+                bgcolor: "rgba(255,255,255,0.04)",
+              }}
+            >
               <Box
                 sx={{
                   width: 7,
                   height: 7,
                   borderRadius: "50%",
-                  bgcolor: "#7CFF72",
+                  bgcolor: meterColors.primary,
                   animation: "blink 2s ease-in-out infinite",
-                  "@keyframes blink": { "0%,100%": { opacity: 1, transform: "scale(1)" }, "50%": { opacity: 0.3, transform: "scale(0.6)" } },
+                  "@keyframes blink": {
+                    "0%,100%": { opacity: 1, transform: "scale(1)" },
+                    "50%": { opacity: 0.3, transform: "scale(0.6)" },
+                  },
                 }}
               />
-              <Typography sx={{ fontSize: "0.72rem", fontWeight: 700, letterSpacing: "0.14em", color: "#7CFF72", textTransform: "uppercase" }}>
+              <Typography
+                sx={{
+                  fontSize: "0.72rem",
+                  fontWeight: 700,
+                  letterSpacing: "0.14em",
+                  color: meterColors.primaryMuted,
+                  textTransform: "uppercase",
+                }}
+              >
                 Team Introduction
               </Typography>
             </Box>
             <Typography variant="h3" sx={{ fontWeight: 900, letterSpacing: "-0.04em", fontSize: { xs: "1.9rem", sm: "2.6rem" }, lineHeight: 1.1 }}>
-              팀 소개
+              METER 팀 소개
             </Typography>
             <Typography sx={{ color: "text.secondary", fontSize: "0.92rem", lineHeight: 1.7, maxWidth: 420 }}>
               AI · IoT · 보안 · 웹 · 디자인을 연결해
               <br />
-              환경을 바꾸는 다섯 명의 팀입니다.
+              적재 자원 통합관리를 만드는 다섯 명의 팀입니다.
             </Typography>
           </Stack>
 
@@ -137,18 +166,49 @@ export default function TeamIntro() {
                 }}
               >
                 <Stack direction="row" alignItems="center" spacing={1.5} mb={2}>
-                  <Box sx={{ width: 46, height: 46, borderRadius: "50%", bgcolor: m.bg, border: `1.5px solid ${m.border}`, display: "flex", alignItems: "center", justifyContent: "center", flexShrink: 0 }}>
+                  <Box
+                    sx={{
+                      width: 46,
+                      height: 46,
+                      borderRadius: "50%",
+                      bgcolor: m.bg,
+                      border: `1.5px solid ${m.border}`,
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      flexShrink: 0,
+                    }}
+                  >
                     <Typography sx={{ fontWeight: 900, fontSize: "1rem", color: m.color }}>{m.avatar}</Typography>
                   </Box>
                   <Box>
                     <Typography sx={{ fontWeight: 800, fontSize: "1rem", lineHeight: 1.2 }}>{m.name}</Typography>
-                    <Typography sx={{ fontSize: "0.72rem", fontWeight: 700, color: m.color, letterSpacing: "0.08em", textTransform: "uppercase" }}>{m.role}</Typography>
+                    <Typography
+                      sx={{
+                        fontSize: "0.72rem",
+                        fontWeight: 700,
+                        color: m.color,
+                        letterSpacing: "0.08em",
+                        textTransform: "uppercase",
+                      }}
+                    >
+                      {m.role}
+                    </Typography>
                   </Box>
                 </Stack>
                 <Stack spacing={1.2}>
                   {m.sections.map((sec) => (
                     <Box key={sec.label}>
-                      <Typography sx={{ fontSize: "0.65rem", fontWeight: 700, letterSpacing: "0.13em", textTransform: "uppercase", color: "rgba(255,255,255,0.35)", mb: 0.6 }}>
+                      <Typography
+                        sx={{
+                          fontSize: "0.65rem",
+                          fontWeight: 700,
+                          letterSpacing: "0.13em",
+                          textTransform: "uppercase",
+                          color: "rgba(255,255,255,0.35)",
+                          mb: 0.6,
+                        }}
+                      >
                         {sec.label}
                       </Typography>
                       <Box sx={{ display: "flex", flexWrap: "wrap", gap: 0.6 }}>
@@ -162,7 +222,7 @@ export default function TeamIntro() {
                               py: 0.35,
                               borderRadius: "100px",
                               bgcolor: "rgba(255,255,255,0.06)",
-                              border: "0.5px solid rgba(255,255,255,0.14)",
+                              border: `0.5px solid ${meterColors.border}`,
                               color: "rgba(255,255,255,0.75)",
                               whiteSpace: "nowrap",
                             }}
@@ -179,15 +239,19 @@ export default function TeamIntro() {
           </Box>
 
           <Stack direction="row" spacing={1.2}>
-            <Button size="small" onClick={() => navigate("/map")} sx={{ textTransform: "none", color: "rgba(255,255,255,0.85)" }}>
+            <Button
+              size="small"
+              onClick={() => navigate("/map")}
+              sx={{ textTransform: "none", color: meterColors.primaryMuted }}
+            >
               Map으로
             </Button>
-            <Button size="small" onClick={() => navigate("/intro/project")} sx={{ textTransform: "none", color: "#7CFF72" }}>
+            <Button size="small" onClick={() => navigate("/intro/project")} sx={{ textTransform: "none", color: meterColors.primary }}>
               프로젝트 소개
             </Button>
           </Stack>
           <Typography sx={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.4)", textAlign: "center" }}>
-            제작: GreenEye Team · 2026
+            제작: METER Team · 2026
           </Typography>
         </Stack>
       </Container>

@@ -1,12 +1,23 @@
 /** 모듈·팝업용 분류 표시 (코드 → 짧은 한글) */
 export const MODULE_TYPE_LABELS = {
+  CLOTHING: "의류수거함",
+  PLASTIC: "플라스틱쓰레기통",
+  CAN: "캔쓰레기통",
+  MEDICINE: "폐의약품수거함",
+  /** 레거시 호환 */
   GENERAL: "일반쓰레기",
-  CAN: "캔",
-  PET: "페트병",
+  PET: "플라스틱",
   HAZARD: "유해폐기물",
-  /** 기존 자원회수 장치(협약) — Camera 분류는 PET/CAN과 매칭 */
-  GOV_PET: "협약 회수함(페트)",
-  GOV_CAN: "협약 회수함(캔)",
+};
+
+export const HELD_TYPE_LABELS = {
+  CLOTHING: "의류",
+  PLASTIC: "플라스틱",
+  CAN: "캔",
+  MEDICINE: "폐의약품",
+  PET: "플라스틱",
+  GENERAL: "일반",
+  HAZARD: "유해",
 };
 
 export function moduleTypeLabel(code) {
@@ -15,14 +26,13 @@ export function moduleTypeLabel(code) {
   return MODULE_TYPE_LABELS[key] || key;
 }
 
-/** Camera에서 선택한 분류(PET, CAN 등)와 모듈 TYPE이 호환되는지 */
+/** Camera에서 선택한 분류와 모듈 TYPE이 호환되는지 */
 export function moduleTypeMatchesHeld(moduleType, heldType) {
-  const m = String(moduleType || "GENERAL").trim().toUpperCase();
+  const m = String(moduleType || "PLASTIC").trim().toUpperCase();
   const h = String(heldType || "").trim().toUpperCase();
   if (!h) return true;
   if (m === h) return true;
-  if (m === "GOV_PET" && h === "PET") return true;
-  if (m === "GOV_CAN" && h === "CAN") return true;
+  if (m === "PLASTIC" && h === "PET") return true;
   return false;
 }
 

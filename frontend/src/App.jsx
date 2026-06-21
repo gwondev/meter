@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import { BrowserRouter, Routes, Route, Navigate, useNavigate } from "react-router-dom";
 import { ThemeProvider, createTheme, CssBaseline } from "@mui/material";
+import { meterThemeOptions } from "./theme/meterTheme";
 import Root from "./pages/Root";
 import Manage from "./pages/Manage";
 import DB from "./pages/DB";
@@ -22,17 +23,7 @@ import TeamIntro from "./pages/TeamIntro";
 import ProjectIntro from "./pages/ProjectIntro";
 import { isAuthenticated, ensureSession } from "./services/auth";
 
-const theme = createTheme({
-  palette: {
-    mode: "dark",
-    background: {
-      default: "#030403",
-      paper: "rgba(255,255,255,0.06)",
-    },
-    primary: { main: "#7CFF72" },
-    text: { primary: "#fff", secondary: "rgba(255,255,255,0.7)" },
-  },
-});
+const theme = createTheme(meterThemeOptions);
 
 function ProtectedRoute({ children, adminOnly = false }) {
   const navigate = useNavigate();

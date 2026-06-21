@@ -17,7 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * IoT → 백엔드: {@code greeneye/+/status}, {@code greeneye/+/events} 구독.
+ * IoT → 백엔드: {@code meter/+/status}, {@code meter/+/events} 구독.
  */
 @Component
 @RequiredArgsConstructor
@@ -30,7 +30,7 @@ public class MqttSubscriberService implements Runnable {
     @Value("${mqtt.broker-url:tcp://localhost:1883}")
     private String brokerUrl;
 
-    @Value("${mqtt.subscriber-client-id:greeneye-backend-sub}")
+    @Value("${mqtt.subscriber-client-id:meter-backend-sub}")
     private String subscriberClientId;
 
     private final AtomicBoolean running = new AtomicBoolean(true);
@@ -105,7 +105,7 @@ public class MqttSubscriberService implements Runnable {
                     String payload = new String(message.getPayload(), StandardCharsets.UTF_8);
                     mqttTrafficLogService.add("IN", topic, payload);
                     String[] parts = topic.split("/");
-                    if (parts.length != 3 || !"greeneye".equals(parts[0])) {
+                    if (parts.length != 3 || !"meter".equals(parts[0])) {
                         log.warn("Unexpected MQTT topic {}", topic);
                         return;
                     }
@@ -141,9 +141,9 @@ public class MqttSubscriberService implements Runnable {
         if (client == null || !client.isConnected()) {
             return;
         }
-        client.subscribe("greeneye/+/status", 1);
-        client.subscribe("greeneye/+/events", 1);
-        log.info("MQTT subscriber subscribed greeneye/+/status, greeneye/+/events");
+        client.subscribe("meter/+/status", 1);
+        client.subscribe("meter/+/events", 1);
+        log.info("MQTT subscriber subscribed meter/+/status, meter/+/events");
     }
 
     private void disconnectQuietly() {

@@ -1,5 +1,6 @@
 import { lazy, Suspense, useEffect, useState, useMemo, useRef } from "react";
-import { moduleTypeMatchesHeld } from "../constants/wasteLabels";
+import { moduleTypeMatchesHeld, HELD_TYPE_LABELS } from "../constants/wasteLabels";
+import { meterColors } from "../theme/meterTheme";
 import { Typography, Box, Paper, Stack, Button, Alert, Snackbar } from "@mui/material";
 import { useLocation, useNavigate } from "react-router-dom";
 import { getUser } from "../services/auth";
@@ -12,17 +13,11 @@ import StorefrontRoundedIcon from "@mui/icons-material/StorefrontRounded";
 
 const MapView = lazy(() => import("./MapView.jsx"));
 
-const HELD_KEY = "greeneye.finalWasteType";
-const PENDING_REWARD_KEY = "greeneye.pendingReward";
-const HELD_TYPE_LABELS = {
-  CAN: "캔",
-  PET: "페트병",
-  GENERAL: "일반쓰레기",
-  HAZARD: "유해폐기물",
-};
+const HELD_KEY = "meter.finalWasteType";
+const HELD_TYPE_LABELS_LOCAL = HELD_TYPE_LABELS;
 const ctaPulse = keyframes`
-  0%, 100% { transform: translateY(0); box-shadow: 0 10px 34px rgba(124,255,114,0.34), 0 0 0 1px rgba(124,255,114,0.42); }
-  50% { transform: translateY(-2px); box-shadow: 0 16px 48px rgba(124,255,114,0.48), 0 0 0 1px rgba(124,255,114,0.55); }
+  0%, 100% { transform: translateY(0); box-shadow: 0 10px 34px rgba(255,255,255,0.34), 0 0 0 1px rgba(255,255,255,0.42); }
+  50% { transform: translateY(-2px); box-shadow: 0 16px 48px rgba(255,255,255,0.48), 0 0 0 1px rgba(255,255,255,0.55); }
 `;
 const ctaShine = keyframes`
   0% { transform: translateX(-120%); opacity: 0; }
@@ -123,14 +118,6 @@ const Map = () => {
       navigate("/map", { replace: true, state: {} });
     }
   }, [location.state, navigate]);
-
-  useEffect(() => {
-    const pending = Number(sessionStorage.getItem(PENDING_REWARD_KEY) || 0);
-    if (pending > 0) {
-      fireRewardEffect(pending);
-      sessionStorage.removeItem(PENDING_REWARD_KEY);
-    }
-  }, []);
 
   useEffect(() => {
     const sync = () => setHeldType(sessionStorage.getItem(HELD_KEY) || "");
@@ -253,51 +240,14 @@ const Map = () => {
     );
   };
 
-  const handleReady = async (serialNumber) => {
-    const h = (heldType || sessionStorage.getItem(HELD_KEY) || "").trim().toUpperCase();
-    if (!h) {
-      alert("먼저 쓰레기를 촬영해 주세요.");
-      return;
-    }
-    const mod = modules.find((x) => x.serialNumber === serialNumber);
-    if (mod && !moduleTypeMatchesHeld(mod.type, h)) {
-      alert(`Camera에서 선택한 분류(${h})와 같은 유형의 쓰레기통만 사용할 수 있습니다.`);
-      return;
-    }
-    const selected = sessionStorage.getItem(HELD_KEY);
-    if (!selected || !String(selected).trim()) {
-      alert("먼저 쓰레기를 촬영해 주세요.");
-      return;
-    }
-    const target = modules.find((x) => x.serialNumber === serialNumber);
-    if (target && String(target.status || "").toUpperCase() === "FULL") {
-      alert("해당 모듈은 FULL 상태라 선택할 수 없습니다.");
-      return;
-    }
+  const handleDispose = async (serialNumber) => {
     try {
-      await apiFetch(`/modules/${serialNumber}/ready`, {
-        method: "POST",
-        body: JSON.stringify({
-          oauthId: user?.oauthId,
-          userId: user?.nickname,
-          selectedType: selected,
-          predictedType: selected,
-        }),
-      });
-      // 모듈 선택 후 들고 있던 쓰레기 분류는 소진된 것으로 간주하고 초기화
-      sessionStorage.removeItem(HELD_KEY);
-      setHeldType("");
+      await apiFetch(`/modules/${serialNumber}/dispose`, { method: "POST", body: "{}" });
       const data = await apiFetch("/modules");
       setModules(Array.isArray(data) ? data : []);
-      navigate("/input", {
-        replace: true,
-        state: {
-          serialNumber,
-          rewardsBaseline: Number(myRewards) || 0,
-        },
-      });
-    } catch (e) {
-      alert("투입 요청에 실패했습니다. 네트워크·로그인·닉네임을 확인해 주세요.");
+      setRewardToast(`투입 기록 +1 · ${serialNumber}`);
+    } catch {
+      alert("투입 기록에 실패했습니다. 네트워크·로그인을 확인해 주세요.");
     }
   };
 
@@ -316,7 +266,7 @@ const Map = () => {
   const heldTypeSummary = useMemo(() => {
     const key = (heldType || "").trim().toUpperCase();
     if (!key) return "";
-    const label = HELD_TYPE_LABELS[key] || key;
+    const label = HELD_TYPE_LABELS_LOCAL[key] || key;
     return `${label} (${key})`;
   }, [heldType]);
 
@@ -346,7 +296,7 @@ const Map = () => {
               width: "min(140vw, 140vh)",
               height: "min(140vw, 140vh)",
               borderRadius: "50%",
-              background: "radial-gradient(circle, rgba(124,255,114,0.35) 0%, rgba(124,255,114,0.08) 38%, transparent 62%)",
+              background: "radial-gradient(circle, rgba(255,255,255,0.35) 0%, rgba(255,255,255,0.08) 38%, transparent 62%)",
               filter: "blur(2px)",
               animation: `${neonRing} 2.2s ease-out forwards`,
             }}
@@ -360,8 +310,8 @@ const Map = () => {
               width: "min(110vw, 110vh)",
               height: "min(110vw, 110vh)",
               borderRadius: "50%",
-              border: "2px solid rgba(124,255,114,0.55)",
-              boxShadow: "0 0 80px rgba(124,255,114,0.35), inset 0 0 60px rgba(124,255,114,0.12)",
+              border: "2px solid rgba(255,255,255,0.55)",
+              boxShadow: "0 0 80px rgba(255,255,255,0.35), inset 0 0 60px rgba(255,255,255,0.12)",
               animation: `${neonRing} 1.95s ease-out 0.08s forwards`,
             }}
           />
@@ -381,11 +331,11 @@ const Map = () => {
                 fontWeight: 900,
                 fontSize: { xs: "clamp(2.8rem, 14vw, 5.5rem)", sm: "clamp(3.2rem, 11vw, 6.2rem)" },
                 letterSpacing: { xs: "0.28em", sm: "0.34em" },
-                color: "#7CFF72",
+                color: "#ffffff",
                 textTransform: "uppercase",
                 lineHeight: 1.05,
                 textShadow:
-                  "0 0 20px rgba(124,255,114,0.95), 0 0 60px rgba(124,255,114,0.55), 0 0 120px rgba(124,255,114,0.35)",
+                  "0 0 20px rgba(255,255,255,0.95), 0 0 60px rgba(255,255,255,0.55), 0 0 120px rgba(255,255,255,0.35)",
               }}
             >
               REWARD
@@ -401,8 +351,8 @@ const Map = () => {
                 sx={{
                   fontWeight: 900,
                   fontSize: { xs: "clamp(2.4rem, 12vw, 4.5rem)", sm: "clamp(2.8rem, 9vw, 5rem)" },
-                  color: rewardDelta === 1 ? "#e8ffe8" : "rgba(124,255,114,0.28)",
-                  textShadow: rewardDelta === 1 ? "0 0 28px rgba(124,255,114,0.9), 0 0 70px rgba(124,255,114,0.45)" : "none",
+                  color: rewardDelta === 1 ? "#e8ffe8" : "rgba(255,255,255,0.28)",
+                  textShadow: rewardDelta === 1 ? "0 0 28px rgba(255,255,255,0.9), 0 0 70px rgba(255,255,255,0.45)" : "none",
                   lineHeight: 1,
                 }}
               >
@@ -412,8 +362,8 @@ const Map = () => {
                 sx={{
                   fontWeight: 900,
                   fontSize: { xs: "clamp(2.4rem, 12vw, 4.5rem)", sm: "clamp(2.8rem, 9vw, 5rem)" },
-                  color: rewardDelta === 10 ? "#e8ffe8" : "rgba(124,255,114,0.28)",
-                  textShadow: rewardDelta === 10 ? "0 0 32px rgba(124,255,114,1), 0 0 90px rgba(124,255,114,0.5)" : "none",
+                  color: rewardDelta === 10 ? "#e8ffe8" : "rgba(255,255,255,0.28)",
+                  textShadow: rewardDelta === 10 ? "0 0 32px rgba(255,255,255,1), 0 0 90px rgba(255,255,255,0.5)" : "none",
                   lineHeight: 1,
                 }}
               >
@@ -455,7 +405,7 @@ const Map = () => {
               wordBreak: "keep-all",
             }}
           >
-            반가워요, <Box component="span" sx={{ color: "#7CFF72" }}>{displayName}</Box>님
+            반가워요, <Box component="span" sx={{ color: "#ffffff" }}>{displayName}</Box>님
           </Typography>
         </Stack>
       </Stack>
@@ -476,9 +426,9 @@ const Map = () => {
             py: { xs: 0.45, sm: 0.55 },
             minHeight: { xs: 34, sm: 38 },
             borderRadius: 999,
-            border: "1px solid rgba(124,255,114,0.26)",
+            border: "1px solid rgba(255,255,255,0.26)",
             background: "rgba(0,0,0,0.86)",
-            color: "#7CFF72",
+            color: "#ffffff",
             fontWeight: 900,
             fontSize: { xs: "0.74rem", sm: "0.84rem" },
             display: "flex",
@@ -500,7 +450,7 @@ const Map = () => {
             fontSize: { xs: "0.72rem", sm: "0.78rem" },
             fontWeight: 800,
             textTransform: "none",
-            bgcolor: "#7CFF72",
+            bgcolor: "#ffffff",
             color: "#0a0f0a",
             "&:hover": { bgcolor: "#9dff92" },
             whiteSpace: "nowrap",
@@ -516,9 +466,9 @@ const Map = () => {
             mb: 1.5,
             flexShrink: 0,
             py: { xs: 0.5, sm: 1 },
-            bgcolor: "rgba(124,255,114,0.1)",
+            bgcolor: "rgba(255,255,255,0.1)",
             color: "#e8ffe8",
-            border: "1px solid rgba(124,255,114,0.28)",
+            border: "1px solid rgba(255,255,255,0.28)",
             fontSize: { xs: "0.75rem", sm: "0.875rem" },
             "& .MuiAlert-message": { width: "100%" },
           }}
@@ -555,7 +505,7 @@ const Map = () => {
           position: "relative",
           borderRadius: 3,
           overflow: "hidden",
-          border: "1px solid rgba(124,255,114,0.25)",
+          border: "1px solid rgba(255,255,255,0.25)",
           boxShadow: "0 12px 40px rgba(0,0,0,0.45)",
           bgcolor: "#0a0f0a",
         }}
@@ -613,7 +563,7 @@ const Map = () => {
                 px: { xs: 1.25, sm: 1.5 },
                 py: { xs: 0.9, sm: 1.05 },
                 borderRadius: 2,
-                border: "1px solid rgba(124,255,114,0.36)",
+                border: "1px solid rgba(255,255,255,0.36)",
                 bgcolor: "rgba(4,11,4,0.76)",
                 backdropFilter: "blur(6px)",
                 boxShadow: "0 8px 28px rgba(0,0,0,0.35)",
@@ -639,7 +589,7 @@ const Map = () => {
                 width: { xs: 64, sm: 72 },
                 height: "auto",
                 borderRadius: 2,
-                border: "1px solid rgba(124,255,114,0.36)",
+                border: "1px solid rgba(255,255,255,0.36)",
                 bgcolor: "rgba(4,11,4,0.76)",
                 color: "#b8ff9e",
                 backdropFilter: "blur(6px)",
@@ -651,7 +601,7 @@ const Map = () => {
                 py: { xs: 0.9, sm: 1.05 },
                 textTransform: "none",
                 "&:hover": {
-                  borderColor: "rgba(124,255,114,0.55)",
+                  borderColor: "rgba(255,255,255,0.55)",
                   color: "#e8ffe1",
                   bgcolor: "rgba(8,18,8,0.9)",
                 },
@@ -668,7 +618,7 @@ const Map = () => {
             </Box>
           }
         >
-          <MapView userPos={userPos} modules={modulesForMap} onReady={handleReady} hasHeldWaste={hasHeldWaste} centerTrigger={centerTrigger} />
+          <MapView userPos={userPos} modules={modulesForMap} onDispose={handleDispose} centerTrigger={centerTrigger} />
         </Suspense>
         <Stack
           spacing={0.45}
@@ -725,7 +675,7 @@ const Map = () => {
               textTransform: "none",
               boxShadow: "0 2px 10px rgba(0,0,0,0.35)",
               "&:hover": {
-                borderColor: "rgba(124,255,114,0.45)",
+                borderColor: "rgba(255,255,255,0.45)",
                 color: "#b8ff9e",
                 bgcolor: "rgba(0,0,0,0.9)",
               },
@@ -796,9 +746,9 @@ const Map = () => {
               fontWeight: 900,
               minHeight: { xs: 48, sm: 56 },
               letterSpacing: "-0.02em",
-              color: "#7CFF72",
-              borderColor: "rgba(124,255,114,0.45)",
-              backgroundImage: "linear-gradient(120deg, rgba(124,255,114,0.1) 0%, rgba(157,255,146,0.14) 50%, rgba(124,255,114,0.1) 100%)",
+              color: "#ffffff",
+              borderColor: "rgba(255,255,255,0.45)",
+              backgroundImage: "linear-gradient(120deg, rgba(255,255,255,0.1) 0%, rgba(157,255,146,0.14) 50%, rgba(255,255,255,0.1) 100%)",
               backgroundSize: "180% 100%",
               position: "relative",
               overflow: "hidden",
@@ -815,10 +765,10 @@ const Map = () => {
               },
               textTransform: "none",
               "&:hover": {
-                borderColor: "rgba(124,255,114,0.65)",
-                bgcolor: "rgba(124,255,114,0.12)",
+                borderColor: "rgba(255,255,255,0.65)",
+                bgcolor: "rgba(255,255,255,0.12)",
                 transform: "translateY(-1px) scale(1.02)",
-                boxShadow: "0 18px 54px rgba(124,255,114,0.3)",
+                boxShadow: "0 18px 54px rgba(255,255,255,0.3)",
               },
             }}
           >
@@ -857,7 +807,7 @@ const Map = () => {
           }}
         >
           <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ px: 0.25, pb: 0.6 }}>
-            <Typography sx={{ color: "rgba(124,255,114,0.85)", fontSize: { xs: "0.68rem", sm: "0.78rem" }, fontWeight: 700 }}>
+            <Typography sx={{ color: "rgba(255,255,255,0.85)", fontSize: { xs: "0.68rem", sm: "0.78rem" }, fontWeight: 700 }}>
               MANAGE · Smart Control Deck
             </Typography>
             <Button
@@ -865,8 +815,8 @@ const Map = () => {
               onClick={() => navigate("/manage")}
               aria-label="manage"
               sx={{
-                color: "#7CFF72",
-                border: "1px solid rgba(124,255,114,0.4)",
+                color: "#ffffff",
+                border: "1px solid rgba(255,255,255,0.4)",
                 minHeight: 34,
                 minWidth: 34,
                 px: 0.65,
@@ -877,7 +827,7 @@ const Map = () => {
             </Button>
           </Stack>
           {modules.map((m) => (
-            <Paper key={m.id} sx={{ p: { xs: 1, sm: 1.5 }, bgcolor: "rgba(255,255,255,0.05)", border: "1px solid rgba(124,255,114,0.2)" }}>
+            <Paper key={m.id} sx={{ p: { xs: 1, sm: 1.5 }, bgcolor: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.2)" }}>
               {/** FULL 모듈은 선택 불가 */}
               <Stack direction="row" justifyContent="space-between" alignItems="center" flexWrap="wrap" gap={1}>
                 <Typography sx={{ color: "#fff", fontSize: { xs: "0.72rem", sm: "0.875rem" }, wordBreak: "break-all" }}>
@@ -885,9 +835,9 @@ const Map = () => {
                 </Typography>
                 <Button
                   size="small"
-                  disabled={String(m.status || "").toUpperCase() === "FULL" || !hasHeldWaste}
-                  onClick={() => handleReady(m.serialNumber)}
-                  sx={{ color: "#7CFF72", border: "1px solid rgba(124,255,114,0.4)", minWidth: 72, minHeight: 36 }}
+                  disabled={String(m.status || "").toUpperCase() === "FULL"}
+                  onClick={() => handleDispose(m.serialNumber)}
+                  sx={{ color: "#ffffff", border: "1px solid rgba(255,255,255,0.4)", minWidth: 72, minHeight: 36 }}
                 >
                   READY
                 </Button>

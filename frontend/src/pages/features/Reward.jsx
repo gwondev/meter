@@ -1,9 +1,10 @@
 import { Box, Typography, Container, Stack, Button } from "@mui/material";
-import WorkspacePremiumRoundedIcon from "@mui/icons-material/WorkspacePremiumRounded";
+import InsightsRoundedIcon from "@mui/icons-material/InsightsRounded";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { keyframes } from "@emotion/react";
+import { meterColors } from "../../theme/meterTheme";
 
 const shine = keyframes`
   0% { background-position: -100% 0; }
@@ -11,9 +12,9 @@ const shine = keyframes`
 `;
 
 const bullets = [
-  "IoT로 배출이 확인되면 포인트를 적립합니다.",
-  "정책에 맞게 지급·정산 흐름을 유지합니다.",
-  "리워드는 다른 혜택으로 교환 가능합니다.",
+  "적재량 추이를 분석해 수거 시점과 빈도를 예측합니다.",
+  "지도 기반 최적 수거 동선을 제안해 운영 효율을 높입니다.",
+  "Gemini 챗봇으로 모듈 상태·적재량·운영 인사이트를 질의합니다.",
 ];
 
 const Reward = () => {
@@ -23,8 +24,8 @@ const Reward = () => {
     <Box
       sx={{
         minHeight: "100dvh",
-        bgcolor: "#030403",
-        color: "#fff",
+        bgcolor: meterColors.bg,
+        color: meterColors.primary,
         display: "flex",
         alignItems: "center",
         position: "relative",
@@ -40,7 +41,7 @@ const Reward = () => {
           width: 400,
           height: 400,
           borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(255,215,80,0.06) 0%, transparent 65%)",
+          background: "radial-gradient(circle, rgba(255,255,255,0.04) 0%, transparent 65%)",
           filter: "blur(50px)",
           pointerEvents: "none",
         }}
@@ -69,35 +70,35 @@ const Reward = () => {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: "#7CFF72",
-                background: "linear-gradient(135deg, rgba(57,255,20,0.14), rgba(57,255,20,0.06))",
-                border: "1px solid rgba(124,255,114,0.3)",
+                color: meterColors.primary,
+                background: "linear-gradient(135deg, rgba(255,255,255,0.12), rgba(255,255,255,0.04))",
+                border: `1px solid ${meterColors.border}`,
                 backgroundSize: "200% 100%",
                 animation: `${shine} 4s linear infinite`,
               }}
             >
-              <WorkspacePremiumRoundedIcon sx={{ fontSize: 44 }} />
+              <InsightsRoundedIcon sx={{ fontSize: 44 }} />
             </Box>
           </motion.div>
 
           <Stack spacing={0.75}>
             <Typography variant="h4" sx={{ fontWeight: 900, letterSpacing: "-0.02em" }}>
-              리워드
+              데이터 분석 &amp; 인사이트
             </Typography>
-            <Typography sx={{ color: "#7CFF72", fontWeight: 600, fontSize: "0.95rem" }}>
-              검증 후 포인트 지급
+            <Typography sx={{ color: meterColors.primaryMuted, fontWeight: 600, fontSize: "0.95rem" }}>
+              적재량 예측 · 수거 동선 · AI 챗봇
             </Typography>
           </Stack>
 
           <Typography
             sx={{
-              color: "rgba(255,255,255,0.72)",
+              color: meterColors.secondary,
               lineHeight: 1.75,
               wordBreak: "keep-all",
               maxWidth: 400,
             }}
           >
-            분리배출 실천이 곧 보상으로 이어지도록 설계했습니다.
+            METER가 수집한 IoT 데이터를 분석해 수거·운영 의사결정을 지원합니다.
           </Typography>
 
           <Stack spacing={1.2} sx={{ width: "100%", maxWidth: 420, textAlign: "left" }}>
@@ -114,11 +115,11 @@ const Reward = () => {
                     gap: 1.25,
                     alignItems: "flex-start",
                     pl: 1,
-                    borderLeft: "3px solid rgba(124,255,114,0.45)",
+                    borderLeft: `3px solid ${meterColors.borderStrong}`,
                     py: 0.25,
                   }}
                 >
-                  <Typography sx={{ color: "rgba(255,255,255,0.78)", fontSize: "0.92rem", lineHeight: 1.65 }}>
+                  <Typography sx={{ color: meterColors.primaryMuted, fontSize: "0.92rem", lineHeight: 1.65 }}>
                     {text}
                   </Typography>
                 </Box>
@@ -132,12 +133,12 @@ const Reward = () => {
               onClick={() => navigate("/")}
               sx={{
                 mt: 1,
-                color: "#fff",
-                border: "1px solid rgba(255,255,255,0.14)",
+                color: meterColors.primary,
+                border: `1px solid ${meterColors.border}`,
                 borderRadius: 999,
                 px: 4,
                 py: 1.2,
-                "&:hover": { borderColor: "#7CFF72", color: "#7CFF72" },
+                "&:hover": { borderColor: meterColors.borderStrong, bgcolor: "rgba(255,255,255,0.06)" },
               }}
             >
               돌아가기

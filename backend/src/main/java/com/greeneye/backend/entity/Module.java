@@ -23,12 +23,15 @@ public class Module {
     @Column(name = "lon")
     private Double lon;
 
-    @Column(name = "type", length = 10)
-    private String type; // PET, CAN, GENERAL, HAZARD, GOV_PET, GOV_CAN (GOV_* = 협약 기존 회수 장치)
+    @Column(name = "type", length = 16)
+    private String type; // CLOTHING, PLASTIC, CAN, MEDICINE
 
     @Builder.Default
     @Column(name = "status", nullable = false, length = 10)
-    private String status = "DEFAULT"; // DEFAULT, READY, CHECK, FULL
+    private String status = "DEFAULT"; // DEFAULT, FULL (적재량 위험), OFFLINE(프론트 표시용)
+
+    @Column(name = "height_cm")
+    private Double heightCm;
 
     @Builder.Default
     @Column(name = "total_disposal_count", nullable = false)

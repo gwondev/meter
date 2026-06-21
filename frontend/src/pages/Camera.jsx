@@ -16,14 +16,13 @@ import { getUser } from "../services/auth";
 import { apiFetchMultipart } from "../services/api";
 import { compressImage } from "../utils/compressImage";
 
-const HELD_KEY = "greeneye.finalWasteType";
-const PENDING_REWARD_KEY = "greeneye.pendingReward";
+const HELD_KEY = "meter.finalWasteType";
 
 const TYPE_LABELS = {
+  CLOTHING: "의류",
+  PLASTIC: "플라스틱",
   CAN: "캔",
-  GENERAL: "일반(일쓰)",
-  PET: "플라스틱(페트)",
-  HAZARD: "위험물",
+  MEDICINE: "폐의약품",
 };
 
 const Camera = () => {
@@ -73,7 +72,7 @@ const Camera = () => {
       setResult(data);
       const granted = Number(data?.rewardGranted ?? 0);
       if (granted > 0) {
-        sessionStorage.setItem(PENDING_REWARD_KEY, String(granted));
+        sessionStorage.setItem("meter.pendingNotice", String(granted));
       }
     } catch (e) {
       alert(e.message || "분석 실패");
@@ -141,7 +140,7 @@ const Camera = () => {
               variant="contained"
               startIcon={<PhotoCameraRoundedIcon />}
               onClick={() => cameraInputRef.current?.click()}
-              sx={{ bgcolor: "#7CFF72", color: "#000", fontWeight: 800, py: 1.2, width: { xs: "100%", sm: "calc(50% - 6px)" } }}
+              sx={{ bgcolor: "#ffffff", color: "#000", fontWeight: 800, py: 1.2, width: { xs: "100%", sm: "calc(50% - 6px)" } }}
             >
               카메라 / 촬영
             </Button>
@@ -149,7 +148,7 @@ const Camera = () => {
               variant="outlined"
               startIcon={<ImageRoundedIcon />}
               onClick={() => fileInputRef.current?.click()}
-              sx={{ color: "#7CFF72", borderColor: "rgba(124,255,114,0.45)", fontWeight: 700, width: { xs: "100%", sm: "calc(50% - 6px)" } }}
+              sx={{ color: "#ffffff", borderColor: "rgba(255,255,255,0.45)", fontWeight: 700, width: { xs: "100%", sm: "calc(50% - 6px)" } }}
             >
               파일에서 선택
             </Button>
@@ -162,7 +161,7 @@ const Camera = () => {
                 width: "100%",
                 alignSelf: "stretch",
                 borderRadius: 2,
-                border: "1px solid rgba(124,255,114,0.25)",
+                border: "1px solid rgba(255,255,255,0.25)",
                 bgcolor: "rgba(0,0,0,0.45)",
                 overflow: "hidden",
                 display: "flex",
@@ -196,14 +195,14 @@ const Camera = () => {
             disabled={loading || !file}
             variant="contained"
             onClick={analyze}
-            sx={{ bgcolor: "#1a2e1a", color: "#7CFF72", border: "1px solid rgba(124,255,114,0.4)", fontWeight: 800, minWidth: 220 }}
+            sx={{ bgcolor: "#1a2e1a", color: "#ffffff", border: "1px solid rgba(255,255,255,0.4)", fontWeight: 800, minWidth: 220 }}
           >
             {loading ? "분석 중…" : "분석"}
           </Button>
 
           {result && (
-            <Paper sx={{ p: 2, bgcolor: "rgba(255,255,255,0.05)", border: "1px solid rgba(124,255,114,0.2)", width: "100%", textAlign: "left" }}>
-              <Typography sx={{ color: "#7CFF72", fontWeight: 800, mb: 1, textAlign: "center" }}>
+            <Paper sx={{ p: 2, bgcolor: "rgba(255,255,255,0.05)", border: "1px solid rgba(255,255,255,0.2)", width: "100%", textAlign: "left" }}>
+              <Typography sx={{ color: "#ffffff", fontWeight: 800, mb: 1, textAlign: "center" }}>
                 AI 예측: {TYPE_LABELS[result.predictedType] ?? result.predictedType}
               </Typography>
               {result.recognizedItem && (
@@ -213,7 +212,7 @@ const Camera = () => {
               )}
               {(result.guidance || result.rawSnippet) && (
                 <Box sx={{ mt: 0.5 }}>
-                  <Typography variant="caption" sx={{ color: "rgba(124,255,114,0.75)", fontWeight: 700, display: "block", mb: 0.5 }}>
+                  <Typography variant="caption" sx={{ color: "rgba(255,255,255,0.75)", fontWeight: 700, display: "block", mb: 0.5 }}>
                     배출 안내
                   </Typography>
                   <Typography variant="body2" sx={{ color: "rgba(255,255,255,0.65)", whiteSpace: "pre-wrap", lineHeight: 1.6 }}>
@@ -240,11 +239,11 @@ const Camera = () => {
                   label={label}
                   onClick={() => setOverride(key)}
                   sx={{
-                    borderColor: override === key ? "#7CFF72" : "rgba(255,255,255,0.2)",
+                    borderColor: override === key ? "#ffffff" : "rgba(255,255,255,0.2)",
                     color: override === key ? "#000" : "#fff",
-                    bgcolor: override === key ? "#7CFF72" : "rgba(255,255,255,0.06)",
+                    bgcolor: override === key ? "#ffffff" : "rgba(255,255,255,0.06)",
                     fontWeight: 700,
-                    "&:hover": { bgcolor: override === key ? "#8fff85" : "rgba(124,255,114,0.12)" },
+                    "&:hover": { bgcolor: override === key ? "#8fff85" : "rgba(255,255,255,0.12)" },
                   }}
                   variant={override === key ? "filled" : "outlined"}
                 />
@@ -260,13 +259,13 @@ const Camera = () => {
               variant="contained"
               disabled={!finalType}
               onClick={confirmAndGoMap}
-              sx={{ bgcolor: "#7CFF72", color: "#000", fontWeight: 900, flex: 1, width: { xs: "100%", sm: "calc(50% - 6px)" } }}
+              sx={{ bgcolor: "#ffffff", color: "#000", fontWeight: 900, flex: 1, width: { xs: "100%", sm: "calc(50% - 6px)" } }}
             >
               분류 확정 후 지도로
             </Button>
             <Button
               variant="outlined"
-              sx={{ color: "#7CFF72", borderColor: "rgba(124,255,114,0.35)", width: { xs: "100%", sm: "calc(50% - 6px)" } }}
+              sx={{ color: "#ffffff", borderColor: "rgba(255,255,255,0.35)", width: { xs: "100%", sm: "calc(50% - 6px)" } }}
               onClick={() => navigate("/map", { state: { focusMyLocation: true } })}
             >
               지도로 (저장 안 함)

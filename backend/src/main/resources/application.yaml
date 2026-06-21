@@ -7,12 +7,12 @@ spring:
       max-file-size: 12MB
       max-request-size: 14MB
   datasource:
-    url: jdbc:mysql://gwon-db:3306/greeneye?serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&useSSL=false&characterEncoding=UTF-8
+    url: jdbc:mysql://gwon-db:3306/meter?serverTimezone=Asia/Seoul&allowPublicKeyRetrieval=true&useSSL=false&characterEncoding=UTF-8
     username: ${DB_USERNAME:root}
     password: ${DB_PASSWORD}
   jpa:
     hibernate:
-      ddl-auto: update # 엔티티 변경사항을 DB에 자동 반영 (핵심!)
+      ddl-auto: update
     properties:
       hibernate:
         format_sql: true
@@ -28,7 +28,7 @@ spring:
           auth: true
           starttls:
             enable: true
-    from: ${MAIL_FROM:${MAIL_USERNAME:no-reply@greeneye.local}}
+    from: ${MAIL_FROM:${MAIL_USERNAME:no-reply@meter.local}}
 
 google:
   client:
@@ -37,24 +37,20 @@ google:
 gemini:
   api:
     key: ${GEMINI_API_KEY:}
-    # 분류 전용: gemini-2.5-flash(정식·빠름) → lite 폴백. preview/pro/심층 모델은 자동 제외
     models: ${GEMINI_MODELS:gemini-2.5-flash,gemini-2.5-flash-lite}
     timeout-seconds: ${GEMINI_TIMEOUT_SECONDS:18}
     max-image-side: ${GEMINI_MAX_IMAGE_SIDE:960}
     jpeg-quality: ${GEMINI_JPEG_QUALITY:0.8}
 
 mqtt:
-  # docker-compose 서비스 이름이 mosquitto 이면 동일 네트워크에서 호스트명도 mosquitto
   broker-url: ${MQTT_BROKER_URL:tcp://mosquitto:1883}
-  client-id: ${MQTT_CLIENT_ID:greeneye-backend}
-  subscriber-client-id: ${MQTT_SUBSCRIBER_CLIENT_ID:greeneye-backend-sub}
+  client-id: ${MQTT_CLIENT_ID:meter-backend}
+  subscriber-client-id: ${MQTT_SUBSCRIBER_CLIENT_ID:meter-backend-sub}
 
-# 로컬에서만 true (IDE 환경변수 GREENEYE_DEV_USER_ENABLED=true). 배포 Docker에서는 false 유지.
-greeneye:
+meter:
   dev-user:
-    enabled: ${GREENEYE_DEV_USER_ENABLED:false}
-    oauth-id: ${GREENEYE_DEV_USER_OAUTH_ID:dev-local-greeneye}
-  # 외부 IoT(ESP32) 공개 브로커 정보 (/api/iot/config 노출): Cloudflare Tunnel WebSocket 경로 기준
+    enabled: ${METER_DEV_USER_ENABLED:false}
+    oauth-id: ${METER_DEV_USER_OAUTH_ID:dev-local-meter}
   iot:
-    mqtt-host: mqtt-greeneye.gwon.run
+    mqtt-host: mqtt-meter.gwon.run
     mqtt-port: 80

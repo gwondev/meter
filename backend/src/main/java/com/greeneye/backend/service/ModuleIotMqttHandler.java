@@ -2,11 +2,14 @@ package com.greeneye.backend.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.greeneye.backend.entity.Module;
+import com.greeneye.backend.repository.ModuleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
+import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDateTime;
 import java.util.concurrent.ConcurrentHashMap;
 
 @Service
@@ -15,10 +18,12 @@ import java.util.concurrent.ConcurrentHashMap;
 public class ModuleIotMqttHandler {
 
     private final ModuleDisposalService moduleDisposalService;
+    private final ModuleRepository moduleRepository;
     private final ObjectMapper objectMapper;
-    /** 동일 모듈에 CHECK MQTT 가 연속으로 오면 중복 처리 방지 (ms) */
+    /** 동일 모듈에 CHECK MQTT 가 연속으로 오면 중복 처리 방지 (ms) — 레거시 호환 */
     private final ConcurrentHashMap<String, Long> lastCheckHandledMs = new ConcurrentHashMap<>();
 
+    @Transactional
     public void handleStatusPayload(String serialNumber, String payload) {
         try {
             JsonNode root = objectMapper.readTree(payload);
@@ -28,6 +33,8 @@ public class ModuleIotMqttHandler {
                 return;
             }
             switch (status) {
+                case "HEARTBEAT" -> touchHeartbeat(serialNumber);
+                case "HEIGHT" -> handleHeight(serialNumber, root);
                 case "DEFAULT" -> moduleDisposalService.setModuleStatusDefault(serialNumber);
                 case "READY" -> handleReadyTimeout(serialNumber, root);
                 case "CHECK" -> handleCheck(serialNumber, root);
@@ -39,7 +46,38 @@ public class ModuleIotMqttHandler {
         }
     }
 
-    /** 10초 경과, 물리적으로 버리지 않음 — 로그만 FAILED, 리워드 없음 */
+    protected void touchHeartbeat(String serialNumber) {
+        Module module = moduleRepository.findBySerialNumber(serialNumber).orElse(null);
+        if (module == null) {
+            return;
+        }
+        module.setLastHeartbeat(LocalDateTime.now());
+        moduleRepository.save(module);
+        log.debug("MQTT HEARTBEAT serial={}", serialNumber);
+    }
+
+    protected void handleHeight(String serialNumber, JsonNode root) {
+        Module module = moduleRepository.findBySerialNumber(serialNumber).orElse(null);
+        if (module == null) {
+            return;
+        }
+        double heightCm = root.path("heightCm").asDouble(-1);
+        if (heightCm < 0 && root.has("height_cm")) {
+            heightCm = root.path("height_cm").asDouble(-1);
+        }
+        module.setLastHeartbeat(LocalDateTime.now());
+        if (heightCm >= 0) {
+            module.setHeightCm(heightCm);
+            if (heightCm <= 10.0) {
+                module.setStatus("FULL");
+            } else if ("FULL".equalsIgnoreCase(module.getStatus())) {
+                module.setStatus("DEFAULT");
+            }
+        }
+        moduleRepository.save(module);
+        log.info("MQTT HEIGHT serial={} heightCm={} status={}", serialNumber, heightCm, module.getStatus());
+    }
+
     private void handleReadyTimeout(String serialNumber, JsonNode root) {
         String nickname = nicknameFrom(root);
         if (nickname == null || nickname.isBlank()) {
@@ -59,16 +97,14 @@ public class ModuleIotMqttHandler {
         String dedupeKey = serialNumber.trim().toLowerCase() + "|" + nickname.trim().toLowerCase();
         Long lastMs = lastCheckHandledMs.get(dedupeKey);
         if (lastMs != null && now - lastMs < 2500L) {
-            log.info("MQTT CHECK deduped serial={} user={} ({}ms since last success)", serialNumber, nickname, now - lastMs);
+            log.info("MQTT CHECK deduped serial={} user={}", serialNumber, nickname);
             return;
         }
         try {
             moduleDisposalService.completeDisposalCheck(serialNumber, nickname);
             lastCheckHandledMs.put(dedupeKey, now);
-        } catch (ResponseStatusException ex) {
-            log.warn("MQTT CHECK not applied serial={} reason={}", serialNumber, ex.getReason());
         } catch (Exception e) {
-            log.error("MQTT CHECK failed serial={}", serialNumber, e);
+            log.warn("MQTT CHECK not applied serial={} reason={}", serialNumber, e.getMessage());
         }
     }
 
@@ -81,6 +117,8 @@ public class ModuleIotMqttHandler {
             }
             if ("FULL".equalsIgnoreCase(ev)) {
                 moduleDisposalService.setModuleStatusFull(serialNumber);
+            } else if ("HEIGHT".equalsIgnoreCase(ev)) {
+                handleHeight(serialNumber, root);
             } else {
                 log.warn("MQTT unknown event serial={} payload={}", serialNumber, payload);
             }

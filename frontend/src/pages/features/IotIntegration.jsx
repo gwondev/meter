@@ -4,6 +4,7 @@ import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { keyframes } from "@emotion/react";
+import { meterColors } from "../../theme/meterTheme";
 
 const ping = keyframes`
   0% { transform: scale(1); opacity: 0.5; }
@@ -12,8 +13,9 @@ const ping = keyframes`
 `;
 
 const bullets = [
-  "투입구·센서가 실제 배출 여부를 감지합니다.",
-  "MQTT로 서버·앱과 실시간으로 상태를 맞춥니다.",
+  "ESP32 + 초음파 센서로 적재 높이를 1분 주기로 측정합니다.",
+  "MQTT 토픽 meter/{serial}/status 로 5분 하트비트·적재량을 전송합니다.",
+  "LED 임계값 10/30/50cm — 현장에서 적재 상태를 즉시 확인할 수 있습니다.",
 ];
 
 const IotIntegration = () => {
@@ -23,8 +25,8 @@ const IotIntegration = () => {
     <Box
       sx={{
         minHeight: "100dvh",
-        bgcolor: "#030403",
-        color: "#fff",
+        bgcolor: meterColors.bg,
+        color: meterColors.primary,
         display: "flex",
         alignItems: "center",
         position: "relative",
@@ -39,7 +41,7 @@ const IotIntegration = () => {
           width: 280,
           height: 280,
           borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(0,255,140,0.1) 0%, transparent 70%)",
+          background: "radial-gradient(circle, rgba(255,255,255,0.05) 0%, transparent 70%)",
           filter: "blur(36px)",
           pointerEvents: "none",
         }}
@@ -61,7 +63,7 @@ const IotIntegration = () => {
                 position: "absolute",
                 inset: 0,
                 borderRadius: "24px",
-                border: "2px solid rgba(124,255,114,0.35)",
+                border: `2px solid ${meterColors.borderStrong}`,
                 animation: `${ping} 2.4s cubic-bezier(0,0,0.2,1) infinite`,
               }}
             />
@@ -75,11 +77,11 @@ const IotIntegration = () => {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                background: "linear-gradient(145deg, rgba(57,255,20,0.12), rgba(57,255,20,0.03))",
-                border: "1px solid rgba(57,255,20,0.22)",
+                background: "linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.03))",
+                border: `1px solid ${meterColors.border}`,
               }}
             >
-              <DeviceHubRoundedIcon sx={{ fontSize: 48, color: "#7CFF72" }} />
+              <DeviceHubRoundedIcon sx={{ fontSize: 48, color: meterColors.primary }} />
             </motion.div>
           </Box>
 
@@ -87,20 +89,20 @@ const IotIntegration = () => {
             <Typography variant="h4" sx={{ fontWeight: 900, letterSpacing: "-0.02em" }}>
               IoT 모듈 연동
             </Typography>
-            <Typography sx={{ color: "#7CFF72", fontWeight: 600, fontSize: "0.95rem" }}>
-              센서 · MQTT · 엣지 기기
+            <Typography sx={{ color: meterColors.primaryMuted, fontWeight: 600, fontSize: "0.95rem" }}>
+              ESP32 · 초음파 · MQTT
             </Typography>
           </Stack>
 
           <Typography
             sx={{
-              color: "rgba(255,255,255,0.72)",
+              color: meterColors.secondary,
               lineHeight: 1.75,
               wordBreak: "keep-all",
               maxWidth: 400,
             }}
           >
-            현장 하드웨어와 백엔드를 안정적으로 이어 줍니다.
+            탈부착형 AIoT 모듈이 현장 하드웨어와 METER 백엔드를 실시간으로 연결합니다.
           </Typography>
 
           <Stack spacing={1.2} sx={{ width: "100%", maxWidth: 420, textAlign: "left" }}>
@@ -117,11 +119,11 @@ const IotIntegration = () => {
                     gap: 1.25,
                     alignItems: "flex-start",
                     pl: 1,
-                    borderLeft: "3px solid rgba(124,255,114,0.45)",
+                    borderLeft: `3px solid ${meterColors.borderStrong}`,
                     py: 0.25,
                   }}
                 >
-                  <Typography sx={{ color: "rgba(255,255,255,0.78)", fontSize: "0.92rem", lineHeight: 1.65 }}>
+                  <Typography sx={{ color: meterColors.primaryMuted, fontSize: "0.92rem", lineHeight: 1.65 }}>
                     {text}
                   </Typography>
                 </Box>
@@ -135,12 +137,12 @@ const IotIntegration = () => {
               onClick={() => navigate("/")}
               sx={{
                 mt: 1,
-                color: "#fff",
-                border: "1px solid rgba(255,255,255,0.14)",
+                color: meterColors.primary,
+                border: `1px solid ${meterColors.border}`,
                 borderRadius: 999,
                 px: 4,
                 py: 1.2,
-                "&:hover": { borderColor: "#7CFF72", color: "#7CFF72" },
+                "&:hover": { borderColor: meterColors.borderStrong, bgcolor: "rgba(255,255,255,0.06)" },
               }}
             >
               돌아가기

@@ -35,7 +35,7 @@ import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import ArrowBackIosNewRoundedIcon from "@mui/icons-material/ArrowBackIosNewRounded";
 
 const cellHead = {
-  color: "#7CFF72",
+  color: "#ffffff",
   fontWeight: 800,
   borderColor: "rgba(124,255,114,0.2)",
   bgcolor: "rgba(124,255,114,0.08)",
@@ -80,7 +80,7 @@ const Manage = () => {
     organization: "CHOSUN_IT",
     lat: "35.1469",
     lon: "126.9228",
-    type: "GENERAL",
+    type: "PLASTIC",
     status: "DEFAULT",
     totalDisposalCount: "0",
   });
@@ -126,7 +126,7 @@ const Manage = () => {
         organization: m.organization ?? "CHOSUN_IT",
         lat: String(m.lat ?? "35.1469"),
         lon: String(m.lon ?? "126.9228"),
-        type: m.type ?? "GENERAL",
+        type: m.type ?? "PLASTIC",
         status: m.status ?? "DEFAULT",
         totalDisposalCount: String(m.totalDisposalCount ?? 0),
       });
@@ -137,7 +137,7 @@ const Manage = () => {
         organization: "CHOSUN_IT",
         lat: "35.1469",
         lon: "126.9228",
-        type: "GENERAL",
+        type: "PLASTIC",
         status: "DEFAULT",
         totalDisposalCount: "0",
       });
@@ -287,12 +287,12 @@ const Manage = () => {
             <Button
               startIcon={<ArrowBackIosNewRoundedIcon sx={{ fontSize: 16 }} />}
               variant="outlined"
-              sx={{ color: "#7CFF72", borderColor: "rgba(124,255,114,0.35)", minHeight: 40, flex: { xs: 1, sm: "none" }, minWidth: { xs: "calc(50% - 4px)", sm: "auto" } }}
+              sx={{ color: "#ffffff", borderColor: "rgba(124,255,114,0.35)", minHeight: 40, flex: { xs: 1, sm: "none" }, minWidth: { xs: "calc(50% - 4px)", sm: "auto" } }}
               onClick={() => navigate("/map")}
             >
               Map
             </Button>
-            <Button onClick={loadOverview} sx={{ color: "#000", bgcolor: "#7CFF72", fontWeight: 800, minHeight: 40, flex: { xs: 1, sm: "none" }, minWidth: { xs: "calc(50% - 4px)", sm: "auto" }, px: { sm: 2 } }}>
+            <Button onClick={loadOverview} sx={{ color: "#000", bgcolor: "#ffffff", fontWeight: 800, minHeight: 40, flex: { xs: 1, sm: "none" }, minWidth: { xs: "calc(50% - 4px)", sm: "auto" }, px: { sm: 2 } }}>
               새로고침
             </Button>
           </Stack>
@@ -323,7 +323,7 @@ const Manage = () => {
           }}
         >
           <Stack direction="row" justifyContent="space-between" alignItems="baseline" sx={{ mb: 1.5 }} flexWrap="wrap" gap={1}>
-            <Typography sx={{ color: "#7CFF72", fontWeight: 800, fontSize: { xs: "0.9rem", sm: "1rem" } }}>
+            <Typography sx={{ color: "#ffffff", fontWeight: 800, fontSize: { xs: "0.9rem", sm: "1rem" } }}>
               유저
               <Box component="span" sx={{ color: "rgba(255,255,255,0.45)", fontWeight: 600, ml: 1, fontSize: { xs: "0.78rem", sm: "0.85rem" } }}>
                 · 총 {overview.users.length}명
@@ -354,7 +354,7 @@ const Manage = () => {
                   <TableCell sx={cellBody}>{u.nowRewards ?? 0}</TableCell>
                   <TableCell sx={cellBody}>{u.totalRewards ?? 0}</TableCell>
                   <TableCell sx={cellBody} align="right">
-                    <IconButton size="small" sx={{ color: "#7CFF72" }} onClick={() => openUserEdit(u)}>
+                    <IconButton size="small" sx={{ color: "#ffffff" }} onClick={() => openUserEdit(u)}>
                       <EditRoundedIcon fontSize="small" />
                     </IconButton>
                     <IconButton
@@ -391,13 +391,13 @@ const Manage = () => {
           }}
         >
           <Stack direction="row" justifyContent="space-between" alignItems="baseline" sx={{ mb: 1.5 }} flexWrap="wrap" gap={1}>
-            <Typography sx={{ color: "#7CFF72", fontWeight: 800, fontSize: { xs: "0.9rem", sm: "1rem" } }}>
+            <Typography sx={{ color: "#ffffff", fontWeight: 800, fontSize: { xs: "0.9rem", sm: "1rem" } }}>
               모듈
               <Box component="span" sx={{ color: "rgba(255,255,255,0.45)", fontWeight: 600, ml: 1, fontSize: { xs: "0.78rem", sm: "0.85rem" } }}>
                 · 총 {overview.modules.length}개
               </Box>
             </Typography>
-            <Button size="small" startIcon={<AddRoundedIcon />} onClick={() => openModuleDialog(null)} sx={{ color: "#000", bgcolor: "#7CFF72", fontWeight: 800 }}>
+            <Button size="small" startIcon={<AddRoundedIcon />} onClick={() => openModuleDialog(null)} sx={{ color: "#000", bgcolor: "#ffffff", fontWeight: 800 }}>
               모듈 추가
             </Button>
           </Stack>
@@ -428,7 +428,7 @@ const Manage = () => {
                   <TableCell sx={cellBody}>{m.lon}</TableCell>
                   <TableCell sx={cellBody}>{m.totalDisposalCount}</TableCell>
                   <TableCell sx={cellBody} align="right">
-                    <IconButton size="small" sx={{ color: "#7CFF72" }} onClick={() => openModuleDialog(m)}>
+                    <IconButton size="small" sx={{ color: "#ffffff" }} onClick={() => openModuleDialog(m)}>
                       <EditRoundedIcon fontSize="small" />
                     </IconButton>
                     <IconButton size="small" sx={{ color: "#ff8a8a" }} onClick={() => setModuleDeleteTarget(m)}>
@@ -452,7 +452,7 @@ const Manage = () => {
             WebkitOverflowScrolling: "touch",
           }}
         >
-          <Typography sx={{ color: "#7CFF72", fontWeight: 800, mb: 0.7, fontSize: { xs: "0.84rem", sm: "0.95rem" } }}>
+          <Typography sx={{ color: "#ffffff", fontWeight: 800, mb: 0.7, fontSize: { xs: "0.84rem", sm: "0.95rem" } }}>
             모스키토 최근 20개
           </Typography>
           <Stack spacing={0.35}>
@@ -473,7 +473,7 @@ const Manage = () => {
 
         <Stack direction={{ xs: "column", md: "row" }} spacing={{ xs: 1.5, md: 2 }}>
           <Paper sx={{ p: { xs: 1.25, sm: 2 }, bgcolor: "rgba(255,255,255,0.04)", flex: 1, maxHeight: { xs: 240, sm: 320 }, overflow: "auto", WebkitOverflowScrolling: "touch" }}>
-            <Typography sx={{ color: "#7CFF72", fontWeight: 800, mb: 1, fontSize: { xs: "0.85rem", sm: "1rem" } }}>배출 기록(최근)</Typography>
+            <Typography sx={{ color: "#ffffff", fontWeight: 800, mb: 1, fontSize: { xs: "0.85rem", sm: "1rem" } }}>배출 기록(최근)</Typography>
             {overview.disposalRecords
               .slice(-20)
               .reverse()
@@ -484,7 +484,7 @@ const Manage = () => {
               ))}
           </Paper>
           <Paper sx={{ p: { xs: 1.25, sm: 2 }, bgcolor: "rgba(255,255,255,0.04)", flex: 1, maxHeight: { xs: 240, sm: 320 }, overflow: "auto", WebkitOverflowScrolling: "touch" }}>
-            <Typography sx={{ color: "#7CFF72", fontWeight: 800, mb: 1, fontSize: { xs: "0.85rem", sm: "1rem" } }}>리워드 내역(최근)</Typography>
+            <Typography sx={{ color: "#ffffff", fontWeight: 800, mb: 1, fontSize: { xs: "0.85rem", sm: "1rem" } }}>리워드 내역(최근)</Typography>
             {overview.rewardHistories
               .slice(-20)
               .reverse()
@@ -518,7 +518,7 @@ const Manage = () => {
           <Button onClick={() => setUserEditOpen(false)} disabled={saving}>
             취소
           </Button>
-          <Button onClick={saveUser} disabled={saving} variant="contained" sx={{ bgcolor: "#7CFF72", color: "#000", fontWeight: 800 }}>
+          <Button onClick={saveUser} disabled={saving} variant="contained" sx={{ bgcolor: "#ffffff", color: "#000", fontWeight: 800 }}>
             저장
           </Button>
         </DialogActions>
@@ -551,12 +551,12 @@ const Manage = () => {
             <TextField label="lon" value={moduleForm.lon} onChange={(e) => setModuleForm((f) => ({ ...f, lon: e.target.value }))} fullWidth sx={{ input: { color: "#fff" } }} />
           </Stack>
           <TextField
-            label="type (PET/CAN/GENERAL/HAZARD/GOV_PET/GOV_CAN)"
+            label="type (CLOTHING/PLASTIC/CAN/MEDICINE)"
             value={moduleForm.type}
             onChange={(e) => setModuleForm((f) => ({ ...f, type: e.target.value }))}
             fullWidth
             sx={{ input: { color: "#fff" } }}
-            helperText="GOV_* = 협약한 기존 자원회수 장치 (GOV_PET은 촬영 분류 PET과 매칭, GOV_CAN은 CAN)"
+            helperText="METER 거점 분류: 의류수거함 · 플라스틱 · 캔 · 폐의약품"
             FormHelperTextProps={{ sx: { color: "rgba(255,255,255,0.55)" } }}
           />
           <TextField
@@ -588,7 +588,7 @@ const Manage = () => {
           <Button onClick={() => setModuleDialogOpen(false)} disabled={saving}>
             취소
           </Button>
-          <Button onClick={saveModule} disabled={saving || !moduleForm.serialNumber.trim()} variant="contained" sx={{ bgcolor: "#7CFF72", color: "#000", fontWeight: 800 }}>
+          <Button onClick={saveModule} disabled={saving || !moduleForm.serialNumber.trim()} variant="contained" sx={{ bgcolor: "#ffffff", color: "#000", fontWeight: 800 }}>
             {saving ? "저장 중…" : "저장"}
           </Button>
         </DialogActions>

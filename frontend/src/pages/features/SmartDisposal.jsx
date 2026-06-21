@@ -1,18 +1,20 @@
 import { Box, Typography, Container, Stack, Button } from "@mui/material";
-import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
+import PhotoCameraRoundedIcon from "@mui/icons-material/PhotoCameraRounded";
 import ArrowBackRoundedIcon from "@mui/icons-material/ArrowBackRounded";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
 import { keyframes } from "@emotion/react";
+import { meterColors } from "../../theme/meterTheme";
 
 const glow = keyframes`
-  0%, 100% { box-shadow: 0 0 0 0 rgba(124,255,114,0.35); }
-  50% { box-shadow: 0 0 28px 6px rgba(124,255,114,0.15); }
+  0%, 100% { box-shadow: 0 0 0 0 rgba(255,255,255,0.2); }
+  50% { box-shadow: 0 0 28px 6px rgba(255,255,255,0.08); }
 `;
 
 const bullets = [
-  "촬영한 폐기물을 AI가 종류까지 판별합니다.",
-  "결과에 맞는 가까운 수거함과 배출 방법을 안내합니다다.",
+  "AI 카메라로 배출물 종류를 인식하고 올바른 투입 방법을 안내합니다.",
+  "의류수거함·플라스틱·캔·폐의약품 등 모듈 유형에 맞는 배출 가이드를 제공합니다.",
+  "지도와 연동해 가까운 수거 모듈 위치와 적재 상태를 함께 확인합니다.",
 ];
 
 const SmartDisposal = () => {
@@ -22,8 +24,8 @@ const SmartDisposal = () => {
     <Box
       sx={{
         minHeight: "100dvh",
-        bgcolor: "#030403",
-        color: "#fff",
+        bgcolor: meterColors.bg,
+        color: meterColors.primary,
         display: "flex",
         alignItems: "center",
         position: "relative",
@@ -38,7 +40,7 @@ const SmartDisposal = () => {
           width: 320,
           height: 320,
           borderRadius: "50%",
-          background: "radial-gradient(circle, rgba(57,255,20,0.12) 0%, transparent 70%)",
+          background: "radial-gradient(circle, rgba(255,255,255,0.06) 0%, transparent 70%)",
           filter: "blur(40px)",
           pointerEvents: "none",
         }}
@@ -54,6 +56,13 @@ const SmartDisposal = () => {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         >
+          <Box
+            component="img"
+            src="/meter-logo.png"
+            alt="METER"
+            sx={{ width: 48, height: 48, objectFit: "contain", opacity: 0.9 }}
+          />
+
           <motion.div
             animate={{ y: [0, -6, 0] }}
             transition={{ duration: 4, repeat: Infinity, ease: "easeInOut" }}
@@ -66,34 +75,34 @@ const SmartDisposal = () => {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: "#7CFF72",
-                background: "linear-gradient(145deg, rgba(57,255,20,0.12), rgba(57,255,20,0.04))",
-                border: "1px solid rgba(57,255,20,0.22)",
+                color: meterColors.primary,
+                background: "linear-gradient(145deg, rgba(255,255,255,0.1), rgba(255,255,255,0.03))",
+                border: `1px solid ${meterColors.border}`,
                 animation: `${glow} 3s ease-in-out infinite`,
               }}
             >
-              <AutoAwesomeRoundedIcon sx={{ fontSize: 44 }} />
+              <PhotoCameraRoundedIcon sx={{ fontSize: 44 }} />
             </Box>
           </motion.div>
 
           <Stack spacing={0.75}>
             <Typography variant="h4" sx={{ fontWeight: 900, letterSpacing: "-0.02em" }}>
-              AI 분리배출 안내
+              AI 카메라 배출 안내
             </Typography>
-            <Typography sx={{ color: "#7CFF72", fontWeight: 600, fontSize: "0.95rem" }}>
-              AI 분석석 · 지도 연동
+            <Typography sx={{ color: meterColors.primaryMuted, fontWeight: 600, fontSize: "0.95rem" }}>
+              Gemini Vision · 모듈별 가이드
             </Typography>
           </Stack>
 
           <Typography
             sx={{
-              color: "rgba(255,255,255,0.72)",
+              color: meterColors.secondary,
               lineHeight: 1.75,
               wordBreak: "keep-all",
               maxWidth: 400,
             }}
           >
-            한 흐름으로 촬영, 분석, 올바른 배출까지 이어 줍니다.
+            METER 플랫폼의 AI 카메라가 촬영부터 올바른 배출까지 한 흐름으로 안내합니다.
           </Typography>
 
           <Stack spacing={1.2} sx={{ width: "100%", maxWidth: 420, textAlign: "left" }}>
@@ -110,11 +119,11 @@ const SmartDisposal = () => {
                     gap: 1.25,
                     alignItems: "flex-start",
                     pl: 1,
-                    borderLeft: "3px solid rgba(124,255,114,0.45)",
+                    borderLeft: `3px solid ${meterColors.borderStrong}`,
                     py: 0.25,
                   }}
                 >
-                  <Typography sx={{ color: "rgba(255,255,255,0.78)", fontSize: "0.92rem", lineHeight: 1.65 }}>
+                  <Typography sx={{ color: meterColors.primaryMuted, fontSize: "0.92rem", lineHeight: 1.65 }}>
                     {text}
                   </Typography>
                 </Box>
@@ -128,12 +137,12 @@ const SmartDisposal = () => {
               onClick={() => navigate("/")}
               sx={{
                 mt: 1,
-                color: "#fff",
-                border: "1px solid rgba(255,255,255,0.14)",
+                color: meterColors.primary,
+                border: `1px solid ${meterColors.border}`,
                 borderRadius: 999,
                 px: 4,
                 py: 1.2,
-                "&:hover": { borderColor: "#7CFF72", color: "#7CFF72" },
+                "&:hover": { borderColor: meterColors.borderStrong, bgcolor: "rgba(255,255,255,0.06)" },
               }}
             >
               돌아가기

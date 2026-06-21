@@ -3,7 +3,8 @@ import { keyframes } from "@emotion/react";
 import { motion } from "framer-motion";
 import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
 import DeviceHubRoundedIcon from "@mui/icons-material/DeviceHubRounded";
-import WorkspacePremiumRoundedIcon from "@mui/icons-material/WorkspacePremiumRounded";
+import AnalyticsRoundedIcon from "@mui/icons-material/AnalyticsRounded";
+import meterLogo from "../assets/meter-logo.png";
 import MapRoundedIcon from "@mui/icons-material/MapRounded";
 import { useNavigate } from "react-router-dom";
 import { useEffect, useRef, useState } from "react";
@@ -32,7 +33,7 @@ const glowPulse = keyframes`
 
 const featureItems = [
   {
-    title: "AI 분리배출 안내",
+    title: "AI 배출 안내",
     icon: <AutoAwesomeRoundedIcon sx={{ fontSize: 26 }} />,
     path: "/features/smart-disposal",
   },
@@ -42,12 +43,12 @@ const featureItems = [
     path: "/features/iot",
   },
   {
-    title: "리워드",
-    icon: <WorkspacePremiumRoundedIcon sx={{ fontSize: 26 }} />,
+    title: "데이터 분석",
+    icon: <AnalyticsRoundedIcon sx={{ fontSize: 26 }} />,
     path: "/features/reward",
   },
   {
-    title: "쓰레기통 통합 관제",
+    title: "통합 관제",
     icon: <MapRoundedIcon sx={{ fontSize: 26 }} />,
     path: "/features/operations",
   },
@@ -144,7 +145,7 @@ const Root = () => {
     <Box
       sx={{
         minHeight: "100dvh",
-        bgcolor: "#030403",
+        bgcolor: "#0a0a0a",
         color: "#fff",
         position: "relative",
         overflow: "hidden",
@@ -161,7 +162,7 @@ const Root = () => {
           height: { xs: 220, md: 420 },
           borderRadius: "50%",
           background:
-            "radial-gradient(circle, rgba(57,255,20,0.16) 0%, rgba(57,255,20,0.06) 35%, rgba(57,255,20,0) 72%)",
+            "radial-gradient(circle, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 35%, rgba(255,255,255,0) 72%)",
           filter: "blur(24px)",
           animation: `${glowPulse} 6s ease-in-out infinite`,
           pointerEvents: "none",
@@ -177,7 +178,7 @@ const Root = () => {
           height: { xs: 260, md: 460 },
           borderRadius: "50%",
           background:
-            "radial-gradient(circle, rgba(0,255,140,0.14) 0%, rgba(0,255,140,0.05) 34%, rgba(0,255,140,0) 72%)",
+            "radial-gradient(circle, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 34%, rgba(255,255,255,0) 72%)",
           filter: "blur(30px)",
           animation: `${glowPulse} 7.5s ease-in-out infinite`,
           pointerEvents: "none",
@@ -208,20 +209,25 @@ const Root = () => {
           sx={{ py: { xs: 6, md: 8 } }}
         >
           <Stack spacing={2} alignItems="center" component={motion.div} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}>
+            <Box
+              component="img"
+              src={meterLogo}
+              alt="METER"
+              sx={{ width: { xs: 72, md: 96 }, height: "auto", mb: 1, filter: "drop-shadow(0 8px 24px rgba(255,255,255,0.15))" }}
+            />
             <Typography
               sx={{
-                fontSize: { xs: "2.7rem", sm: "4.3rem", md: "6rem" },
+                fontSize: { xs: "2.7rem", sm: "4.3rem", md: "5.5rem" },
                 fontWeight: 900,
                 lineHeight: 0.95,
-                letterSpacing: "0.14em",
+                letterSpacing: "0.18em",
                 color: "#ffffff",
                 textTransform: "uppercase",
-                textShadow:
-                  "0 0 10px rgba(57,255,20,0.10), 0 0 30px rgba(57,255,20,0.10)",
+                textShadow: "0 0 40px rgba(255,255,255,0.12)",
                 animation: `${floatSlow} 6s ease-in-out infinite`,
               }}
             >
-              GREENEYE
+              METER
             </Typography>
 
             <Typography
@@ -234,7 +240,7 @@ const Root = () => {
                 lineHeight: 1.7,
               }}
             >
-              AIoT 기반 리워드형 분리배출 안내 시스템
+              범용 탈부착형 AIoT 모듈 기반 적재 자원 통합관리 플랫폼
             </Typography>
           </Stack>
 
@@ -283,11 +289,11 @@ const Root = () => {
                   backdropFilter: "blur(8px)",
                   transition: "all 0.25s ease",
                   "&:hover": {
-                    borderColor: "rgba(57,255,20,0.36)",
-                    boxShadow: "0 0 24px rgba(57,255,20,0.12)",
+                    borderColor: "rgba(255,255,255,0.35)",
+                    boxShadow: "0 0 24px rgba(255,255,255,0.08)",
                     transform: "translateY(-4px)",
                     background:
-                      "linear-gradient(135deg, rgba(57,255,20,0.08), rgba(255,255,255,0.03))",
+                      "linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03))",
                   },
                 }}
               >
@@ -305,9 +311,9 @@ const Root = () => {
                       display: "flex",
                       alignItems: "center",
                       justifyContent: "center",
-                      color: "#7CFF72",
-                      background: "rgba(57,255,20,0.08)",
-                      border: "1px solid rgba(57,255,20,0.14)",
+                      color: "#ffffff",
+                      background: "rgba(255,255,255,0.06)",
+                      border: "1px solid rgba(255,255,255,0.14)",
                       flexShrink: 0,
                     }}
                   >
@@ -343,7 +349,7 @@ const Root = () => {
                   color: "#fff",
                   textTransform: "none",
                   fontWeight: 800,
-                  border: "1px solid rgba(57,255,20,0.26)",
+                  border: "1px solid rgba(255,255,255,0.22)",
                 }}
               >
                 개발용 로그인
@@ -377,11 +383,11 @@ const Root = () => {
                 fontSize: "1rem",
                 border: "1px solid rgba(57,255,20,0.26)",
                 background:
-                  "linear-gradient(90deg, rgba(9,20,9,0.96), rgba(10,16,10,0.98), rgba(9,20,9,0.96))",
+                  "linear-gradient(90deg, rgba(20,20,20,0.96), rgba(16,16,16,0.98), rgba(20,20,20,0.96))",
                 "&:hover": {
-                  boxShadow: "0 0 24px rgba(57,255,20,0.16)",
+                  boxShadow: "0 0 24px rgba(255,255,255,0.12)",
                   background:
-                    "linear-gradient(90deg, rgba(10,28,10,1), rgba(10,18,10,1), rgba(10,28,10,1))",
+                    "linear-gradient(90deg, rgba(28,28,28,1), rgba(22,22,22,1), rgba(28,28,28,1))",
                 },
               }}
             >
