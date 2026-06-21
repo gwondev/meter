@@ -4,12 +4,10 @@ import { meterColors } from "../theme/meterTheme";
 import {
   Typography,
   Box,
-  Paper,
   Stack,
   Button,
   Alert,
   Snackbar,
-  Grid,
 } from "@mui/material";
 import { useLocation, useNavigate } from "react-router-dom";
 import { getUser } from "../services/auth";
@@ -160,26 +158,53 @@ const Map = () => {
     borderColor: meterColors.border,
     color: meterColors.primaryMuted,
     bgcolor: "rgba(14,14,14,0.88)",
+    backdropFilter: "blur(8px)",
     "&:hover": { borderColor: meterColors.borderStrong, bgcolor: "rgba(24,24,24,0.94)" },
   };
 
   return (
     <Box
       sx={{
+        position: "relative",
         height: "100dvh",
-        bgcolor: meterColors.bg,
+        width: "100%",
+        bgcolor: "#0a0a0a",
         color: meterColors.primary,
-        display: "flex",
-        flexDirection: "column",
         overflow: "hidden",
-        p: { xs: 1, md: 1.5 },
-        boxSizing: "border-box",
       }}
     >
-      <Stack direction="row" justifyContent="space-between" alignItems="center" sx={{ mb: 1, flexShrink: 0 }}>
+      <Box sx={{ position: "absolute", inset: 0 }}>
+        <Suspense
+          fallback={
+            <Box sx={{ height: "100%", display: "grid", placeItems: "center", color: meterColors.secondary }}>
+              지도 로딩…
+            </Box>
+          }
+        >
+          <MapView userPos={userPos} modules={modulesForMap} onDispose={handleDispose} centerTrigger={centerTrigger} />
+        </Suspense>
+      </Box>
+
+      <Stack
+        direction="row"
+        justifyContent="space-between"
+        alignItems="center"
+        sx={{
+          position: "absolute",
+          top: 0,
+          left: 0,
+          right: 0,
+          zIndex: 1300,
+          px: { xs: 1, sm: 1.5 },
+          py: 1,
+          bgcolor: "linear-gradient(180deg, rgba(0,0,0,0.82) 0%, rgba(0,0,0,0.45) 70%, transparent 100%)",
+          pointerEvents: "none",
+          "& > *": { pointerEvents: "auto" },
+        }}
+      >
         <Stack direction="row" spacing={1} alignItems="center">
           <Box component="img" src="/meter-logo.png" alt="METER" sx={{ width: 28, height: 28, mixBlendMode: "screen" }} />
-          <Typography sx={{ fontWeight: 900, fontSize: { xs: "0.95rem", md: "1.1rem" } }}>
+          <Typography sx={{ fontWeight: 900, fontSize: { xs: "0.95rem", md: "1.1rem" }, textShadow: "0 1px 8px rgba(0,0,0,0.8)" }}>
             METER · {displayName}
           </Typography>
         </Stack>
@@ -187,75 +212,136 @@ const Map = () => {
       </Stack>
 
       {!isLocalNoEnv && heldType && modules.length > modulesForMap.length && (
-        <Alert severity="info" sx={{ mb: 1, py: 0.3, flexShrink: 0, fontSize: "0.78rem" }}>
+        <Alert
+          severity="info"
+          sx={{
+            position: "absolute",
+            top: 52,
+            left: { xs: 8, sm: 12 },
+            right: { xs: 8, sm: "auto" },
+            maxWidth: 360,
+            zIndex: 1300,
+            py: 0.3,
+            fontSize: "0.78rem",
+            bgcolor: "rgba(14,14,14,0.9)",
+            backdropFilter: "blur(6px)",
+          }}
+        >
           {heldTypeSummary} 유형 모듈만 표시 중
         </Alert>
       )}
       {geoMessage && (
-        <Alert severity="warning" sx={{ mb: 1, py: 0.3, flexShrink: 0, fontSize: "0.78rem" }} onClose={() => setGeoMessage("")}>
+        <Alert
+          severity="warning"
+          sx={{
+            position: "absolute",
+            top: heldType && modules.length > modulesForMap.length ? 96 : 52,
+            left: { xs: 8, sm: 12 },
+            right: { xs: 8, sm: "auto" },
+            maxWidth: 360,
+            zIndex: 1300,
+            py: 0.3,
+            fontSize: "0.78rem",
+            bgcolor: "rgba(14,14,14,0.9)",
+            backdropFilter: "blur(6px)",
+          }}
+          onClose={() => setGeoMessage("")}
+        >
           {geoMessage}
         </Alert>
       )}
 
-      <Grid container spacing={1.5} sx={{ flex: 1, minHeight: 0 }}>
-        <Grid item xs={12} md={6} sx={{ display: "flex", minHeight: 0 }}>
-          <Paper
-            sx={{
-              flex: 1,
-              position: "relative",
-              borderRadius: 2,
-              overflow: "hidden",
-              border: `1px solid ${meterColors.border}`,
-              bgcolor: "#0a0a0a",
-              minHeight: { xs: 280, md: 0 },
+      {heldTypeSummary && (
+        <Box
+          sx={{
+            position: "absolute",
+            left: { xs: 8, sm: 12 },
+            top: 52,
+            zIndex: 1250,
+            px: 1.2,
+            py: 0.6,
+            borderRadius: 1.5,
+            bgcolor: "rgba(0,0,0,0.78)",
+            border: `1px solid ${meterColors.border}`,
+            backdropFilter: "blur(6px)",
+          }}
+        >
+          <Typography sx={{ fontSize: "0.72rem", fontWeight: 800 }}>분류: {heldTypeSummary}</Typography>
+          <Button
+            size="small"
+            onClick={() => {
+              sessionStorage.removeItem(HELD_KEY);
+              setHeldType("");
             }}
+            sx={{ fontSize: "0.65rem", p: 0, minWidth: 0, color: meterColors.secondary }}
           >
-            {heldTypeSummary && (
-              <Box sx={{ position: "absolute", left: 8, top: 8, zIndex: 1200, px: 1.2, py: 0.6, borderRadius: 1.5, bgcolor: "rgba(0,0,0,0.8)", border: `1px solid ${meterColors.border}` }}>
-                <Typography sx={{ fontSize: "0.72rem", fontWeight: 800 }}>분류: {heldTypeSummary}</Typography>
-                <Button size="small" onClick={() => { sessionStorage.removeItem(HELD_KEY); setHeldType(""); }} sx={{ fontSize: "0.65rem", p: 0, minWidth: 0, color: meterColors.secondary }}>
-                  초기화
-                </Button>
-              </Box>
-            )}
-            <Suspense fallback={<Box sx={{ height: 1, minHeight: 260, display: "grid", placeItems: "center", color: meterColors.secondary }}>지도 로딩…</Box>}>
-              <MapView userPos={userPos} modules={modulesForMap} onDispose={handleDispose} centerTrigger={centerTrigger} />
-            </Suspense>
-            <Stack spacing={0.4} sx={{ position: "absolute", right: 6, bottom: 6, zIndex: 1200 }}>
-              <Button size="small" onClick={focusMyLocation} sx={{ fontSize: "0.65rem", bgcolor: "rgba(0,0,0,0.85)", color: meterColors.primaryMuted, border: `1px solid ${meterColors.border}` }}>
-                내 위치
-              </Button>
-            </Stack>
-          </Paper>
-        </Grid>
+            초기화
+          </Button>
+        </Box>
+      )}
 
-        <Grid item xs={12} md={6} sx={{ display: "flex", flexDirection: "column", minHeight: 0, gap: 1 }}>
-          <MeterChatbot />
+      <Button
+        size="small"
+        onClick={focusMyLocation}
+        sx={{
+          position: "absolute",
+          left: { xs: 8, sm: 12 },
+          bottom: { xs: 78, sm: 82 },
+          zIndex: 1250,
+          fontSize: "0.65rem",
+          bgcolor: "rgba(0,0,0,0.85)",
+          color: meterColors.primaryMuted,
+          border: `1px solid ${meterColors.border}`,
+          backdropFilter: "blur(6px)",
+        }}
+      >
+        내 위치
+      </Button>
 
-          <Stack direction="row" flexWrap="wrap" gap={0.8}>
-            <Button variant="outlined" startIcon={<InfoRoundedIcon />} onClick={() => navigate("/map/overview")} sx={btnSx}>
-              서비스개요
+      <Box
+        sx={{
+          position: "absolute",
+          left: 0,
+          right: 0,
+          bottom: 0,
+          zIndex: 1200,
+          px: { xs: 1, sm: 1.5 },
+          py: 1,
+          bgcolor: "linear-gradient(0deg, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.55) 75%, transparent 100%)",
+        }}
+      >
+        <Stack direction="row" flexWrap="wrap" gap={0.8}>
+          <Button variant="outlined" startIcon={<InfoRoundedIcon />} onClick={() => navigate("/map/overview")} sx={btnSx}>
+            서비스개요
+          </Button>
+          <Button
+            variant="outlined"
+            startIcon={<PhotoCameraRoundedIcon />}
+            onClick={() => navigate("/camera")}
+            sx={{ ...btnSx, color: meterColors.primary, borderColor: meterColors.borderStrong }}
+          >
+            AI 카메라
+          </Button>
+          <Button variant="outlined" startIcon={<RouteRoundedIcon />} onClick={() => navigate("/map/route")} sx={btnSx}>
+            최적경로
+          </Button>
+          <Button variant="outlined" startIcon={<StorageRoundedIcon />} onClick={() => navigate("/db")} sx={btnSx}>
+            DB 조회
+          </Button>
+          {showAdmin && (
+            <Button variant="outlined" startIcon={<AdminPanelSettingsRoundedIcon />} onClick={() => navigate("/manage")} sx={btnSx}>
+              관리자
             </Button>
-            <Button variant="outlined" startIcon={<PhotoCameraRoundedIcon />} onClick={() => navigate("/camera")} sx={{ ...btnSx, color: meterColors.primary, borderColor: meterColors.borderStrong }}>
-              AI 카메라
-            </Button>
-            <Button variant="outlined" startIcon={<RouteRoundedIcon />} onClick={() => navigate("/map/route")} sx={btnSx}>
-              최적경로
-            </Button>
-            <Button variant="outlined" startIcon={<StorageRoundedIcon />} onClick={() => navigate("/db")} sx={btnSx}>
-              DB 조회
-            </Button>
-            {showAdmin && (
-              <Button variant="outlined" startIcon={<AdminPanelSettingsRoundedIcon />} onClick={() => navigate("/manage")} sx={btnSx}>
-                관리자
-              </Button>
-            )}
-          </Stack>
+          )}
+        </Stack>
+        {(loading || error) && (
+          <Typography sx={{ fontSize: "0.72rem", color: error ? meterColors.danger : meterColors.secondary, mt: 0.5, px: 0.5 }}>
+            {error || "모듈 갱신 중…"}
+          </Typography>
+        )}
+      </Box>
 
-          {loading && <Typography sx={{ fontSize: "0.75rem", color: meterColors.secondary }}>모듈 갱신 중…</Typography>}
-          {error && <Typography sx={{ fontSize: "0.75rem", color: meterColors.danger }}>{error}</Typography>}
-        </Grid>
-      </Grid>
+      <MeterChatbot />
 
       <Snackbar open={Boolean(toast)} autoHideDuration={2500} onClose={() => setToast("")} message={toast} />
     </Box>
