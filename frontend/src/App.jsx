@@ -93,11 +93,11 @@ function App() {
           <Route path="/manage" element={<ProtectedRoute adminOnly><Manage /></ProtectedRoute>} />
           <Route path="/mosquitto" element={<ProtectedRoute adminOnly><Mosquitto /></ProtectedRoute>} />
 
-          {/* 개별 기능 페이지 */}
-          <Route path="/features/smart-disposal" element={<ProtectedRoute><SmartDisposal /></ProtectedRoute>} />
-          <Route path="/features/iot" element={<ProtectedRoute><IotIntegration /></ProtectedRoute>} />
-          <Route path="/features/reward" element={<ProtectedRoute><Reward /></ProtectedRoute>} />
-          <Route path="/features/operations" element={<ProtectedRoute><OperationsHub /></ProtectedRoute>} />
+          {/* 소개 기능 페이지 — 로그인 없이 열람 가능 */}
+          <Route path="/features/smart-disposal" element={<SmartDisposal />} />
+          <Route path="/features/iot" element={<IotIntegration />} />
+          <Route path="/features/reward" element={<Reward />} />
+          <Route path="/features/operations" element={<OperationsHub />} />
           <Route path="/features/recognition" element={<Navigate to="/features/smart-disposal" replace />} />
           <Route path="/features/guide" element={<Navigate to="/features/smart-disposal" replace />} />
           <Route path="/features/control" element={<Navigate to="/features/operations" replace />} />

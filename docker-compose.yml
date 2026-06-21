@@ -24,7 +24,12 @@ services:
   frontend:
     restart: always
     container_name: meter-frontend
-    build: ./frontend
+    build:
+      context: ./frontend
+      args:
+        VITE_GOOGLE_CLIENT_ID: ${VITE_GOOGLE_CLIENT_ID}
+        VITE_KAKAO_API: ${VITE_KAKAO_API}
+        VITE_API_BASE_URL: ${VITE_API_BASE_URL:-/api}
     networks:
       - global_network
 

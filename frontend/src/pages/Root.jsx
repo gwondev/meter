@@ -1,13 +1,12 @@
 import { Box, Typography, Container, Stack, Button } from "@mui/material";
 import { keyframes } from "@emotion/react";
 import { motion } from "framer-motion";
-import AutoAwesomeRoundedIcon from "@mui/icons-material/AutoAwesomeRounded";
-import DeviceHubRoundedIcon from "@mui/icons-material/DeviceHubRounded";
-import AnalyticsRoundedIcon from "@mui/icons-material/AnalyticsRounded";
-import meterLogo from "../assets/meter-logo.png";
-import MapRoundedIcon from "@mui/icons-material/MapRounded";
-import { useNavigate } from "react-router-dom";
+import PhotoCameraRoundedIcon from "@mui/icons-material/PhotoCameraRounded";
+import SensorsRoundedIcon from "@mui/icons-material/SensorsRounded";
+import InsightsRoundedIcon from "@mui/icons-material/InsightsRounded";
+import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
 import { useEffect, useRef, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import {
   loginWithGoogleCredential,
   saveAuth,
@@ -18,6 +17,7 @@ import {
   ensureSession,
 } from "../services/auth";
 import { GoogleLogin } from "@react-oauth/google";
+import meterLogo from "../assets/meter-logo.png";
 
 const floatSlow = keyframes`
   0% { transform: translate3d(0, 0, 0); }
@@ -33,23 +33,27 @@ const glowPulse = keyframes`
 
 const featureItems = [
   {
-    title: "AI 배출 안내",
-    icon: <AutoAwesomeRoundedIcon sx={{ fontSize: 26 }} />,
+    title: "AI 카메라 배출 안내",
+    subtitle: "촬영 → 분류 → 올바른 수거 안내",
+    icon: <PhotoCameraRoundedIcon sx={{ fontSize: 26 }} />,
     path: "/features/smart-disposal",
   },
   {
-    title: "IoT 모듈 연동",
-    icon: <DeviceHubRoundedIcon sx={{ fontSize: 26 }} />,
+    title: "IoT 실시간 적재 측정",
+    subtitle: "초음파 · MQTT · LED 상태 표시",
+    icon: <SensorsRoundedIcon sx={{ fontSize: 26 }} />,
     path: "/features/iot",
   },
   {
-    title: "데이터 분석",
-    icon: <AnalyticsRoundedIcon sx={{ fontSize: 26 }} />,
+    title: "데이터 분석 & 수거 동선",
+    subtitle: "적재량 예측 · Gemini 챗봇",
+    icon: <InsightsRoundedIcon sx={{ fontSize: 26 }} />,
     path: "/features/reward",
   },
   {
-    title: "통합 관제",
-    icon: <MapRoundedIcon sx={{ fontSize: 26 }} />,
+    title: "통합 관제 플랫폼",
+    subtitle: "지도 · 모듈 상태 · 수거 우선순위",
+    icon: <DashboardRoundedIcon sx={{ fontSize: 26 }} />,
     path: "/features/operations",
   },
 ];
@@ -110,22 +114,15 @@ const Root = () => {
       if (!credential) throw new Error("Google credential is missing");
 
       const loginResponse = await loginWithGoogleCredential(credential);
-      console.log("google loginResponse:", loginResponse);
-
       const user = loginResponse?.user;
       const oauthId = user?.oauthId ?? user?.oauth_id;
       if (!oauthId) throw new Error("로그인 응답의 oauthId가 없습니다.");
 
-      // 백엔드 직렬화/필드명에 따라 oauthId 키가 달라질 수 있어 정규화
-      const normalizedLoginResponse = {
+      saveAuth({
         ...loginResponse,
-        user: {
-          ...user,
-          oauthId,
-        },
-      };
+        user: { ...user, oauthId },
+      });
 
-      saveAuth(normalizedLoginResponse);
       if (loginResponse?.isNewUser) {
         navigateRef.current("/nickname");
       } else {
@@ -133,7 +130,7 @@ const Root = () => {
       }
     } catch (error) {
       console.error(error);
-      alert("로그인 처리 중 오류가 발생했습니다.");
+      alert(error?.message || "로그인 처리 중 오류가 발생했습니다.");
     }
   };
 
@@ -208,12 +205,25 @@ const Root = () => {
           textAlign="center"
           sx={{ py: { xs: 6, md: 8 } }}
         >
-          <Stack spacing={2} alignItems="center" component={motion.div} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}>
+          <Stack
+            spacing={1.5}
+            alignItems="center"
+            component={motion.div}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+          >
             <Box
               component="img"
               src={meterLogo}
               alt="METER"
-              sx={{ width: { xs: 72, md: 96 }, height: "auto", mb: 1, filter: "drop-shadow(0 8px 24px rgba(255,255,255,0.15))" }}
+              sx={{
+                width: { xs: 56, md: 72 },
+                height: "auto",
+                display: "block",
+                mixBlendMode: "screen",
+                opacity: 0.95,
+              }}
             />
             <Typography
               sx={{
@@ -272,67 +282,72 @@ const Root = () => {
                 transition={{ type: "spring", stiffness: 420, damping: 28 }}
                 style={{ width: "100%", minWidth: 0 }}
               >
-              <Button
-                fullWidth
-                onClick={() => navigate(item.path)}
-                sx={{
-                  minHeight: { xs: 92, sm: 102, md: 110 },
-                  px: { xs: 1.2, sm: 1.8 },
-                  py: 1.8,
-                  borderRadius: 3,
-                  color: "#fff",
-                  justifyContent: "flex-start",
-                  textTransform: "none",
-                  border: "1px solid rgba(255,255,255,0.10)",
-                  background:
-                    "linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02))",
-                  backdropFilter: "blur(8px)",
-                  transition: "all 0.25s ease",
-                  "&:hover": {
-                    borderColor: "rgba(255,255,255,0.35)",
-                    boxShadow: "0 0 24px rgba(255,255,255,0.08)",
-                    transform: "translateY(-4px)",
-                    background:
-                      "linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03))",
-                  },
-                }}
-              >
-                <Stack
-                  direction="row"
-                  spacing={{ xs: 1, sm: 1.4 }}
-                  alignItems="center"
-                  sx={{ textAlign: "left" }}
+                <Button
+                  fullWidth
+                  onClick={() => navigate(item.path)}
+                  sx={{
+                    minHeight: { xs: 100, sm: 110, md: 118 },
+                    px: { xs: 1.2, sm: 1.8 },
+                    py: 1.8,
+                    borderRadius: 3,
+                    color: "#fff",
+                    justifyContent: "flex-start",
+                    textTransform: "none",
+                    border: "1px solid rgba(255,255,255,0.10)",
+                    background: "linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02))",
+                    backdropFilter: "blur(8px)",
+                    transition: "all 0.25s ease",
+                    "&:hover": {
+                      borderColor: "rgba(255,255,255,0.35)",
+                      boxShadow: "0 0 24px rgba(255,255,255,0.08)",
+                      transform: "translateY(-4px)",
+                      background: "linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03))",
+                    },
+                  }}
                 >
-                  <Box
-                    sx={{
-                      width: { xs: 38, sm: 44 },
-                      height: { xs: 38, sm: 44 },
-                      borderRadius: "12px",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: "#ffffff",
-                      background: "rgba(255,255,255,0.06)",
-                      border: "1px solid rgba(255,255,255,0.14)",
-                      flexShrink: 0,
-                    }}
-                  >
-                    {item.icon}
-                  </Box>
+                  <Stack direction="row" spacing={{ xs: 1, sm: 1.4 }} alignItems="center" sx={{ textAlign: "left" }}>
+                    <Box
+                      sx={{
+                        width: { xs: 38, sm: 44 },
+                        height: { xs: 38, sm: 44 },
+                        borderRadius: "12px",
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        color: "#ffffff",
+                        background: "rgba(255,255,255,0.06)",
+                        border: "1px solid rgba(255,255,255,0.14)",
+                        flexShrink: 0,
+                      }}
+                    >
+                      {item.icon}
+                    </Box>
 
-                  <Typography
-                    sx={{
-                      fontSize: { xs: "0.76rem", sm: "0.95rem", md: "1rem" },
-                      fontWeight: 700,
-                      color: "#fff",
-                      lineHeight: 1.3,
-                      wordBreak: "keep-all",
-                    }}
-                  >
-                    {item.title}
-                  </Typography>
-                </Stack>
-              </Button>
+                    <Stack spacing={0.25} sx={{ minWidth: 0 }}>
+                      <Typography
+                        sx={{
+                          fontSize: { xs: "0.76rem", sm: "0.95rem", md: "1rem" },
+                          fontWeight: 700,
+                          color: "#fff",
+                          lineHeight: 1.3,
+                          wordBreak: "keep-all",
+                        }}
+                      >
+                        {item.title}
+                      </Typography>
+                      <Typography
+                        sx={{
+                          fontSize: { xs: "0.68rem", sm: "0.78rem" },
+                          color: "rgba(255,255,255,0.55)",
+                          lineHeight: 1.35,
+                          wordBreak: "keep-all",
+                        }}
+                      >
+                        {item.subtitle}
+                      </Typography>
+                    </Stack>
+                  </Stack>
+                </Button>
               </motion.div>
             ))}
           </Box>
@@ -381,13 +396,11 @@ const Root = () => {
                 textTransform: "none",
                 fontWeight: 800,
                 fontSize: "1rem",
-                border: "1px solid rgba(57,255,20,0.26)",
-                background:
-                  "linear-gradient(90deg, rgba(20,20,20,0.96), rgba(16,16,16,0.98), rgba(20,20,20,0.96))",
+                border: "1px solid rgba(255,255,255,0.22)",
+                background: "linear-gradient(90deg, rgba(20,20,20,0.96), rgba(16,16,16,0.98), rgba(20,20,20,0.96))",
                 "&:hover": {
                   boxShadow: "0 0 24px rgba(255,255,255,0.12)",
-                  background:
-                    "linear-gradient(90deg, rgba(28,28,28,1), rgba(22,22,22,1), rgba(28,28,28,1))",
+                  background: "linear-gradient(90deg, rgba(28,28,28,1), rgba(22,22,22,1), rgba(28,28,28,1))",
                 },
               }}
             >
