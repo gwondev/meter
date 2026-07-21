@@ -19,7 +19,7 @@ import MyPage from "./pages/MyPage";
 import Mosquitto from "./pages/Mosquitto";
 import ModuleDB from "./pages/ModuleDB";
 import RouteGuide from "./pages/RouteGuide";
-import Test from "./pages/Test";
+import UITest from "./pages/UITest";
 import TeamIntro from "./pages/TeamIntro";
 import ProjectIntro from "./pages/ProjectIntro";
 import { isAuthenticated, ensureSession } from "./services/auth";
@@ -76,7 +76,7 @@ function App() {
           {/* 시작 및 계정 설정 */}
           <Route path="/" element={<Root />} />
           <Route path="/nickname" element={<Nickname />} />
-          <Route path="/test" element={<Test />} />
+          <Route path="/test" element={<UITest />} />
           <Route path="/intro/team" element={<ProtectedRoute><TeamIntro /></ProtectedRoute>} />
           <Route path="/intro/project" element={<ProtectedRoute><ProjectIntro /></ProtectedRoute>} />
 
