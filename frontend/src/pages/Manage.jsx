@@ -3,6 +3,7 @@ import {
   Alert,
   Box,
   Button,
+  Chip,
   Container,
   Divider,
   Paper,
@@ -23,6 +24,7 @@ import {
   FormControl,
   InputLabel,
   Select,
+  Grid,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -35,6 +37,9 @@ import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
 import CleaningServicesRoundedIcon from "@mui/icons-material/CleaningServicesRounded";
 import ArrowBackIosNewRoundedIcon from "@mui/icons-material/ArrowBackIosNewRounded";
+import HubRoundedIcon from "@mui/icons-material/HubRounded";
+import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
+import { meterColors } from "../theme/meterTheme";
 
 const cellHead = {
   color: "#ffffff",
@@ -91,7 +96,7 @@ const Manage = () => {
       setError("");
       const [data, logs] = await Promise.all([
         apiFetch("/admin/overview"),
-        apiFetch("/mosquitto/logs?limit=20"),
+        apiFetch("/mosquitto/logs?limit=50"),
       ]);
       setOverview({
         users: data?.users || [],
@@ -113,6 +118,12 @@ const Manage = () => {
       return;
     }
     loadOverview();
+    const t = setInterval(() => {
+      apiFetch("/mosquitto/logs?limit=50")
+        .then((logs) => setMqttLogs(Array.isArray(logs) ? logs : []))
+        .catch(() => {});
+    }, 5000);
+    return () => clearInterval(t);
   }, [currentUser?.role, navigate, loadOverview]);
 
   const openModuleDialog = (m = null) => {
@@ -271,21 +282,18 @@ const Manage = () => {
         <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ xs: "stretch", sm: "flex-start" }} sx={{ mb: { xs: 1.5, sm: 2 } }} gap={2}>
           <Box sx={{ minWidth: 0 }}>
             <Typography variant="h4" sx={{ fontWeight: 900, fontSize: { xs: "1.35rem", sm: "2rem" }, lineHeight: 1.2 }}>
-              관리 콘솔
+              DB 관리
             </Typography>
             <Typography
               sx={{
                 mt: { xs: 0.75, sm: 1 },
-                fontSize: { xs: "0.62rem", sm: "0.72rem" },
-                letterSpacing: { xs: "0.2em", sm: "0.32em" },
-                textTransform: "uppercase",
-                color: "rgba(124,255,114,0.88)",
-                fontWeight: 700,
-                fontFamily: '"Segoe UI", "Apple SD Gothic Neo", system-ui, sans-serif',
+                fontSize: { xs: "0.72rem", sm: "0.82rem" },
+                color: "rgba(255,255,255,0.55)",
+                fontWeight: 600,
                 lineHeight: 1.4,
               }}
             >
-              Admin Management Page
+              MQTT 수신 로그 · 유저 · 모듈
             </Typography>
           </Box>
           <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ width: { xs: "100%", sm: "auto" }, flexShrink: 0 }}>
@@ -311,66 +319,137 @@ const Manage = () => {
 
         <Paper
           sx={{
-            p: { xs: 1, sm: 2 },
+            p: { xs: 1.25, sm: 1.75 },
             mb: 2,
             bgcolor: "rgba(255,255,255,0.04)",
-            overflowX: "auto",
-            border: "1px solid rgba(124,255,114,0.18)",
-            WebkitOverflowScrolling: "touch",
-            "& .MuiTableCell-root": {
-              fontSize: { xs: "0.64rem", sm: "0.78rem" },
-              py: { xs: 0.6, sm: 0.9 },
-              px: { xs: 0.5, sm: 1 },
-              whiteSpace: "normal",
-              wordBreak: "break-word",
-              overflowWrap: "anywhere",
-            },
+            border: "1px solid rgba(124,255,114,0.22)",
+            borderRadius: 2.5,
           }}
         >
-          <Stack direction="row" justifyContent="space-between" alignItems="baseline" sx={{ mb: 1.5 }} flexWrap="wrap" gap={1}>
-            <Typography sx={{ color: "#ffffff", fontWeight: 800, fontSize: { xs: "0.9rem", sm: "1rem" } }}>
-              유저
-              <Box component="span" sx={{ color: "rgba(255,255,255,0.45)", fontWeight: 600, ml: 1, fontSize: { xs: "0.78rem", sm: "0.85rem" } }}>
-                · 총 {overview.users.length}명
-              </Box>
+          <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.2 }}>
+            <HubRoundedIcon sx={{ color: "#7cff72", fontSize: 22 }} />
+            <Typography sx={{ color: "#fff", fontWeight: 900, fontSize: { xs: "0.95rem", sm: "1.05rem" } }}>
+              MQTT 수신 로그
             </Typography>
+            <Chip
+              size="small"
+              label={`최근 ${mqttLogs.length}건`}
+              sx={{ ml: "auto", bgcolor: "rgba(124,255,114,0.12)", color: "#7cff72", fontWeight: 800, fontSize: "0.68rem" }}
+            />
           </Stack>
-          <Table size="small" sx={{ tableLayout: "fixed", minWidth: 0 }}>
-            <TableHead>
-              <TableRow>
-                <TableCell sx={cellHead}>ID</TableCell>
-                <TableCell sx={cellHead}>닉네임</TableCell>
-                <TableCell sx={cellHead}>ROLE</TableCell>
-                <TableCell sx={cellHead}>상태</TableCell>
-                <TableCell sx={cellHead} align="right">
-                  작업
-                </TableCell>
-              </TableRow>
-            </TableHead>
-            <TableBody>
-              {overview.users.map((u) => (
-                <TableRow key={u.id} sx={{ "&:nth-of-type(odd)": { bgcolor: "rgba(255,255,255,0.03)" } }}>
-                  <TableCell sx={cellBody}>{u.id}</TableCell>
-                  <TableCell sx={cellBody}>{u.nickname || "-"}</TableCell>
-                  <TableCell sx={cellBody}>{u.role}</TableCell>
-                  <TableCell sx={cellBody}>{u.status}</TableCell>
-                  <TableCell sx={cellBody} align="right">
-                    <IconButton size="small" sx={{ color: "#ffffff" }} onClick={() => openUserEdit(u)}>
-                      <EditRoundedIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton
-                      size="small"
-                      sx={{ color: "#ff8a8a" }}
-                      disabled={currentUser?.id != null && u.id === currentUser.id}
-                      onClick={() => setUserDeleteTarget(u)}
-                    >
-                      <DeleteOutlineRoundedIcon fontSize="small" />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+          <Stack spacing={0.6} sx={{ maxHeight: { xs: 280, sm: 360 }, overflow: "auto" }}>
+            {mqttLogs.map((row, idx) => (
+              <Box
+                key={`${row.time}-${idx}`}
+                sx={{
+                  p: 1,
+                  borderRadius: 1.5,
+                  bgcolor: "rgba(0,0,0,0.35)",
+                  border: "1px solid rgba(255,255,255,0.08)",
+                }}
+              >
+                <Stack direction="row" spacing={0.8} alignItems="center" flexWrap="wrap" sx={{ mb: 0.4 }}>
+                  <Chip
+                    size="small"
+                    label={row.direction || "?"}
+                    sx={{
+                      height: 20,
+                      fontSize: "0.62rem",
+                      fontWeight: 900,
+                      bgcolor: row.direction === "IN" ? "rgba(124,255,114,0.18)" : "rgba(255,152,0,0.18)",
+                      color: row.direction === "IN" ? "#7cff72" : "#ffb74d",
+                    }}
+                  />
+                  <Typography sx={{ fontSize: "0.68rem", color: "rgba(255,255,255,0.5)" }}>{row.time}</Typography>
+                </Stack>
+                <Typography sx={{ fontSize: { xs: "0.72rem", sm: "0.78rem" }, fontWeight: 800, color: "#fff", wordBreak: "break-all" }}>
+                  {row.topic}
+                </Typography>
+                <Typography sx={{ fontSize: { xs: "0.68rem", sm: "0.74rem" }, color: "rgba(255,255,255,0.78)", mt: 0.3, wordBreak: "break-all" }}>
+                  {row.payload}
+                </Typography>
+              </Box>
+            ))}
+            {mqttLogs.length === 0 && (
+              <Typography sx={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.55)", py: 2, textAlign: "center" }}>
+                MQTT 로그 없음
+              </Typography>
+            )}
+          </Stack>
+        </Paper>
+
+        <Paper
+          sx={{
+            p: { xs: 1.25, sm: 1.75 },
+            mb: 2,
+            bgcolor: "rgba(255,255,255,0.04)",
+            border: "1px solid rgba(255,255,255,0.12)",
+            borderRadius: 2.5,
+          }}
+        >
+          <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
+            <PersonRoundedIcon sx={{ color: meterColors.primaryMuted, fontSize: 22 }} />
+            <Typography sx={{ color: "#fff", fontWeight: 900, fontSize: { xs: "0.95rem", sm: "1.05rem" } }}>
+              유저 목록
+            </Typography>
+            <Chip
+              size="small"
+              label={`${overview.users.length}명`}
+              sx={{ ml: "auto", bgcolor: "rgba(255,255,255,0.08)", color: "#fff", fontWeight: 800, fontSize: "0.68rem" }}
+            />
+          </Stack>
+          <Grid container spacing={1.2}>
+            {overview.users.map((u) => (
+              <Grid item xs={12} sm={6} key={u.id}>
+                <Box
+                  sx={{
+                    p: 1.25,
+                    borderRadius: 2,
+                    bgcolor: "rgba(0,0,0,0.35)",
+                    border: `1px solid ${u.role === "ADMIN" ? "rgba(124,255,114,0.35)" : "rgba(255,255,255,0.1)"}`,
+                  }}
+                >
+                  <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
+                    <Box sx={{ minWidth: 0 }}>
+                      <Typography sx={{ fontWeight: 900, fontSize: "0.95rem", color: "#fff" }} noWrap>
+                        {u.nickname || "닉네임 없음"}
+                      </Typography>
+                      <Typography sx={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.5)", mt: 0.3 }} noWrap>
+                        {u.email || `ID ${u.id}`}
+                      </Typography>
+                      <Stack direction="row" spacing={0.5} sx={{ mt: 0.8 }}>
+                        <Chip size="small" label={u.role || "USER"} sx={{ height: 22, fontSize: "0.62rem", fontWeight: 800 }} />
+                        <Chip
+                          size="small"
+                          label={u.status || "ACTIVE"}
+                          sx={{
+                            height: 22,
+                            fontSize: "0.62rem",
+                            fontWeight: 800,
+                            bgcolor: u.status === "ACTIVE" ? "rgba(124,255,114,0.15)" : "rgba(255,255,255,0.08)",
+                            color: u.status === "ACTIVE" ? "#7cff72" : "rgba(255,255,255,0.7)",
+                          }}
+                        />
+                      </Stack>
+                    </Box>
+                    <Stack direction="row" spacing={0.2}>
+                      <IconButton size="small" sx={{ color: "#fff" }} onClick={() => openUserEdit(u)}>
+                        <EditRoundedIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton
+                        size="small"
+                        sx={{ color: "#ff8a8a" }}
+                        disabled={currentUser?.id != null && u.id === currentUser.id}
+                        onClick={() => setUserDeleteTarget(u)}
+                      >
+                        <DeleteOutlineRoundedIcon fontSize="small" />
+                      </IconButton>
+                    </Stack>
+                  </Stack>
+                </Box>
+              </Grid>
+            ))}
+          </Grid>
         </Paper>
 
         <Paper
@@ -456,34 +535,6 @@ const Manage = () => {
               ))}
             </TableBody>
           </Table>
-        </Paper>
-
-        <Paper
-          sx={{
-            p: { xs: 1, sm: 1.25 },
-            mb: 2,
-            bgcolor: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(124,255,114,0.18)",
-            maxHeight: { xs: 220, sm: 260 },
-            overflow: "auto",
-            WebkitOverflowScrolling: "touch",
-          }}
-        >
-          <Typography sx={{ color: "#ffffff", fontWeight: 800, mb: 0.7, fontSize: { xs: "0.84rem", sm: "0.95rem" } }}>
-            모스키토 최근 20개
-          </Typography>
-          <Stack spacing={0.35}>
-            {mqttLogs.map((row, idx) => (
-              <Typography key={`${row.time}-${idx}`} sx={{ fontSize: { xs: "0.64rem", sm: "0.72rem" }, lineHeight: 1.25, color: "rgba(255,255,255,0.86)", wordBreak: "break-all" }}>
-                [{row.direction}] {row.time} · {row.topic} · {row.payload}
-              </Typography>
-            ))}
-            {mqttLogs.length === 0 && (
-              <Typography sx={{ fontSize: { xs: "0.7rem", sm: "0.78rem" }, color: "rgba(255,255,255,0.65)" }}>
-                로그 없음
-              </Typography>
-            )}
-          </Stack>
         </Paper>
 
         <Divider sx={{ borderColor: "rgba(255,255,255,0.15)", my: 2 }} />

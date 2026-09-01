@@ -33,13 +33,14 @@ static const unsigned long WIFI_ATTEMPT_TIMEOUT_MS = 8000UL;
 static const int PIN_TRIG = 32;
 static const int PIN_ECHO = 33;
 
-/* 발행 주기 — 높이값 1건을 이 간격으로 계속 보낸다. 서버는 수신 시각을 생존 신호로 쓴다. */
-static const unsigned long PUBLISH_INTERVAL_MS = 5UL * 1000UL;
-static const unsigned long ULTRA_PING_INTERVAL_MS = 15;
-static const unsigned long ULTRA_LOG_INTERVAL_MS = 10000UL;
+/* RGB 상태 LED — MQTT 연결/전송 상태 표시 */
+static const int PIN_LED_R = 25;
+static const int PIN_LED_G = 26;
+static const int PIN_LED_B = 27;
+static const unsigned long LED_FLASH_MS = 450UL;
 
 static const float DIST_MIN_CM = 2.0f;
-static const float DIST_MAX_CM = 100.0f;
+static const float DIST_MAX_CM = 100.0f; /* 1m 초과 시 100cm(1m)로 전송 */
 
 static esp_mqtt_client_handle_t s_mqtt = nullptr;
 static volatile bool s_mqtt_connected = false;
@@ -48,7 +49,30 @@ static char s_topicStatus[52] = "";
 static unsigned long s_lastPublishMs = 0;
 static unsigned long s_lastUltraPingMs = 0;
 static unsigned long s_lastUltraLogMs = 0;
+static unsigned long s_ledFlashUntilMs = 0;
 static float s_lastDistCm = -1.0f;
+
+/* 발행 주기 — 높이값 1건을 이 간격으로 계속 보낸다. 서버는 수신 시각을 생존 신호로 쓴다. */
+static const unsigned long PUBLISH_INTERVAL_MS = 5UL * 1000UL;
+static const unsigned long ULTRA_PING_INTERVAL_MS = 15;
+static const unsigned long ULTRA_LOG_INTERVAL_MS = 10000UL;
+
+static void setLedRgb(bool r, bool g, bool b) {
+  digitalWrite(PIN_LED_R, r ? HIGH : LOW);
+  digitalWrite(PIN_LED_G, g ? HIGH : LOW);
+  digitalWrite(PIN_LED_B, b ? HIGH : LOW);
+}
+
+static void updateStatusLed() {
+  unsigned long now = millis();
+  if (!s_mqtt_connected) {
+    setLedRgb(true, false, false); /* 빨강 — MQTT 미연결 */
+  } else if (now < s_ledFlashUntilMs) {
+    setLedRgb(false, true, false); /* 초록 — 전송 순간 */
+  } else {
+    setLedRgb(true, true, false); /* 주황 — MQTT 연결 유지 */
+  }
+}
 
 static void buildMqttClientId() {
   uint64_t mac = ESP.getEfuseMac();
@@ -80,7 +104,10 @@ float measureDistanceCm() {
     return -1.0f;
   }
   float cm = (float)durationUs / 58.0f;
-  if (cm < DIST_MIN_CM || cm > DIST_MAX_CM) {
+  if (cm > DIST_MAX_CM) {
+    return DIST_MAX_CM; /* 1m 넘으면 100cm(1m)로 전송 */
+  }
+  if (cm < DIST_MIN_CM) {
     return -1.0f;
   }
   return cm;
@@ -167,6 +194,7 @@ void publishHeight(float cm) {
   buf[n] = '\0';
   Serial.printf(">>> PUB %s %s\n", s_topicStatus, buf);
   mqttPublishRaw(s_topicStatus, buf);
+  s_ledFlashUntilMs = millis() + LED_FLASH_MS;
 }
 
 static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_t event_id, void *event_data) {
@@ -236,6 +264,11 @@ void setup() {
   pinMode(PIN_ECHO, INPUT);
   digitalWrite(PIN_TRIG, LOW);
 
+  pinMode(PIN_LED_R, OUTPUT);
+  pinMode(PIN_LED_G, OUTPUT);
+  pinMode(PIN_LED_B, OUTPUT);
+  setLedRgb(true, false, false);
+
   while (!connectWifiFromLists()) {
     Serial.println("WiFi retry 5s");
     delay(5000);
@@ -261,7 +294,12 @@ void loop() {
 
   unsigned long now = millis();
   if (now - s_lastPublishMs >= PUBLISH_INTERVAL_MS) {
-    if (s_lastDistCm >= 0) {
+    /* 발행 시점마다 재측정 — 1m 초과는 measureDistanceCm 에서 100cm 로 클램프 */
+    float cm = measureDistanceCm();
+    if (cm >= 0) {
+      s_lastDistCm = cm;
+      publishHeight(cm);
+    } else if (s_lastDistCm >= 0) {
       publishHeight(s_lastDistCm);
     } else {
       Serial.println("[ULTRA] invalid sample — publish skipped");
@@ -269,5 +307,6 @@ void loop() {
     s_lastPublishMs = now;
   }
 
+  updateStatusLed();
   delay(20);
 }

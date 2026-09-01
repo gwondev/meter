@@ -17,7 +17,6 @@ import Reward from "./pages/features/Reward";
 import OperationsHub from "./pages/features/OperationsHub";
 import MyPage from "./pages/MyPage";
 import Mosquitto from "./pages/Mosquitto";
-import ModuleDB from "./pages/ModuleDB";
 import UITest from "./pages/UITest";
 import TeamIntro from "./pages/TeamIntro";
 import ProjectIntro from "./pages/ProjectIntro";
@@ -86,13 +85,13 @@ function App() {
           <Route path="/map/recycling-guide" element={<ProtectedRoute><RecyclingGuide /></ProtectedRoute>} />
           <Route path="/camera" element={<ProtectedRoute><Camera /></ProtectedRoute>} />
           <Route path="/input" element={<ProtectedRoute><Input /></ProtectedRoute>} />
-          <Route path="/db" element={<ProtectedRoute><ModuleDB /></ProtectedRoute>} />
+          <Route path="/db" element={<ProtectedRoute adminOnly><Manage /></ProtectedRoute>} />
+          <Route path="/manage" element={<Navigate to="/db" replace />} />
           {/* 최적경로는 별도 페이지 없이 /map 위에 직접 그린다 */}
           <Route path="/map/route" element={<Navigate to="/map" replace />} />
           <Route path="/mypage" element={<ProtectedRoute><MyPage /></ProtectedRoute>} />
 
-          {/* 관리자 전용 페이지 */}
-          <Route path="/manage" element={<ProtectedRoute adminOnly><Manage /></ProtectedRoute>} />
+          {/* 관리자 전용 — /manage 는 /db 로 통합 */}
           <Route path="/mosquitto" element={<ProtectedRoute adminOnly><Mosquitto /></ProtectedRoute>} />
 
           {/* 소개 기능 페이지 — 로그인 없이 열람 가능 */}

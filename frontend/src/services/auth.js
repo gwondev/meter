@@ -57,6 +57,12 @@ export function isAuthenticated() {
   return Boolean(u?.oauthId);
 }
 
+/** 닉네임 미설정(빈 문자열 포함)이면 true */
+export function needsNickname(user) {
+  const n = user?.nickname;
+  return n == null || String(n).trim() === "";
+}
+
 export function getEffectiveUser() {
   const u = getUser();
   if (u?.oauthId) return u;
@@ -111,7 +117,7 @@ export async function ensureSession() {
     const res = await apiFetch(`/auth/session?oauthId=${encodeURIComponent(cached.oauthId)}`);
     const user = mergeUserFromServer(cached, res?.user);
     saveUser(user);
-    if (res?.isNewUser) {
+    if (res?.isNewUser || needsNickname(user)) {
       return { status: "needs_nickname", user };
     }
     return { status: "ok", user };
@@ -119,6 +125,9 @@ export async function ensureSession() {
     if (isUserNotFoundError(error)) {
       clearAuth();
       return { status: "deleted" };
+    }
+    if (needsNickname(cached)) {
+      return { status: "needs_nickname", user: cached };
     }
     return { status: "offline", user: cached };
   }

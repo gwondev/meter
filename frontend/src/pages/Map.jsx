@@ -13,12 +13,9 @@ import {
   IconButton,
 } from "@mui/material";
 import { useLocation, useNavigate } from "react-router-dom";
-import { getUser } from "../services/auth";
+import { getUser, ensureSession, needsNickname } from "../services/auth";
 import { apiFetch } from "../services/api";
-import AdminPanelSettingsRoundedIcon from "@mui/icons-material/AdminPanelSettingsRounded";
 import PhotoCameraRoundedIcon from "@mui/icons-material/PhotoCameraRounded";
-import InfoRoundedIcon from "@mui/icons-material/InfoRounded";
-import StorageRoundedIcon from "@mui/icons-material/StorageRounded";
 import RouteRoundedIcon from "@mui/icons-material/RouteRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
 import UserMenu from "../components/UserMenu";
@@ -42,6 +39,22 @@ const Map = () => {
   const [visibleModules, setVisibleModules] = useState([]);
   const [route, setRoute] = useState(null);
   const isLocalNoEnv = import.meta.env.DEV && !String(import.meta.env.VITE_GOOGLE_CLIENT_ID || "").trim();
+
+  /* 새로고침·포커스 시에도 닉네임 없으면 설정 페이지로 */
+  useEffect(() => {
+    if (!user?.oauthId) return undefined;
+
+    const checkNickname = async () => {
+      const result = await ensureSession();
+      if (result.status === "needs_nickname" || needsNickname(result.user ?? user)) {
+        navigate("/nickname", { replace: true });
+      }
+    };
+
+    checkNickname();
+    window.addEventListener("focus", checkNickname);
+    return () => window.removeEventListener("focus", checkNickname);
+  }, [navigate, user?.oauthId, user?.nickname]);
 
   useEffect(() => {
     if (!user?.oauthId) {
@@ -160,41 +173,49 @@ const Map = () => {
 
   if (!user?.oauthId) return null;
 
-  const showAdmin = user?.role === "ADMIN";
-  const displayName = user?.nickname || "사용자";
+  const displayName = user?.nickname?.trim() || "닉네임 설정";
 
-  const actionBtnSx = {
-    flex: 1,
-    minWidth: 0,
-    flexDirection: "column",
-    gap: 0.4,
-    px: 0.5,
-    py: 1.1,
+  const headerBadgeSx = {
+    px: 1.3,
+    py: 0.7,
+    borderRadius: 2,
+    bgcolor: "#000000",
+    border: `1px solid ${meterColors.borderStrong}`,
+    boxShadow: "0 6px 20px rgba(0,0,0,0.55)",
+    fontWeight: 900,
+    color: "#ffffff",
+    fontSize: { xs: "0.82rem", md: "0.92rem" },
+    letterSpacing: "0.02em",
+    lineHeight: 1,
+  };
+
+  const bottomBtnSx = {
+    minWidth: { xs: 132, sm: 148 },
+    px: 2,
+    py: 1.35,
     borderRadius: 2.5,
     fontWeight: 800,
     textTransform: "none",
-    fontSize: "0.72rem",
-    lineHeight: 1.1,
-    border: `1px solid ${meterColors.border}`,
-    color: meterColors.primaryMuted,
-    bgcolor: "rgba(18,18,18,0.92)",
+    fontSize: { xs: "0.82rem", sm: "0.9rem" },
+    border: `1px solid ${meterColors.borderStrong}`,
+    color: meterColors.primary,
+    bgcolor: "rgba(0,0,0,0.9)",
     backdropFilter: "blur(10px)",
-    transition: "transform 140ms ease, border-color 140ms ease, background-color 140ms ease",
-    "& .MuiButton-startIcon": { m: 0, "& svg": { fontSize: "1.25rem" } },
+    boxShadow: "0 8px 28px rgba(0,0,0,0.45)",
+    "& .MuiButton-startIcon": { mr: 0.6 },
     "&:hover": {
+      bgcolor: "rgba(24,24,24,0.96)",
+      borderColor: meterColors.primary,
       transform: "translateY(-2px)",
-      borderColor: meterColors.borderStrong,
-      bgcolor: "rgba(32,32,32,0.96)",
     },
   };
 
-  const activeActionSx = {
-    ...actionBtnSx,
+  const bottomBtnActiveSx = {
+    ...bottomBtnSx,
     color: "#0a0a0a",
     bgcolor: meterColors.primary,
     borderColor: meterColors.primary,
-    "& .MuiButton-startIcon": actionBtnSx["& .MuiButton-startIcon"],
-    "&:hover": { transform: "translateY(-2px)", bgcolor: "#e8e8e8", borderColor: "#e8e8e8" },
+    "&:hover": { bgcolor: "#e8e8e8", borderColor: "#e8e8e8" },
   };
 
   return (
@@ -242,30 +263,20 @@ const Map = () => {
           "& > *": { pointerEvents: "auto" },
         }}
       >
-        <Stack
-          direction="row"
-          spacing={1}
-          alignItems="center"
-          sx={{
-            px: 1.4,
-            py: 0.8,
-            borderRadius: 2.5,
-            bgcolor: "#000000",
-            border: `1px solid ${meterColors.borderStrong}`,
-            boxShadow: "0 8px 24px rgba(0,0,0,0.6)",
-          }}
-        >
-          <Box component="img" src="/meter-logo.png" alt="METER" sx={{ width: 24, height: 24, mixBlendMode: "screen" }} />
-          <Typography
+        <Stack direction="row" spacing={0.8} alignItems="center">
+          <Box sx={headerBadgeSx}>METER</Box>
+          <Box
             sx={{
-              fontWeight: 900,
-              color: "#ffffff",
-              fontSize: { xs: "0.9rem", md: "1.05rem" },
-              letterSpacing: "0.02em",
+              ...headerBadgeSx,
+              color: user?.nickname?.trim() ? "#ffffff" : meterColors.warning,
+              cursor: user?.nickname?.trim() ? "default" : "pointer",
+            }}
+            onClick={() => {
+              if (!user?.nickname?.trim()) navigate("/nickname");
             }}
           >
-            METER · {displayName}
-          </Typography>
+            {displayName}
+          </Box>
         </Stack>
         <UserMenu />
       </Stack>
@@ -407,7 +418,7 @@ const Map = () => {
         sx={{
           position: "absolute",
           left: { xs: 8, sm: 12 },
-          bottom: { xs: 96, sm: 100 },
+          bottom: { xs: 72, sm: 76 },
           zIndex: 1250,
           fontSize: "0.68rem",
           fontWeight: 800,
@@ -430,37 +441,37 @@ const Map = () => {
           right: 0,
           bottom: 0,
           zIndex: 1200,
-          px: { xs: 1, sm: 1.5 },
-          pt: 3,
-          pb: 1.2,
-          background: "linear-gradient(0deg, rgba(0,0,0,0.94) 0%, rgba(0,0,0,0.6) 62%, transparent 100%)",
+          display: "flex",
+          justifyContent: "center",
+          pb: { xs: 1.4, sm: 1.8 },
+          pt: 4,
+          pointerEvents: "none",
+          background: "linear-gradient(0deg, rgba(0,0,0,0.88) 0%, rgba(0,0,0,0.35) 55%, transparent 100%)",
         }}
       >
-        <Stack direction="row" gap={0.8}>
-          <Button startIcon={<InfoRoundedIcon />} onClick={() => navigate("/map/overview")} sx={actionBtnSx}>
-            서비스개요
-          </Button>
-          <Button startIcon={<PhotoCameraRoundedIcon />} onClick={() => navigate("/camera")} sx={actionBtnSx}>
+        <Stack direction="row" spacing={1.2} sx={{ pointerEvents: "auto" }}>
+          <Button startIcon={<PhotoCameraRoundedIcon />} onClick={() => navigate("/camera")} sx={bottomBtnSx}>
             AI 카메라
           </Button>
-          <Button startIcon={<RouteRoundedIcon />} onClick={toggleRoute} sx={route ? activeActionSx : actionBtnSx}>
+          <Button startIcon={<RouteRoundedIcon />} onClick={toggleRoute} sx={route ? bottomBtnActiveSx : bottomBtnSx}>
             {route ? "경로 해제" : "최적경로"}
           </Button>
-          <Button startIcon={<StorageRoundedIcon />} onClick={() => navigate("/db")} sx={actionBtnSx}>
-            DB 조회
-          </Button>
-          {showAdmin && (
-            <Button startIcon={<AdminPanelSettingsRoundedIcon />} onClick={() => navigate("/manage")} sx={actionBtnSx}>
-              관리자
-            </Button>
-          )}
         </Stack>
-        {(loading || error) && (
-          <Typography sx={{ fontSize: "0.7rem", color: error ? meterColors.danger : meterColors.secondary, mt: 0.6, px: 0.5 }}>
-            {error || "모듈 갱신 중…"}
-          </Typography>
-        )}
       </Box>
+      {(loading || error) && (
+        <Typography
+          sx={{
+            position: "absolute",
+            left: 12,
+            bottom: 72,
+            zIndex: 1200,
+            fontSize: "0.7rem",
+            color: error ? meterColors.danger : meterColors.secondary,
+          }}
+        >
+          {error || "모듈 갱신 중…"}
+        </Typography>
+      )}
 
       <MeterChatbot />
 

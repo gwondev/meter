@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { keyframes } from "@emotion/react";
 import AccountCircleRoundedIcon from "@mui/icons-material/AccountCircleRounded";
 import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
-import { getUser, saveUser, ensureSession, clearAuth } from "../services/auth";
+import { getUser, saveUser, ensureSession, clearAuth, needsNickname } from "../services/auth";
 import { apiFetch } from "../services/api";
 import { meterColors } from "../theme/meterTheme";
 
@@ -35,7 +35,7 @@ const NicknamePage = () => {
         navigate("/");
         return;
       }
-      if (result.status === "ok") {
+      if (result.status === "ok" && !needsNickname(result.user)) {
         navigate("/map");
       }
     })();

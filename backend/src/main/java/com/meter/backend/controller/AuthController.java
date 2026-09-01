@@ -75,7 +75,7 @@ public class AuthController {
     private static Map<String, Object> sessionPayload(User user, String oauthId) {
         return Map.of(
                 "user", toUserDto(user, oauthId),
-                "isNewUser", user.getNickname() == null
+                "isNewUser", user.getNickname() == null || user.getNickname().isBlank()
         );
     }
 
