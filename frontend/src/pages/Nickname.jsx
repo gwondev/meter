@@ -102,7 +102,7 @@ const NicknamePage = () => {
             sx={{
               width: 80,
               height: 80,
-              borderRadius: 4,
+              borderRadius: 1,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
@@ -159,7 +159,7 @@ const NicknamePage = () => {
                 fontWeight: 600,
                 "& fieldset": {
                   borderColor: meterColors.border,
-                  borderRadius: 3,
+                  borderRadius: 1,
                 },
                 "&:hover fieldset": { borderColor: meterColors.borderStrong },
                 "&.Mui-focused fieldset": {
@@ -183,7 +183,7 @@ const NicknamePage = () => {
             sx={{
               maxWidth: 320,
               height: 56,
-              borderRadius: 999,
+              borderRadius: 1,
               fontSize: "1.1rem",
               fontWeight: 800,
               color: "#000",

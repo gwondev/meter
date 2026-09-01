@@ -7,14 +7,17 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.transaction.support.TransactionSynchronization;
+import org.springframework.transaction.support.TransactionSynchronizationManager;
 
 import java.time.LocalDateTime;
 
 /**
  * 모듈 신호 수신 지점 — 여기를 통과한 신호만 DB 에 기록된다.
  *
- * <p>등록되지 않은 시리얼의 신호가 들어오면 모듈을 자동 생성한다(위치는 미지정).
- * 즉 «신호가 감지되면 그때부터 데이터가 쌓이기 시작» 하며, 더미 시드는 사용하지 않는다.
+ * <p>이미 등록된 시리얼 → 활성(lastSignalAt)만 갱신.
+ * 새 시리얼 → 자동 등록 + 사용자 현재 위치 기준 50m 반경 랜덤 LAT/LON.
+ * 등록 직후(커밋 후) 유저/모듈 ID 를 1부터 재정렬한다.
  */
 @Service
 @RequiredArgsConstructor
@@ -22,12 +25,12 @@ import java.time.LocalDateTime;
 public class ModuleSignalService {
 
     private final ModuleRepository moduleRepository;
+    private final GeoAnchorService geoAnchorService;
+    private final TableIdCompactionService tableIdCompactionService;
 
-    /** depthCm 미지정 모듈의 기본 용기 깊이 — heightCm → fillPercent 환산에 쓴다. */
     @Value("${meter.module.default-depth-cm:60}")
     private double defaultDepthCm;
 
-    /** 모듈1(m*) 높이 신호. heightCm 는 센서에서 내용물 표면까지의 빈 거리. */
     @Transactional
     public void applyHeight(String serialNumber, double heightCm) {
         Module module = findOrCreate(serialNumber);
@@ -39,7 +42,6 @@ public class ModuleSignalService {
                 serialNumber, heightCm, module.getFillPercent());
     }
 
-    /** 모듈2(r*) 영상 판정 신호. fillPercent 는 0(수거 불필요)~100(즉시 수거). */
     @Transactional
     public Module applyVisionReport(String serialNumber, double fillPercent, String imageUrl) {
         Module module = findOrCreate(serialNumber);
@@ -53,7 +55,6 @@ public class ModuleSignalService {
         return saved;
     }
 
-    /** 페이로드에 측정값이 없는 생존 신호 — 수신 시각만 갱신한다. */
     @Transactional
     public void touch(String serialNumber) {
         Module module = findOrCreate(serialNumber);
@@ -64,18 +65,45 @@ public class ModuleSignalService {
     private Module findOrCreate(String serialNumber) {
         String serial = serialNumber.trim();
         return moduleRepository.findBySerialNumber(serial).orElseGet(() -> {
+            double[] pos = geoAnchorService.randomNearAnchor();
             Module created = Module.builder()
                     .serialNumber(serial)
                     .deviceType(Module.deviceTypeFromSerial(serial))
                     .type("GENERAL")
+                    .lat(round6(pos[0]))
+                    .lon(round6(pos[1]))
                     .createdAt(LocalDateTime.now())
                     .build();
-            log.info("모듈 자동 등록 serial={} deviceType={}", serial, created.getDeviceType());
-            return moduleRepository.save(created);
+            Module saved = moduleRepository.save(created);
+            scheduleIdCompactionAfterCommit();
+            log.info("모듈 자동 등록 serial={} deviceType={} lat={} lon={}",
+                    serial, saved.getDeviceType(), saved.getLat(), saved.getLon());
+            return saved;
         });
     }
 
-    /** 빈 거리가 작을수록 가득 찬 상태이므로 (깊이 - 빈거리) / 깊이 로 환산한다. */
+    /** 커밋 후 ID 를 1부터 연속으로 재정렬 — 트랜잭션 중 ALTER 충돌을 피한다. */
+    private void scheduleIdCompactionAfterCommit() {
+        if (!TransactionSynchronizationManager.isSynchronizationActive()) {
+            tableIdCompactionService.compactAllAfterDelete();
+            return;
+        }
+        TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+            @Override
+            public void afterCommit() {
+                try {
+                    tableIdCompactionService.compactAllAfterDelete();
+                } catch (Exception e) {
+                    log.warn("ID compaction after module create failed: {}", e.getMessage());
+                }
+            }
+        });
+    }
+
+    private static double round6(double v) {
+        return Math.round(v * 1_000_000d) / 1_000_000d;
+    }
+
     private Double toFillPercent(double heightCm, Double depthCm) {
         double depth = (depthCm != null && depthCm > 0) ? depthCm : defaultDepthCm;
         if (depth <= 0) {

@@ -2,17 +2,19 @@ package com.meter.backend.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.meter.backend.entity.Module;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
 /**
- * 모듈1(m*) MQTT 수신 처리 — 토픽 {@code meter/{serial}/status}.
+ * MQTT {@code meter/{serial}/status} 수신 처리.
  *
- * <p>페이로드는 단일 형태이며 status 구분이 없다.
- * <pre>{"moduleSerial":"m1","heightCm":25.3}</pre>
- *
- * <p>heightCm 이 없거나 음수(무효 측정)면 생존 신호로만 처리한다.
+ * <p>토픽 형식은 m* / r* 가 같다. 계열은 시리얼 접두어로 나눈다.
+ * <ul>
+ *   <li>{@code m*} → HEIGHT_SENSOR — heightCm 로 적재율 환산</li>
+ *   <li>{@code r*} → VISION_CAM — fillPercent(또는 생존 touch). 사진은 HTTP report 권장</li>
+ * </ul>
  */
 @Service
 @RequiredArgsConstructor
@@ -25,8 +27,24 @@ public class ModuleIotMqttHandler {
     public void handleStatusPayload(String serialNumber, String payload) {
         try {
             JsonNode root = objectMapper.readTree(payload);
-            double heightCm = readHeightCm(root);
+            String deviceType = Module.deviceTypeFromSerial(serialNumber);
 
+            if (Module.DEVICE_VISION_CAM.equals(deviceType)) {
+                /* r* — 카메라 계열. MQTT 로 fillPercent 만 와도 활성화된다. */
+                if (root.hasNonNull("fillPercent") || root.hasNonNull("fill_percent")) {
+                    double fill = root.hasNonNull("fillPercent")
+                            ? root.path("fillPercent").asDouble(0)
+                            : root.path("fill_percent").asDouble(0);
+                    moduleSignalService.applyVisionReport(serialNumber, fill, null);
+                } else {
+                    moduleSignalService.touch(serialNumber);
+                    log.debug("MQTT r* 생존 신호 serial={}", serialNumber);
+                }
+                return;
+            }
+
+            /* m* — 초음파 높이 */
+            double heightCm = readHeightCm(root);
             if (heightCm >= 0) {
                 moduleSignalService.applyHeight(serialNumber, heightCm);
             } else {

@@ -39,6 +39,8 @@ import CleaningServicesRoundedIcon from "@mui/icons-material/CleaningServicesRou
 import ArrowBackIosNewRoundedIcon from "@mui/icons-material/ArrowBackIosNewRounded";
 import HubRoundedIcon from "@mui/icons-material/HubRounded";
 import PersonRoundedIcon from "@mui/icons-material/PersonRounded";
+import LocationPickerDialog from "../components/LocationPickerDialog";
+import MapRoundedIcon from "@mui/icons-material/MapRounded";
 import { meterColors } from "../theme/meterTheme";
 
 const cellHead = {
@@ -53,6 +55,7 @@ const cellBody = {
 };
 
 const MODULE_TYPE_OPTIONS = ["CLOTHING", "PLASTIC", "CAN", "MEDICINE", "GENERAL"];
+const square = { borderRadius: 1 };
 
 const Manage = () => {
   const navigate = useNavigate();
@@ -89,6 +92,8 @@ const Manage = () => {
   });
   const [moduleDeleteTarget, setModuleDeleteTarget] = useState(null);
   const [saving, setSaving] = useState(false);
+  const [locationPickerOpen, setLocationPickerOpen] = useState(false);
+  const [mqttFilter, setMqttFilter] = useState("ALL");
 
   const loadOverview = useCallback(async () => {
     try {
@@ -96,7 +101,7 @@ const Manage = () => {
       setError("");
       const [data, logs] = await Promise.all([
         apiFetch("/admin/overview"),
-        apiFetch("/mosquitto/logs?limit=50"),
+        apiFetch("/mosquitto/logs?limit=200"),
       ]);
       setOverview({
         users: data?.users || [],
@@ -119,10 +124,20 @@ const Manage = () => {
     }
     loadOverview();
     const t = setInterval(() => {
-      apiFetch("/mosquitto/logs?limit=50")
+      apiFetch("/mosquitto/logs?limit=200")
         .then((logs) => setMqttLogs(Array.isArray(logs) ? logs : []))
         .catch(() => {});
-    }, 5000);
+      apiFetch("/admin/overview")
+        .then((data) => {
+          if (!data) return;
+          setOverview({
+            users: data.users || [],
+            modules: data.modules || [],
+            disposalRecords: data.disposalRecords || [],
+          });
+        })
+        .catch(() => {});
+    }, 4000);
     return () => clearInterval(t);
   }, [currentUser?.role, navigate, loadOverview]);
 
@@ -270,6 +285,14 @@ const Manage = () => {
 
   if (currentUser?.role !== "ADMIN") return null;
 
+  const filteredMqtt = mqttLogs.filter((row) => {
+    if (mqttFilter === "ALL") return true;
+    if (mqttFilter === "IN") return row.direction === "IN";
+    return row.direction !== "IN";
+  });
+  const inCount = mqttLogs.filter((r) => r.direction === "IN").length;
+  const outCount = mqttLogs.length - inCount;
+
   return (
     <Box
       component={motion.div}
@@ -282,7 +305,7 @@ const Manage = () => {
         <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ xs: "stretch", sm: "flex-start" }} sx={{ mb: { xs: 1.5, sm: 2 } }} gap={2}>
           <Box sx={{ minWidth: 0 }}>
             <Typography variant="h4" sx={{ fontWeight: 900, fontSize: { xs: "1.35rem", sm: "2rem" }, lineHeight: 1.2 }}>
-              DB 관리
+              관리자페이지
             </Typography>
             <Typography
               sx={{
@@ -302,91 +325,120 @@ const Manage = () => {
             <Button
               startIcon={<ArrowBackIosNewRoundedIcon sx={{ fontSize: 16 }} />}
               variant="outlined"
-              sx={{ color: "#ffffff", borderColor: "rgba(124,255,114,0.35)", minHeight: 40, flex: { xs: 1, sm: "none" }, minWidth: { xs: "calc(50% - 4px)", sm: "auto" } }}
+              sx={{ ...square, color: "#ffffff", borderColor: "rgba(255,255,255,0.35)", minHeight: 40, flex: { xs: 1, sm: "none" }, minWidth: { xs: "calc(50% - 4px)", sm: "auto" } }}
               onClick={() => navigate("/map")}
             >
               Map
             </Button>
-            <Button onClick={loadOverview} sx={{ color: "#000", bgcolor: "#ffffff", fontWeight: 800, minHeight: 40, flex: { xs: 1, sm: "none" }, minWidth: { xs: "calc(50% - 4px)", sm: "auto" }, px: { sm: 2 } }}>
+            <Button onClick={loadOverview} sx={{ ...square, color: "#000", bgcolor: "#ffffff", fontWeight: 800, minHeight: 40, flex: { xs: 1, sm: "none" }, minWidth: { xs: "calc(50% - 4px)", sm: "auto" }, px: { sm: 2 } }}>
               새로고침
             </Button>
           </Stack>
         </Stack>
 
         <Stack spacing={1.2} sx={{ mb: { xs: 1.5, sm: 2 } }}>
-          {loading && <Alert severity="info" sx={{ py: 0.5, fontSize: { xs: "0.8rem", sm: "1rem" } }}>로딩 중...</Alert>}
-          {error && <Alert severity="error" sx={{ fontSize: { xs: "0.8rem", sm: "1rem" } }}>{error}</Alert>}
-          {success && <Alert severity="success" sx={{ fontSize: { xs: "0.8rem", sm: "1rem" } }}>{success}</Alert>}
+          {loading && <Alert severity="info" sx={{ ...square, py: 0.5, fontSize: { xs: "0.8rem", sm: "1rem" } }}>로딩 중...</Alert>}
+          {error && <Alert severity="error" sx={{ ...square, fontSize: { xs: "0.8rem", sm: "1rem" } }}>{error}</Alert>}
+          {success && <Alert severity="success" sx={{ ...square, fontSize: { xs: "0.8rem", sm: "1rem" } }}>{success}</Alert>}
         </Stack>
 
         <Paper
           sx={{
+            ...square,
             p: { xs: 1.25, sm: 1.75 },
             mb: 2,
             bgcolor: "rgba(255,255,255,0.04)",
-            border: "1px solid rgba(124,255,114,0.22)",
-            borderRadius: 2.5,
+            border: "1px solid rgba(255,255,255,0.18)",
           }}
         >
-          <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.2 }}>
+          <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1 }} flexWrap="wrap" useFlexGap>
             <HubRoundedIcon sx={{ color: "#7cff72", fontSize: 22 }} />
-            <Typography sx={{ color: "#fff", fontWeight: 900, fontSize: { xs: "0.95rem", sm: "1.05rem" } }}>
+            <Typography sx={{ color: "#fff", fontWeight: 900, fontSize: { xs: "0.95rem", sm: "1.05rem" }, whiteSpace: "nowrap" }}>
               MQTT 수신 로그
             </Typography>
-            <Chip
-              size="small"
-              label={`최근 ${mqttLogs.length}건`}
-              sx={{ ml: "auto", bgcolor: "rgba(124,255,114,0.12)", color: "#7cff72", fontWeight: 800, fontSize: "0.68rem" }}
-            />
+            <Chip size="small" label={`전체 ${mqttLogs.length}`} sx={{ ...square, bgcolor: "rgba(255,255,255,0.08)", color: "#fff", fontWeight: 800, fontSize: "0.65rem" }} />
+            <Chip size="small" label={`IN ${inCount}`} sx={{ ...square, bgcolor: "rgba(124,255,114,0.12)", color: "#7cff72", fontWeight: 800, fontSize: "0.65rem" }} />
+            <Chip size="small" label={`OUT ${outCount}`} sx={{ ...square, bgcolor: "rgba(255,152,0,0.12)", color: "#ffb74d", fontWeight: 800, fontSize: "0.65rem" }} />
           </Stack>
-          <Stack spacing={0.6} sx={{ maxHeight: { xs: 280, sm: 360 }, overflow: "auto" }}>
-            {mqttLogs.map((row, idx) => (
-              <Box
-                key={`${row.time}-${idx}`}
+          <Stack direction="row" spacing={0.6} sx={{ mb: 1 }}>
+            {["ALL", "IN", "OUT"].map((f) => (
+              <Button
+                key={f}
+                size="small"
+                onClick={() => setMqttFilter(f)}
                 sx={{
-                  p: 1,
-                  borderRadius: 1.5,
-                  bgcolor: "rgba(0,0,0,0.35)",
-                  border: "1px solid rgba(255,255,255,0.08)",
+                  ...square,
+                  minWidth: 52,
+                  py: 0.35,
+                  fontWeight: 800,
+                  fontSize: "0.7rem",
+                  color: mqttFilter === f ? "#000" : "#fff",
+                  bgcolor: mqttFilter === f ? "#fff" : "transparent",
+                  border: "1px solid rgba(255,255,255,0.25)",
                 }}
               >
-                <Stack direction="row" spacing={0.8} alignItems="center" flexWrap="wrap" sx={{ mb: 0.4 }}>
-                  <Chip
-                    size="small"
-                    label={row.direction || "?"}
-                    sx={{
-                      height: 20,
-                      fontSize: "0.62rem",
-                      fontWeight: 900,
-                      bgcolor: row.direction === "IN" ? "rgba(124,255,114,0.18)" : "rgba(255,152,0,0.18)",
-                      color: row.direction === "IN" ? "#7cff72" : "#ffb74d",
-                    }}
-                  />
-                  <Typography sx={{ fontSize: "0.68rem", color: "rgba(255,255,255,0.5)" }}>{row.time}</Typography>
-                </Stack>
-                <Typography sx={{ fontSize: { xs: "0.72rem", sm: "0.78rem" }, fontWeight: 800, color: "#fff", wordBreak: "break-all" }}>
-                  {row.topic}
-                </Typography>
-                <Typography sx={{ fontSize: { xs: "0.68rem", sm: "0.74rem" }, color: "rgba(255,255,255,0.78)", mt: 0.3, wordBreak: "break-all" }}>
-                  {row.payload}
-                </Typography>
-              </Box>
+                {f}
+              </Button>
             ))}
-            {mqttLogs.length === 0 && (
-              <Typography sx={{ fontSize: "0.8rem", color: "rgba(255,255,255,0.55)", py: 2, textAlign: "center" }}>
-                MQTT 로그 없음
-              </Typography>
-            )}
           </Stack>
+          <Box sx={{ maxHeight: { xs: 320, sm: 420 }, overflow: "auto", border: "1px solid rgba(255,255,255,0.08)", ...square }}>
+            <Table size="small" stickyHeader sx={{ minWidth: 480 }}>
+              <TableHead>
+                <TableRow>
+                  {["DIR", "시간", "토픽", "페이로드"].map((h) => (
+                    <TableCell key={h} sx={{ ...cellHead, py: 0.6, fontSize: "0.68rem", whiteSpace: "nowrap" }}>
+                      {h}
+                    </TableCell>
+                  ))}
+                </TableRow>
+              </TableHead>
+              <TableBody>
+                {filteredMqtt.map((row, idx) => (
+                  <TableRow key={`${row.time}-${idx}`} sx={{ "&:nth-of-type(odd)": { bgcolor: "rgba(255,255,255,0.03)" } }}>
+                    <TableCell sx={{ ...cellBody, py: 0.55, width: 52 }}>
+                      <Chip
+                        size="small"
+                        label={row.direction || "?"}
+                        sx={{
+                          ...square,
+                          height: 20,
+                          fontSize: "0.6rem",
+                          fontWeight: 900,
+                          bgcolor: row.direction === "IN" ? "rgba(124,255,114,0.18)" : "rgba(255,152,0,0.18)",
+                          color: row.direction === "IN" ? "#7cff72" : "#ffb74d",
+                        }}
+                      />
+                    </TableCell>
+                    <TableCell sx={{ ...cellBody, py: 0.55, fontSize: "0.65rem", color: "rgba(255,255,255,0.5)", whiteSpace: "nowrap" }}>
+                      {String(row.time || "").replace("T", " ").slice(0, 19)}
+                    </TableCell>
+                    <TableCell sx={{ ...cellBody, py: 0.55, fontSize: "0.7rem", fontWeight: 700, maxWidth: 160 }}>
+                      {row.topic}
+                    </TableCell>
+                    <TableCell sx={{ ...cellBody, py: 0.55, fontSize: "0.68rem", color: "rgba(255,255,255,0.8)", maxWidth: 280 }}>
+                      {row.payload}
+                    </TableCell>
+                  </TableRow>
+                ))}
+                {filteredMqtt.length === 0 && (
+                  <TableRow>
+                    <TableCell colSpan={4} sx={{ ...cellBody, textAlign: "center", py: 3, color: "rgba(255,255,255,0.5)" }}>
+                      MQTT 로그 없음
+                    </TableCell>
+                  </TableRow>
+                )}
+              </TableBody>
+            </Table>
+          </Box>
         </Paper>
 
         <Paper
           sx={{
+            ...square,
             p: { xs: 1.25, sm: 1.75 },
             mb: 2,
             bgcolor: "rgba(255,255,255,0.04)",
             border: "1px solid rgba(255,255,255,0.12)",
-            borderRadius: 2.5,
           }}
         >
           <Stack direction="row" alignItems="center" spacing={1} sx={{ mb: 1.5 }}>
@@ -397,34 +449,38 @@ const Manage = () => {
             <Chip
               size="small"
               label={`${overview.users.length}명`}
-              sx={{ ml: "auto", bgcolor: "rgba(255,255,255,0.08)", color: "#fff", fontWeight: 800, fontSize: "0.68rem" }}
+              sx={{ ...square, ml: "auto", bgcolor: "rgba(255,255,255,0.08)", color: "#fff", fontWeight: 800, fontSize: "0.68rem" }}
             />
           </Stack>
           <Grid container spacing={1.2}>
-            {overview.users.map((u) => (
+            {[...overview.users].sort((a, b) => (a.id ?? 0) - (b.id ?? 0)).map((u) => (
               <Grid item xs={12} sm={6} key={u.id}>
                 <Box
                   sx={{
+                    ...square,
                     p: 1.25,
-                    borderRadius: 2,
                     bgcolor: "rgba(0,0,0,0.35)",
                     border: `1px solid ${u.role === "ADMIN" ? "rgba(124,255,114,0.35)" : "rgba(255,255,255,0.1)"}`,
                   }}
                 >
                   <Stack direction="row" justifyContent="space-between" alignItems="flex-start" spacing={1}>
                     <Box sx={{ minWidth: 0 }}>
+                      <Typography sx={{ fontWeight: 900, fontSize: "0.78rem", color: "#7cff72", mb: 0.35 }}>
+                        ID {u.id}
+                      </Typography>
                       <Typography sx={{ fontWeight: 900, fontSize: "0.95rem", color: "#fff" }} noWrap>
                         {u.nickname || "닉네임 없음"}
                       </Typography>
                       <Typography sx={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.5)", mt: 0.3 }} noWrap>
-                        {u.email || `ID ${u.id}`}
+                        {u.email || "—"}
                       </Typography>
                       <Stack direction="row" spacing={0.5} sx={{ mt: 0.8 }}>
-                        <Chip size="small" label={u.role || "USER"} sx={{ height: 22, fontSize: "0.62rem", fontWeight: 800 }} />
+                        <Chip size="small" label={u.role || "USER"} sx={{ ...square, height: 22, fontSize: "0.62rem", fontWeight: 800 }} />
                         <Chip
                           size="small"
                           label={u.status || "ACTIVE"}
                           sx={{
+                            ...square,
                             height: 22,
                             fontSize: "0.62rem",
                             fontWeight: 800,
@@ -435,12 +491,12 @@ const Manage = () => {
                       </Stack>
                     </Box>
                     <Stack direction="row" spacing={0.2}>
-                      <IconButton size="small" sx={{ color: "#fff" }} onClick={() => openUserEdit(u)}>
+                      <IconButton size="small" sx={{ color: "#fff", borderRadius: 1 }} onClick={() => openUserEdit(u)}>
                         <EditRoundedIcon fontSize="small" />
                       </IconButton>
                       <IconButton
                         size="small"
-                        sx={{ color: "#ff8a8a" }}
+                        sx={{ color: "#ff8a8a", borderRadius: 1 }}
                         disabled={currentUser?.id != null && u.id === currentUser.id}
                         onClick={() => setUserDeleteTarget(u)}
                       >
@@ -505,11 +561,11 @@ const Manage = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {overview.modules.map((m) => (
+              {[...overview.modules].sort((a, b) => (a.id ?? 0) - (b.id ?? 0)).map((m) => (
                 <TableRow key={m.id} sx={{ "&:nth-of-type(odd)": { bgcolor: "rgba(255,255,255,0.03)" } }}>
-                  <TableCell sx={cellBody}>{m.id}</TableCell>
+                  <TableCell sx={{ ...cellBody, fontWeight: 900, color: "#7cff72" }}>{m.id}</TableCell>
                   <TableCell sx={cellBody}>{m.serialNumber}</TableCell>
-                  <TableCell sx={cellBody}>{m.deviceType === "VISION_CAM" ? "영상" : "초음파"}</TableCell>
+                  <TableCell sx={cellBody}>{m.deviceType === "VISION_CAM" ? "카메라" : "초음파"}</TableCell>
                   <TableCell sx={cellBody}>
                     <Box component="span" sx={{ fontWeight: 700 }}>{m.type}</Box>
                     <Box component="span" sx={{ display: "block", fontSize: "0.72rem", opacity: 0.78, mt: 0.25, lineHeight: 1.3 }}>
@@ -526,10 +582,10 @@ const Manage = () => {
                   <TableCell sx={cellBody}>{m.lat ?? "—"}</TableCell>
                   <TableCell sx={cellBody}>{m.lon ?? "—"}</TableCell>
                   <TableCell sx={cellBody} align="right">
-                    <IconButton size="small" sx={{ color: "#ffffff" }} onClick={() => openModuleDialog(m)}>
+                    <IconButton size="small" sx={{ color: "#ffffff", borderRadius: 1 }} onClick={() => openModuleDialog(m)}>
                       <EditRoundedIcon fontSize="small" />
                     </IconButton>
-                    <IconButton size="small" sx={{ color: "#ff8a8a" }} onClick={() => setModuleDeleteTarget(m)}>
+                    <IconButton size="small" sx={{ color: "#ff8a8a", borderRadius: 1 }} onClick={() => setModuleDeleteTarget(m)}>
                       <DeleteOutlineRoundedIcon fontSize="small" />
                     </IconButton>
                   </TableCell>
@@ -599,9 +655,16 @@ const Manage = () => {
         <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
           <TextField label="serialNumber*" value={moduleForm.serialNumber} onChange={(e) => setModuleForm((f) => ({ ...f, serialNumber: e.target.value }))} fullWidth sx={{ input: { color: "#fff" } }} />
           <TextField label="organization" value={moduleForm.organization} onChange={(e) => setModuleForm((f) => ({ ...f, organization: e.target.value }))} fullWidth sx={{ input: { color: "#fff" } }} />
-          <Stack direction="row" spacing={2}>
+          <Stack direction="row" spacing={1} alignItems="flex-start">
             <TextField label="lat" value={moduleForm.lat} onChange={(e) => setModuleForm((f) => ({ ...f, lat: e.target.value }))} fullWidth sx={{ input: { color: "#fff" } }} />
             <TextField label="lon" value={moduleForm.lon} onChange={(e) => setModuleForm((f) => ({ ...f, lon: e.target.value }))} fullWidth sx={{ input: { color: "#fff" } }} />
+            <Button
+              startIcon={<MapRoundedIcon />}
+              onClick={() => setLocationPickerOpen(true)}
+              sx={{ ...square, minWidth: 108, height: 56, color: "#000", bgcolor: "#fff", fontWeight: 800, whiteSpace: "nowrap" }}
+            >
+              지도
+            </Button>
           </Stack>
           <FormControl fullWidth>
             <InputLabel sx={{ color: "rgba(255,255,255,0.7)" }}>type</InputLabel>
@@ -643,7 +706,7 @@ const Manage = () => {
         </DialogActions>
       </Dialog>
 
-      <Dialog open={!!moduleDeleteTarget} onClose={() => !saving && setModuleDeleteTarget(null)} PaperProps={{ sx: { bgcolor: "#121816", color: "#fff" } }}>
+      <Dialog open={!!moduleDeleteTarget} onClose={() => !saving && setModuleDeleteTarget(null)} PaperProps={{ sx: { bgcolor: "#121816", color: "#fff", borderRadius: 1 } }}>
         <DialogTitle>모듈 삭제</DialogTitle>
         <DialogContent>
           <Typography>
@@ -659,6 +722,17 @@ const Manage = () => {
           </Button>
         </DialogActions>
       </Dialog>
+
+      <LocationPickerDialog
+        open={locationPickerOpen}
+        lat={moduleForm.lat}
+        lon={moduleForm.lon}
+        onClose={() => setLocationPickerOpen(false)}
+        onConfirm={({ lat, lon }) => {
+          setModuleForm((f) => ({ ...f, lat: String(lat), lon: String(lon) }));
+          setLocationPickerOpen(false);
+        }}
+      />
     </Box>
   );
 };

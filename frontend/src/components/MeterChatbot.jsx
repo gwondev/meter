@@ -96,7 +96,7 @@ export default function MeterChatbot({ embed = false }) {
           flexDirection: "column",
           bgcolor: meterColors.bgElevated,
           border: `1px solid ${meterColors.borderStrong}`,
-          borderRadius: 3,
+          borderRadius: 1,
           overflow: "hidden",
           boxShadow: "0 12px 40px rgba(0,0,0,0.55)",
           mb: embed ? 1 : 0,
@@ -117,7 +117,7 @@ export default function MeterChatbot({ embed = false }) {
             sx={{
               width: 42,
               height: 42,
-              borderRadius: "50%",
+              borderRadius: 1,
               display: "grid",
               placeItems: "center",
               bgcolor: "rgba(255,255,255,0.08)",
@@ -154,7 +154,7 @@ export default function MeterChatbot({ embed = false }) {
                     maxWidth: "92%",
                     px: 1.5,
                     py: 1.1,
-                    borderRadius: m.role === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
+                    borderRadius: 1,
                     bgcolor: m.role === "user" ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.05)",
                     border: `1px solid ${meterColors.border}`,
                     ml: m.role === "user" ? "auto" : 0,
@@ -183,7 +183,7 @@ export default function MeterChatbot({ embed = false }) {
               sx={{
                 fontSize: "0.72rem",
                 textTransform: "none",
-                borderRadius: 999,
+                borderRadius: 1,
                 color: meterColors.secondary,
                 border: `1px solid ${meterColors.border}`,
                 px: 1.1,
@@ -238,6 +238,7 @@ export default function MeterChatbot({ embed = false }) {
         sx={{
           width: embed ? { xs: 48, sm: 56 } : 64,
           height: embed ? { xs: 48, sm: 56 } : 64,
+          borderRadius: 1,
           bgcolor: meterColors.primary,
           color: meterColors.bg,
           border: `2px solid ${meterColors.borderStrong}`,

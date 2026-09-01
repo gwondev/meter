@@ -28,7 +28,39 @@ export const meterThemeOptions = {
     secondary: { main: meterColors.secondary },
     text: { primary: meterColors.primary, secondary: meterColors.secondary },
   },
-  shape: { borderRadius: 12 },
+  shape: { borderRadius: 4 }, // 거의 네모 — pill/둥근 카드 대신 사각 테마
+  components: {
+    MuiButton: {
+      styleOverrides: {
+        root: { borderRadius: 4, textTransform: "none" },
+      },
+    },
+    MuiPaper: {
+      styleOverrides: {
+        root: { borderRadius: 4 },
+      },
+    },
+    MuiChip: {
+      styleOverrides: {
+        root: { borderRadius: 4 },
+      },
+    },
+    MuiDialog: {
+      styleOverrides: {
+        paper: { borderRadius: 4 },
+      },
+    },
+    MuiOutlinedInput: {
+      styleOverrides: {
+        root: { borderRadius: 4 },
+      },
+    },
+    MuiIconButton: {
+      styleOverrides: {
+        root: { borderRadius: 4 },
+      },
+    },
+  },
   typography: {
     fontFamily: '"Pretendard", "Segoe UI", system-ui, sans-serif',
   },
@@ -91,8 +123,8 @@ export function moduleDisplayState(module) {
   return { active: true, label: `여유 ${fill}%`, color: meterColors.fillGreen, level: "ok", fillPercent: fill };
 }
 
-/** 디바이스 계열 표기 — 명세상 m* 는 초음파, r* 는 카메라. */
+/** 디바이스 계열 표기 — 시리얼 접두어: m* 초음파, r* 카메라. 토픽은 같아도 계열은 시리얼로 갈린다. */
 export function deviceTypeLabel(module) {
-  if (module?.deviceType === "VISION_CAM") return "영상 판정 (라즈베리파이)";
+  if (module?.deviceType === "VISION_CAM") return "카메라 (라즈베리파이)";
   return "초음파 높이 (ESP32)";
 }

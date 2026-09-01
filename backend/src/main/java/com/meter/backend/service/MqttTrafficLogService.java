@@ -27,7 +27,7 @@ public class MqttTrafficLogService {
     }
 
     public synchronized List<Map<String, Object>> latest(int limit) {
-        int safeLimit = Math.max(1, Math.min(limit, 100));
+        int safeLimit = Math.max(1, Math.min(limit, MAX_LOGS));
         List<Map<String, Object>> out = new ArrayList<>(safeLimit);
         int i = 0;
         for (Map<String, Object> row : logs) {

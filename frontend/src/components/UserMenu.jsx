@@ -43,7 +43,7 @@ export default function UserMenu() {
           border: `1px solid ${meterColors.borderStrong}`,
           bgcolor: "#000000",
           color: meterColors.primary,
-          borderRadius: 2,
+          borderRadius: 1,
           "&:hover": { bgcolor: "#111111", borderColor: meterColors.borderStrong },
         }}
       >
@@ -84,7 +84,7 @@ export default function UserMenu() {
               <StorageRoundedIcon sx={{ color: meterColors.primaryMuted }} />
             </ListItemIcon>
             <ListItemText primaryTypographyProps={{ fontWeight: 700, fontSize: "0.88rem" }}>
-              DB 관리
+              관리자페이지
             </ListItemText>
           </MenuItem>
         )}

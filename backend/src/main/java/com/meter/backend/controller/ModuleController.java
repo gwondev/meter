@@ -5,6 +5,7 @@ import com.meter.backend.entity.Module;
 import com.meter.backend.repository.DisposalRecordRepository;
 import com.meter.backend.repository.ModuleRepository;
 import com.meter.backend.repository.RewardHistoryRepository;
+import com.meter.backend.service.GeoAnchorService;
 import com.meter.backend.service.ModuleMaintenanceService;
 import com.meter.backend.service.TableIdCompactionService;
 import lombok.RequiredArgsConstructor;
@@ -37,6 +38,7 @@ public class ModuleController {
     private final RewardHistoryRepository rewardHistoryRepository;
     private final TableIdCompactionService tableIdCompactionService;
     private final ModuleMaintenanceService moduleMaintenanceService;
+    private final GeoAnchorService geoAnchorService;
 
     /** 지도·목록용 전체 모듈. 신호가 없는 모듈도 «신호 대기중» 으로 함께 내려간다. */
     @GetMapping
@@ -65,7 +67,18 @@ public class ModuleController {
                 .depthCm(doubleOrNull(body.get("depthCm")))
                 .createdAt(LocalDateTime.now())
                 .build();
-        return toDto(moduleRepository.save(module));
+
+        /* lat/lon 미입력 시 사용자 위치 기준 50m 랜덤 */
+        if (module.getLat() == null || module.getLon() == null) {
+            double[] pos = geoAnchorService.randomNearAnchor();
+            if (module.getLat() == null) module.setLat(Math.round(pos[0] * 1_000_000d) / 1_000_000d);
+            if (module.getLon() == null) module.setLon(Math.round(pos[1] * 1_000_000d) / 1_000_000d);
+        }
+
+        Module saved = moduleRepository.save(module);
+        moduleRepository.flush();
+        tableIdCompactionService.compactAllAfterDelete();
+        return toDto(moduleRepository.findBySerialNumber(serialNumber).orElse(saved));
     }
 
     @PutMapping("/{id}")
