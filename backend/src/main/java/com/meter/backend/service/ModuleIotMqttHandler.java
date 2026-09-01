@@ -10,11 +10,8 @@ import org.springframework.stereotype.Service;
 /**
  * MQTT {@code meter/{serial}/status} 수신 처리.
  *
- * <p>토픽 형식은 m* / r* 가 같다. 계열은 시리얼 접두어로 나눈다.
- * <ul>
- *   <li>{@code m*} → HEIGHT_SENSOR — heightCm 로 적재율 환산</li>
- *   <li>{@code r*} → VISION_CAM — fillPercent(또는 생존 touch). 사진은 HTTP report 권장</li>
- * </ul>
+ * <p>M·R 모두 {@code fillPercent}(0~100) 를 보낸다. 계열은 시리얼 접두어(m/r)로만 구분한다.
+ * 구형 펌웨어의 {@code heightCm} 은 하위 호환으로만 환산한다.
  */
 @Service
 @RequiredArgsConstructor
@@ -27,36 +24,36 @@ public class ModuleIotMqttHandler {
     public void handleStatusPayload(String serialNumber, String payload) {
         try {
             JsonNode root = objectMapper.readTree(payload);
-            String deviceType = Module.deviceTypeFromSerial(serialNumber);
-
-            if (Module.DEVICE_VISION_CAM.equals(deviceType)) {
-                /* r* — 카메라 계열. MQTT 로 fillPercent 만 와도 활성화된다. */
-                if (root.hasNonNull("fillPercent") || root.hasNonNull("fill_percent")) {
-                    double fill = root.hasNonNull("fillPercent")
-                            ? root.path("fillPercent").asDouble(0)
-                            : root.path("fill_percent").asDouble(0);
-                    moduleSignalService.applyVisionReport(serialNumber, fill, null);
-                } else {
-                    moduleSignalService.touch(serialNumber);
-                    log.debug("MQTT r* 생존 신호 serial={}", serialNumber);
-                }
+            Double fill = readFillPercent(root);
+            if (fill != null) {
+                moduleSignalService.applyFillPercent(serialNumber, fill, null);
                 return;
             }
 
-            /* m* — 초음파 높이 */
+            /* 구형 m* 펌웨어: heightCm → 서버에서 환산 */
             double heightCm = readHeightCm(root);
             if (heightCm >= 0) {
-                moduleSignalService.applyHeight(serialNumber, heightCm);
-            } else {
-                moduleSignalService.touch(serialNumber);
-                log.debug("MQTT 측정값 없음 — 생존 신호로 처리 serial={}", serialNumber);
+                moduleSignalService.applyHeightLegacy(serialNumber, heightCm);
+                return;
             }
+
+            moduleSignalService.touch(serialNumber);
+            log.debug("MQTT 생존 신호 serial={}", serialNumber);
         } catch (Exception e) {
             log.error("MQTT payload 처리 실패 serial={} payload={}", serialNumber, payload, e);
         }
     }
 
-    /** heightCm / height_cm 두 표기를 모두 허용한다. 없으면 -1. */
+    private static Double readFillPercent(JsonNode root) {
+        if (root.hasNonNull("fillPercent")) {
+            return root.path("fillPercent").asDouble();
+        }
+        if (root.hasNonNull("fill_percent")) {
+            return root.path("fill_percent").asDouble();
+        }
+        return null;
+    }
+
     private static double readHeightCm(JsonNode root) {
         if (root.hasNonNull("heightCm")) {
             return root.path("heightCm").asDouble(-1);

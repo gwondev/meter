@@ -92,6 +92,7 @@ const Manage = () => {
     type: "GENERAL",
     depthCm: "",
     dummy: false,
+    series: "M",
     fillPercent: "55",
   });
   const [moduleDeleteTarget, setModuleDeleteTarget] = useState(null);
@@ -159,6 +160,7 @@ const Manage = () => {
         type: m.type ?? "GENERAL",
         depthCm: m.depthCm == null ? "" : String(m.depthCm),
         dummy: Boolean(m.dummy),
+        series: m.deviceType === "VISION_CAM" || String(m.series || "").includes("R") ? "R" : "M",
         fillPercent: m.fillPercent == null ? "55" : String(m.fillPercent),
       });
     } else {
@@ -172,6 +174,7 @@ const Manage = () => {
         type: "GENERAL",
         depthCm: "",
         dummy: false,
+        series: "M",
         fillPercent: "55",
       });
     }
@@ -194,6 +197,8 @@ const Manage = () => {
       };
       if (isDummy) {
         body.fillPercent = moduleForm.fillPercent.trim() === "" ? 55 : Number(moduleForm.fillPercent);
+        body.series = moduleForm.series === "R" ? "R" : "M";
+        body.deviceType = moduleForm.series === "R" ? "VISION_CAM" : "HEIGHT_SENSOR";
       }
       if (editingModule) {
         const path = editingModule.dummy
@@ -610,9 +615,11 @@ const Manage = () => {
                         </Box>
                       )}
                     </TableCell>
-                    <TableCell sx={cellBody}>
-                      {m.dummy ? "더미" : m.deviceType === "VISION_CAM" ? "카메라" : "초음파"}
-                    </TableCell>
+                  <TableCell sx={cellBody}>
+                    {m.dummy
+                      ? (m.series || (m.deviceType === "VISION_CAM" ? "D(R)" : "D(M)"))
+                      : (m.series || (m.deviceType === "VISION_CAM" ? "R" : "M"))}
+                  </TableCell>
                     <TableCell sx={cellBody}>
                       <Box component="span" sx={{ fontWeight: 700 }}>{m.type}</Box>
                       <Box component="span" sx={{ display: "block", fontSize: "0.72rem", opacity: 0.78, mt: 0.25, lineHeight: 1.3 }}>
@@ -754,7 +761,15 @@ const Manage = () => {
       <Dialog open={moduleDialogOpen} onClose={() => !saving && setModuleDialogOpen(false)} fullWidth maxWidth="sm" PaperProps={{ sx: { bgcolor: "#121816", color: "#fff", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 1 } }}>
         <DialogTitle sx={{ fontWeight: 800 }}>{editingModule ? "모듈 수정" : "모듈 추가"}</DialogTitle>
         <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
-          <Stack direction="row" spacing={1} alignItems="center">
+          <Stack direction="column" spacing={1}>
+            {editingModule && (
+              <Typography sx={{ fontSize: "0.75rem", color: editingModule.dummy ? "#ffb74d" : "#7cff72", fontWeight: 700 }}>
+                {editingModule.dummy
+                  ? `더미 · ${editingModule.series || "D(M)"} (ID ${editingModule.id})`
+                  : `실기기 · ${editingModule.series || "M"} (ID ${editingModule.id})`}
+              </Typography>
+            )}
+            <Stack direction="row" spacing={1} alignItems="center">
             {!editingModule && (
               <FormControlLabel
                 control={
@@ -775,7 +790,7 @@ const Manage = () => {
               onChange={(e) => setModuleForm((f) => ({ ...f, serialNumber: e.target.value }))}
               disabled={serialLocked}
               fullWidth
-              helperText={serialLocked ? "실기기 시리얼(m/r)은 수정할 수 없습니다" : moduleForm.dummy ? "예: dummy-park-1" : ""}
+              helperText={serialLocked ? "실기기 시리얼(m/r)은 수정할 수 없습니다" : moduleForm.dummy ? "예: dm1, dr1 (m/r 접두어 금지)" : ""}
               FormHelperTextProps={{ sx: { color: "rgba(255,255,255,0.5)" } }}
               sx={{
                 input: { color: "#fff" },
@@ -788,6 +803,21 @@ const Manage = () => {
               }}
             />
           </Stack>
+          </Stack>
+          {(moduleForm.dummy || editingModule?.dummy) && (
+            <FormControl fullWidth>
+              <InputLabel sx={{ color: "rgba(255,255,255,0.7)" }}>계열 (더미)</InputLabel>
+              <Select
+                label="계열 (더미)"
+                value={moduleForm.series === "R" ? "R" : "M"}
+                onChange={(e) => setModuleForm((f) => ({ ...f, series: e.target.value }))}
+                sx={{ color: "#fff" }}
+              >
+                <MenuItem value="M">D(M) · 부착 모듈</MenuItem>
+                <MenuItem value="R">D(R) · 카메라</MenuItem>
+              </Select>
+            </FormControl>
+          )}
           <TextField label="organization" value={moduleForm.organization} onChange={(e) => setModuleForm((f) => ({ ...f, organization: e.target.value }))} fullWidth sx={{ input: { color: "#fff" } }} />
           <Stack direction="row" spacing={1} alignItems="flex-start">
             <TextField label="lat" value={moduleForm.lat} onChange={(e) => setModuleForm((f) => ({ ...f, lat: e.target.value }))} fullWidth sx={{ input: { color: "#fff" } }} />
@@ -815,34 +845,21 @@ const Manage = () => {
               ))}
             </Select>
           </FormControl>
-          {!moduleForm.dummy && (
-            <TextField
-              label="depthCm (모듈1 용기 깊이)"
-              type="number"
-              value={moduleForm.depthCm}
-              onChange={(e) => setModuleForm((f) => ({ ...f, depthCm: e.target.value }))}
-              fullWidth
-              sx={{ input: { color: "#fff" } }}
-              inputProps={{ min: 1 }}
-              helperText="초음파 높이 → 적재율 환산 기준. 비우면 60cm"
-              FormHelperTextProps={{ sx: { color: "rgba(255,255,255,0.55)" } }}
-            />
-          )}
           {moduleForm.dummy && (
             <TextField
-              label="fillPercent (더미 적재율)"
+              label="fillPercent (적재율 0~100)"
               type="number"
               value={moduleForm.fillPercent}
               onChange={(e) => setModuleForm((f) => ({ ...f, fillPercent: e.target.value }))}
               fullWidth
               sx={{ input: { color: "#fff" } }}
-              inputProps={{ min: 0, max: 100 }}
+              inputProps={{ min: 0, max: 100, step: 0.1 }}
             />
           )}
-          <Typography sx={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.55)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+          <Typography sx={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.55)" }}>
             {moduleForm.dummy
-              ? "더미는 dummy_modules 테이블(별도 ID). 무신호 자동정리 제외. 시리얼에 m/r 접두어 불가."
-              : "실기기는 modules 테이블(별도 ID). m/r 시리얼은 자동등록되며 웹에서 바꿀 수 없습니다."}
+              ? "더미는 임시 데이터(별도 ID). 계열 D(M)/D(R). 무신호 자동정리 제외."
+              : "실기기 m*=M, r*=R. 보드는 fillPercent만 전송. 측정 높이는 웹에 표시하지 않음."}
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>

@@ -18,7 +18,8 @@ import java.util.Map;
 import java.util.Set;
 
 /**
- * 더미 모듈 CRUD — {@code dummy_modules} 전용 ID 공간.
+ * 더미 모듈 CRUD — {@code dummy_modules} 전용 ID.
+ * 계열은 M(HEIGHT_SENSOR) 또는 R(VISION_CAM) — UI 표기 D(M)/D(R).
  */
 @RestController
 @RequestMapping("/api/dummy-modules")
@@ -40,6 +41,7 @@ public class DummyModuleController {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "serialNumber is required");
         }
         assertSerialFree(serialNumber, null);
+        String deviceType = resolveDeviceType(body.get("deviceType"), body.get("series"));
 
         DummyModule module = DummyModule.builder()
                 .serialNumber(serialNumber)
@@ -47,6 +49,7 @@ public class DummyModuleController {
                 .lat(doubleOrNull(body.get("lat")))
                 .lon(doubleOrNull(body.get("lon")))
                 .type(stringOrDefault(body.get("type"), "GENERAL").toUpperCase())
+                .deviceType(deviceType)
                 .depthCm(doubleOrNull(body.get("depthCm")))
                 .fillPercent(doubleOrNull(body.get("fillPercent")))
                 .lastSignalAt(LocalDateTime.now())
@@ -98,6 +101,9 @@ public class DummyModuleController {
             }
             module.setType(type);
         }
+        if (body.containsKey("deviceType") || body.containsKey("series")) {
+            module.setDeviceType(resolveDeviceType(body.get("deviceType"), body.get("series")));
+        }
         if (body.containsKey("depthCm")) {
             module.setDepthCm(doubleOrNull(body.get("depthCm")));
         }
@@ -130,11 +136,35 @@ public class DummyModuleController {
         }
         if (Module.isDeviceSerial(serialNumber)) {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST,
-                    "더미 시리얼은 m/r 접두어를 쓸 수 없습니다 (실기기 전용)");
+                    "더미 시리얼은 m/r 접두어를 쓸 수 없습니다 (실기기 전용). 예: dm1, dr1");
         }
     }
 
+    /** body.deviceType 또는 series=M|R */
+    static String resolveDeviceType(Object deviceTypeRaw, Object seriesRaw) {
+        if (deviceTypeRaw != null) {
+            String dt = deviceTypeRaw.toString().trim().toUpperCase();
+            if (Module.DEVICE_VISION_CAM.equals(dt) || "R".equals(dt) || "CAMERA".equals(dt)) {
+                return Module.DEVICE_VISION_CAM;
+            }
+            if (Module.DEVICE_HEIGHT_SENSOR.equals(dt) || "M".equals(dt) || "MODULE".equals(dt)) {
+                return Module.DEVICE_HEIGHT_SENSOR;
+            }
+        }
+        if (seriesRaw != null) {
+            String s = seriesRaw.toString().trim().toUpperCase();
+            if (s.startsWith("R") || s.contains("(R)")) {
+                return Module.DEVICE_VISION_CAM;
+            }
+        }
+        return Module.DEVICE_HEIGHT_SENSOR;
+    }
+
     static Map<String, Object> toDto(DummyModule module) {
+        String deviceType = module.getDeviceType() == null
+                ? Module.DEVICE_HEIGHT_SENSOR
+                : module.getDeviceType();
+        boolean isR = Module.DEVICE_VISION_CAM.equals(deviceType);
         Map<String, Object> dto = new LinkedHashMap<>();
         dto.put("id", module.getId());
         dto.put("idDisplay", module.getId() == null ? "-" : String.valueOf(module.getId()));
@@ -143,7 +173,8 @@ public class DummyModuleController {
         dto.put("lat", module.getLat());
         dto.put("lon", module.getLon());
         dto.put("type", module.getType());
-        dto.put("deviceType", Module.DEVICE_DUMMY);
+        dto.put("deviceType", deviceType);
+        dto.put("series", isR ? "D(R)" : "D(M)");
         dto.put("dummy", true);
         dto.put("heightCm", null);
         dto.put("depthCm", module.getDepthCm());

@@ -190,7 +190,6 @@ public class ModuleController {
 
     static Map<String, Object> toDto(Module module) {
         Map<String, Object> dto = new LinkedHashMap<>();
-        boolean dummy = module.isDummy() || Module.DEVICE_DUMMY.equals(module.getDeviceType());
         dto.put("id", module.getId());
         dto.put("idDisplay", module.getId() == null ? "-" : String.valueOf(module.getId()));
         dto.put("serialNumber", module.getSerialNumber());
@@ -199,8 +198,10 @@ public class ModuleController {
         dto.put("lon", module.getLon());
         dto.put("type", module.getType());
         dto.put("deviceType", module.getDeviceType());
-        dto.put("dummy", dummy);
-        dto.put("heightCm", module.getHeightCm());
+        boolean isR = Module.DEVICE_VISION_CAM.equals(module.getDeviceType());
+        dto.put("series", isR ? "R" : "M");
+        dto.put("dummy", false);
+        dto.put("heightCm", null);
         dto.put("depthCm", module.getDepthCm());
         dto.put("fillPercent", module.getFillPercent());
         dto.put("lastImageUrl", module.getLastImageUrl());

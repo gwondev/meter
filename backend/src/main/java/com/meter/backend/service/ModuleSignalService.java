@@ -34,27 +34,41 @@ public class ModuleSignalService {
     private double defaultDepthCm;
 
     @Transactional
-    public void applyHeight(String serialNumber, double heightCm) {
+    public void applyFillPercent(String serialNumber, double fillPercent, String imageUrl) {
+        Module module = findOrCreate(serialNumber);
+        module.setFillPercent(clampPercent(fillPercent));
+        module.setHeightCm(null); /* 보드에서 이미 % 환산 — 원본 높이는 보관하지 않음 */
+        if (imageUrl != null && !imageUrl.isBlank()) {
+            module.setLastImageUrl(imageUrl);
+        }
+        module.setLastSignalAt(LocalDateTime.now());
+        moduleRepository.save(module);
+        log.info("signal FILL serial={} deviceType={} fillPercent={}",
+                serialNumber, module.getDeviceType(), module.getFillPercent());
+    }
+
+    /** 구형 펌웨어 heightCm 호환. */
+    @Transactional
+    public void applyHeightLegacy(String serialNumber, double heightCm) {
         Module module = findOrCreate(serialNumber);
         module.setHeightCm(heightCm);
         module.setFillPercent(toFillPercent(heightCm, module.getDepthCm()));
         module.setLastSignalAt(LocalDateTime.now());
         moduleRepository.save(module);
-        log.info("signal HEIGHT serial={} heightCm={} fillPercent={}",
+        log.info("signal HEIGHT(legacy) serial={} heightCm={} fillPercent={}",
                 serialNumber, heightCm, module.getFillPercent());
     }
 
     @Transactional
     public Module applyVisionReport(String serialNumber, double fillPercent, String imageUrl) {
-        Module module = findOrCreate(serialNumber);
-        module.setFillPercent(clampPercent(fillPercent));
-        if (imageUrl != null && !imageUrl.isBlank()) {
-            module.setLastImageUrl(imageUrl);
-        }
-        module.setLastSignalAt(LocalDateTime.now());
-        Module saved = moduleRepository.save(module);
-        log.info("signal VISION serial={} fillPercent={} image={}", serialNumber, fillPercent, imageUrl);
-        return saved;
+        applyFillPercent(serialNumber, fillPercent, imageUrl);
+        return moduleRepository.findBySerialNumber(serialNumber.trim()).orElseThrow();
+    }
+
+    @Deprecated
+    @Transactional
+    public void applyHeight(String serialNumber, double heightCm) {
+        applyHeightLegacy(serialNumber, heightCm);
     }
 
     @Transactional

@@ -7,24 +7,25 @@ import java.time.LocalDateTime;
 /**
  * METER 수거 거점 모듈.
  *
- * <p>두 계열이 하나의 테이블을 공유한다 — 최적 수거 경로가 계열 구분 없이 단일 노드 목록을 다뤄야 하기 때문.
  * <ul>
- *   <li>{@code m*} — 초음파 높이 센서 노드 (ESP32). {@code heightCm} 를 보낸다.</li>
- *   <li>{@code r*} — 영상 판정 노드 (라즈베리파이). {@code fillPercent} 와 사진을 보낸다.</li>
+ *   <li>{@code m*} — M 계열 (부착 모듈). 보드가 {@code fillPercent} 0~100 을 보낸다.</li>
+ *   <li>{@code r*} — R 계열 (카메라). 동일하게 {@code fillPercent} 0~100 (+사진 HTTP).</li>
  * </ul>
  *
- * <p>{@code lastSignalAt} 이 null 이면 아직 신호를 한 번도 받지 못한 «신호 대기중» 상태다.
+ * <p>더미(임시 데이터)는 {@code dummy_modules} 에 두고, 계열은 여전히 M 또는 R 이다(D(M)/D(R)).
  */
 @Entity
 @Table(name = "modules")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Module {
 
-    /** 높이 센서 계열 (m1, m2 …) */
+    /** M 계열 — 부착 모듈 (시리얼 m*) */
     public static final String DEVICE_HEIGHT_SENSOR = "HEIGHT_SENSOR";
-    /** 영상 판정 계열 (r1, r2 …) */
+    /** R 계열 — 카메라 (시리얼 r*) */
     public static final String DEVICE_VISION_CAM = "VISION_CAM";
-    /** 관리자 더미 (지도·경로 테스트용, 자동 삭제 안 함) */
+
+    /** @deprecated 더미는 deviceType=M/R + dummy 플래그. 레거시 값만 잔존. */
+    @Deprecated
     public static final String DEVICE_DUMMY = "DUMMY";
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -46,27 +47,26 @@ public class Module {
     @Column(name = "type", length = 16)
     private String type;
 
-    /** 디바이스 계열 — 시리얼 접두어로 결정. 더미는 {@link #DEVICE_DUMMY}. */
+    /** 디바이스 계열 — 시리얼 접두어로 결정 (HEIGHT_SENSOR / VISION_CAM). */
     @Column(name = "device_type", length = 16)
     private String deviceType;
 
     /**
-     * 관리자 테스트용 더미 모듈 - 무신호 자동 정리 대상에서 제외.
-     * 실기기(m/r 접두어)와 시리얼 충돌을 피하려고 별도 플래그로 관리한다.
+     * 레거시 플래그. 신규 더미는 {@code dummy_modules} 테이블.
      */
     @Column(name = "dummy", nullable = false)
     @Builder.Default
     private boolean dummy = false;
 
-    /** 모듈1 원본 측정값 — 센서에서 내용물 표면까지의 빈 거리(cm). 작을수록 가득 찬 상태. */
+    /** 구형 펌웨어 원본 높이(cm). 신규 펌웨어는 null — 웹에 표시하지 않음. */
     @Column(name = "height_cm")
     private Double heightCm;
 
-    /** 모듈1 용기 총 깊이(cm). heightCm 를 fillPercent 로 환산할 때 쓴다. */
+    /** 구형 heightCm 환산용 깊이. 보드가 fillPercent 를 보내면 불필요. */
     @Column(name = "depth_cm")
     private Double depthCm;
 
-    /** 수거 우선도 0~100 (100 = 즉시 수거). 두 계열의 공통 지표이며 최적 경로 정렬 기준. */
+    /** 적재율 0~100 (100 = 즉시 수거). M·R·더미 공통. */
     @Column(name = "fill_percent")
     private Double fillPercent;
 

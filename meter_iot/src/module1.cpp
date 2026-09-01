@@ -1,11 +1,11 @@
 /*
- * METER 모듈1 — 적재 높이 측정 노드
+ * METER 모듈1 — 적재율(M 계열) 노드
  *
- * 역할: HC-SR04P 초음파 센서로 용기 내부 빈 거리(cm)를 재고, MQTT 로 5초마다 발행한다.
- * 발행 토픽: meter/m1/status   (단일 페이로드, status 구분 없음)
+ * 역할: HC-SR04P 로 빈 거리(cm)를 재고, 보드에서 0~100 적재율(%)로 환산해 MQTT 발행.
+ * 발행 토픽: meter/m1/status   {"moduleSerial":"m1","fillPercent":72.5}
  * 구독: 없음 (발행 전용 단방향)
  *
- * 모듈2(라즈베리파이 영상 판정 노드)는 이 파일과 무관하다.
+ * 모듈2(R 계열)도 동일하게 fillPercent(0~100) 를 보낸다. 서버는 M/R 구분만 한다.
  *
  * === FIRMWARE VERIFY MARKER (유지보수 규칙 — 에이전트/개발자 공통) ===
  * 목적: `pio run -t clean` 후 `pio run -t upload` 했을 때 시리얼 모니터에
@@ -35,7 +35,7 @@ static const char *const MODULE_SERIAL = "m1";
  * 펌웨어 배포 확인 태그 — 수정할 때마다 이 문자열을 갱신한다.
  * setup() 에서 한 번만 출력됨. (위 파일 헤더 VERIFY MARKER 규칙 참고)
  */
-static const char *const BUILD_VERIFY_TAG = "METER-FW m1 2026-09-02a PUB=30s LED=R/Y/B";
+static const char *const BUILD_VERIFY_TAG = "METER-FW m1 2026-09-02b fillPercent";
 
 static const char *MQTT_WS_URI = "ws://mqtt-meter.gwon.run:80";
 
@@ -61,7 +61,9 @@ static const int PIN_LED_B = 27;
 static const unsigned long LED_FLASH_MS = 450UL;
 
 static const float DIST_MIN_CM = 2.0f;
-static const float DIST_MAX_CM = 100.0f; /* 1m 초과 시 100cm(1m)로 전송 */
+static const float DIST_MAX_CM = 100.0f; /* 1m 초과 시 빈 거리 100cm 로 클램프 */
+/* 용기 깊이 — 빈 거리=DEPTH 이면 0%, 빈 거리≈0 이면 100% */
+static const float TANK_DEPTH_CM = 100.0f;
 
 static esp_mqtt_client_handle_t s_mqtt = nullptr;
 static volatile bool s_mqtt_connected = false;
@@ -73,7 +75,7 @@ static unsigned long s_lastUltraLogMs = 0;
 static unsigned long s_ledFlashUntilMs = 0;
 static float s_lastDistCm = -1.0f;
 
-/* 발행 주기 — 높이값 1건을 이 간격으로 계속 보낸다. 서버는 수신 시각을 생존 신호로 쓴다. */
+/* 발행 주기 — fillPercent 1건을 이 간격으로 보낸다. 서버는 수신 시각을 생존 신호로 쓴다. */
 static const unsigned long PUBLISH_INTERVAL_MS = 30UL * 1000UL;
 static const unsigned long ULTRA_PING_INTERVAL_MS = 15;
 static const unsigned long ULTRA_LOG_INTERVAL_MS = 10000UL;
@@ -203,16 +205,24 @@ static void mqttPublishRaw(const char *topic, const char *payload, int qos = 1) 
   s_ledFlashUntilMs = millis() + LED_FLASH_MS;
 }
 
-/* 단일 페이로드: {"moduleSerial":"m1","heightCm":25.3} */
-void publishHeight(float cm) {
+/* 빈 거리(cm) → 적재율 0~100. 멀수록 비어 있음. */
+static float emptyCmToFillPercent(float emptyCm) {
+  float fill = (TANK_DEPTH_CM - emptyCm) / TANK_DEPTH_CM * 100.0f;
+  if (fill < 0.0f) fill = 0.0f;
+  if (fill > 100.0f) fill = 100.0f;
+  return fill;
+}
+
+/* 단일 페이로드: {"moduleSerial":"m1","fillPercent":72.5} */
+void publishFillPercent(float fillPercent) {
   StaticJsonDocument<128> doc;
   doc["moduleSerial"] = MODULE_SERIAL;
-  doc["heightCm"] = cm;
+  doc["fillPercent"] = fillPercent;
 
   char buf[160];
   size_t n = serializeJson(doc, buf, sizeof(buf));
   if (n == 0 || n >= sizeof(buf)) {
-    Serial.println("publishHeight: buffer too small");
+    Serial.println("publishFillPercent: buffer too small");
     return;
   }
   buf[n] = '\0';
@@ -230,7 +240,7 @@ static void mqtt_event_handler(void *handler_args, esp_event_base_t base, int32_
       Serial.println("MQTT_EVENT_CONNECTED");
       s_mqtt_connected = true;
       if (s_lastDistCm >= 0) {
-        publishHeight(s_lastDistCm);
+        publishFillPercent(emptyCmToFillPercent(s_lastDistCm));
         s_lastPublishMs = millis();
       }
       break;
@@ -319,13 +329,15 @@ void loop() {
 
   unsigned long now = millis();
   if (now - s_lastPublishMs >= PUBLISH_INTERVAL_MS) {
-    /* 발행 시점마다 재측정 — 1m 초과는 measureDistanceCm 에서 100cm 로 클램프 */
+    /* 발행 시점마다 재측정 → 보드에서 fillPercent 로 환산 */
     float cm = measureDistanceCm();
     if (cm >= 0) {
       s_lastDistCm = cm;
-      publishHeight(cm);
+      float fill = emptyCmToFillPercent(cm);
+      Serial.printf("[ULTRA] empty=%.1fcm → fill=%.1f%%\n", cm, fill);
+      publishFillPercent(fill);
     } else if (s_lastDistCm >= 0) {
-      publishHeight(s_lastDistCm);
+      publishFillPercent(emptyCmToFillPercent(s_lastDistCm));
     } else {
       Serial.println("[ULTRA] invalid sample — publish skipped");
     }

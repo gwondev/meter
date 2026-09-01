@@ -1,7 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { moduleTypeMatchesHeld, HELD_TYPE_LABELS, moduleTypeLabel } from "../constants/wasteLabels";
 import { meterColors } from "../theme/meterTheme";
-import { buildCollectionRouteWithRoads, ROUTE_FILL_THRESHOLD } from "../utils/collectionRoute";
+import { buildCollectionRouteWithRoads } from "../utils/collectionRoute";
 import {
   Typography,
   Box,
@@ -381,7 +381,7 @@ const Map = () => {
             </IconButton>
           </Stack>
           <Typography sx={{ fontSize: "0.62rem", color: meterColors.secondary, mb: 0.8, whiteSpace: "nowrap" }}>
-            화면 · 적재율 {ROUTE_FILL_THRESHOLD}%↑
+            화면 모듈 전부 · 도로망
           </Typography>
           <Stack spacing={0.5}>
             {route.stops.map((stop) => (

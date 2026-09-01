@@ -20,6 +20,17 @@ const TYPE_SYMBOLS = {
   HAZARD: "☣️",
 };
 
+/** M=부착모듈, R=카메라. 더미는 D(M)/D(R). */
+function seriesMeta(module) {
+  const isR =
+    module?.deviceType === "VISION_CAM" ||
+    String(module?.series || "").toUpperCase().includes("R");
+  if (module?.dummy) {
+    return { key: isR ? "D(R)" : "D(M)", icon: isR ? "📷" : "📟", isR };
+  }
+  return { key: isR ? "R" : "M", icon: isR ? "📷" : "📟", isR };
+}
+
 /**
  * 카카오 지도 렌더러.
  *
@@ -35,7 +46,7 @@ export default function MapView({ userPos, modules, route = null, centerTrigger 
   const overlaysRef = useRef([]);
   const routeShapesRef = useRef([]);
   const userOverlayRef = useRef(null);
-  const infoRef = useRef(null);
+  const popupOverlayRef = useRef(null);
   const centeredOnceRef = useRef(false);
   const latestCenterTriggerRef = useRef(centerTrigger);
   const modulesRef = useRef(modules);
@@ -115,8 +126,13 @@ export default function MapView({ userPos, modules, route = null, centerTrigger 
         level: 3,
       });
       mapRef.current = map;
-      infoRef.current = new window.kakao.maps.InfoWindow({ zIndex: 3 });
       window.kakao.maps.event.addListener(map, "idle", reportVisibleModules);
+      window.kakao.maps.event.addListener(map, "click", () => {
+        if (popupOverlayRef.current) {
+          popupOverlayRef.current.setMap(null);
+          popupOverlayRef.current = null;
+        }
+      });
       reportVisibleModules();
     } catch (e) {
       setDebugMessage(`[KAKAO MAP ERROR] map init failed: ${e?.message || String(e)}`);
@@ -142,9 +158,12 @@ export default function MapView({ userPos, modules, route = null, centerTrigger 
     overlaysRef.current.forEach((o) => o.setMap(null));
     markersRef.current = [];
     overlaysRef.current = [];
+    if (popupOverlayRef.current) {
+      popupOverlayRef.current.setMap(null);
+      popupOverlayRef.current = null;
+    }
 
     const map = mapRef.current;
-    const infoWindow = infoRef.current;
 
     modules.forEach((m) => {
       if (m.lat == null || m.lon == null) return;
@@ -152,87 +171,142 @@ export default function MapView({ userPos, modules, route = null, centerTrigger 
       const serial = (m.serialNumber && String(m.serialNumber).trim()) || "—";
       const typeKey = String(m.type || "GENERAL").toUpperCase();
       const typeTitle = moduleTypeLabel(m.type);
-      const typeSymbol = TYPE_SYMBOLS[typeKey] || "📍";
+      const wasteSymbol = TYPE_SYMBOLS[typeKey] || "📍";
+      const series = seriesMeta(m);
       const state = moduleDisplayState(m);
       const waiting = !state.active;
       const position = new window.kakao.maps.LatLng(m.lat, m.lon);
 
-      const marker = new window.kakao.maps.Marker({
-        map,
-        position,
-        title: `${typeTitle} (${serial})`,
-        opacity: waiting ? 0.45 : 1,
-      });
-      markersRef.current.push(marker);
+      /* 기본 파란 핀 대신 계열 아이콘 커스텀 마커 */
+      const pin = document.createElement("button");
+      pin.type = "button";
+      pin.style.cssText = [
+        "display:flex",
+        "align-items:center",
+        "justify-content:center",
+        "width:34px",
+        "height:34px",
+        "border-radius:10px",
+        "border:2px solid " + (waiting ? "rgba(140,140,140,0.7)" : series.isR ? "#64b5f6" : "#7cff72"),
+        "background:" + (waiting ? "rgba(40,40,40,0.92)" : "#111"),
+        "color:#fff",
+        "font-size:18px",
+        "line-height:1",
+        "cursor:pointer",
+        "box-shadow:0 4px 14px rgba(0,0,0,0.45)",
+        "padding:0",
+        "filter:" + (waiting ? "grayscale(1)" : "none"),
+      ].join(";");
+      pin.textContent = series.icon;
+      pin.title = `${series.key} · ${typeTitle} (${serial})`;
 
-      const badge = document.createElement("div");
-      badge.style.padding = "3px 9px";
-      badge.style.borderRadius = "999px";
-      badge.style.border = `1px solid ${waiting ? "rgba(140,140,140,0.5)" : state.color}`;
-      badge.style.background = waiting ? "rgba(48,48,48,0.9)" : "rgba(0,0,0,0.86)";
-      badge.style.color = waiting ? "rgba(190,190,190,0.85)" : state.color;
-      badge.style.fontWeight = "800";
-      badge.style.fontSize = "11px";
-      badge.style.whiteSpace = "nowrap";
-      badge.style.boxShadow = waiting ? "none" : "0 4px 12px rgba(0,0,0,0.35)";
-      badge.style.filter = waiting ? "grayscale(1)" : "none";
-      badge.textContent = waiting ? `${typeSymbol} 신호 대기중` : `${typeSymbol} ${state.label}`;
-
-      const labelOverlay = new window.kakao.maps.CustomOverlay({
-        position,
-        content: badge,
-        yAnchor: 2.6,
-      });
-      labelOverlay.setMap(map);
-      overlaysRef.current.push(labelOverlay);
-
-      window.kakao.maps.event.addListener(marker, "click", () => {
-        const info = document.createElement("div");
-        info.style.minWidth = "210px";
-        info.style.maxWidth = "270px";
-        info.style.padding = "12px 14px";
-        info.style.background = waiting ? "#1a1a1a" : "#111";
-        info.style.border = `1px solid ${waiting ? "rgba(120,120,120,0.4)" : meterColors.borderStrong}`;
-        info.style.borderRadius = "12px";
-        info.style.color = meterColors.primaryMuted;
-        info.style.fontSize = "12px";
-        info.style.lineHeight = "1.6";
-        info.style.boxShadow = "0 12px 32px rgba(0,0,0,0.45)";
-
-        const appendLine = (text, style = {}) => {
-          const line = document.createElement("div");
-          Object.assign(line.style, style);
-          line.textContent = text;
-          info.appendChild(line);
-        };
-
-        /* 팝업: 상태 · 측정높이 · 마지막신호만 */
-        appendLine(state.label, {
-          fontWeight: "800",
-          color: state.color,
-          fontSize: "14px",
-          marginBottom: "6px",
-        });
-        if (m.heightCm != null) {
-          appendLine(`측정 높이 ${Number(m.heightCm).toFixed(1)}cm`, { opacity: "0.75" });
+      const openPopup = () => {
+        if (popupOverlayRef.current) {
+          popupOverlayRef.current.setMap(null);
+          popupOverlayRef.current = null;
         }
-        appendLine(`마지막 신호 ${formatSignalAge(m.lastSignalAt)}`, { opacity: "0.65" });
+
+        const info = document.createElement("div");
+        info.style.cssText = [
+          "min-width:180px",
+          "max-width:240px",
+          "padding:10px 12px",
+          "background:" + (waiting ? "#1a1a1a" : "#0d0d0d"),
+          "border:1px solid " + (waiting ? "rgba(120,120,120,0.45)" : "rgba(255,255,255,0.22)"),
+          "border-radius:4px",
+          "color:" + meterColors.primaryMuted,
+          "font-size:12px",
+          "line-height:1.55",
+          "box-shadow:0 10px 28px rgba(0,0,0,0.5)",
+          "pointer-events:auto",
+        ].join(";");
+
+        const title = document.createElement("div");
+        title.style.cssText = `font-weight:800;color:${state.color};font-size:14px;margin-bottom:4px;`;
+        title.textContent = state.label;
+        info.appendChild(title);
+
+        const meta = document.createElement("div");
+        meta.style.opacity = "0.75";
+        meta.style.marginBottom = "2px";
+        meta.textContent = `${series.key} · ${serial}`;
+        info.appendChild(meta);
+
+        const age = document.createElement("div");
+        age.style.opacity = "0.65";
+        age.textContent = `마지막 신호 ${formatSignalAge(m.lastSignalAt)}`;
+        info.appendChild(age);
 
         if (m.lastImageUrl) {
           const img = document.createElement("img");
           img.src = m.lastImageUrl;
           img.alt = `${serial} 스냅샷`;
-          img.style.marginTop = "8px";
-          img.style.width = "100%";
-          img.style.borderRadius = "4px";
-          img.style.border = `1px solid ${meterColors.border}`;
-          img.style.filter = waiting ? "grayscale(1)" : "none";
+          img.style.cssText =
+            "margin-top:8px;width:100%;border-radius:4px;border:1px solid rgba(255,255,255,0.15);" +
+            (waiting ? "filter:grayscale(1);" : "");
           info.appendChild(img);
         }
 
-        infoWindow.setContent(info);
-        infoWindow.open(map, marker);
+        const wrap = document.createElement("div");
+        wrap.style.cssText = "position:relative;transform:translateY(-6px);";
+        wrap.appendChild(info);
+        const tip = document.createElement("div");
+        tip.style.cssText =
+          "width:0;height:0;margin:0 auto;border-left:7px solid transparent;border-right:7px solid transparent;border-top:8px solid #0d0d0d;";
+        wrap.appendChild(tip);
+
+        const popup = new window.kakao.maps.CustomOverlay({
+          position,
+          content: wrap,
+          yAnchor: 1.35,
+          zIndex: 10,
+          clickable: true,
+        });
+        popup.setMap(map);
+        popupOverlayRef.current = popup;
+      };
+
+      pin.addEventListener("click", (e) => {
+        e.stopPropagation();
+        openPopup();
       });
+
+      const markerOverlay = new window.kakao.maps.CustomOverlay({
+        position,
+        content: pin,
+        yAnchor: 0.5,
+        zIndex: 4,
+        clickable: true,
+      });
+      markerOverlay.setMap(map);
+      markersRef.current.push(markerOverlay);
+
+      const badge = document.createElement("div");
+      badge.style.cssText = [
+        "padding:3px 9px",
+        "border-radius:4px",
+        "border:1px solid " + (waiting ? "rgba(140,140,140,0.5)" : state.color),
+        "background:" + (waiting ? "rgba(48,48,48,0.9)" : "rgba(0,0,0,0.86)"),
+        "color:" + (waiting ? "rgba(190,190,190,0.85)" : state.color),
+        "font-weight:800",
+        "font-size:11px",
+        "white-space:nowrap",
+        "box-shadow:" + (waiting ? "none" : "0 4px 12px rgba(0,0,0,0.35)"),
+        "filter:" + (waiting ? "grayscale(1)" : "none"),
+        "pointer-events:none",
+      ].join(";");
+      badge.textContent = waiting
+        ? `${series.icon} 신호 대기중`
+        : `${series.icon} ${wasteSymbol} ${state.label}`;
+
+      const labelOverlay = new window.kakao.maps.CustomOverlay({
+        position,
+        content: badge,
+        yAnchor: 2.35,
+        zIndex: 3,
+      });
+      labelOverlay.setMap(map);
+      overlaysRef.current.push(labelOverlay);
     });
 
     reportVisibleModules();
@@ -242,6 +316,10 @@ export default function MapView({ userPos, modules, route = null, centerTrigger 
       overlaysRef.current.forEach((o) => o.setMap(null));
       markersRef.current = [];
       overlaysRef.current = [];
+      if (popupOverlayRef.current) {
+        popupOverlayRef.current.setMap(null);
+        popupOverlayRef.current = null;
+      }
     };
   }, [modules, reportVisibleModules, sdkReady]);
 

@@ -1,7 +1,5 @@
-import { isSignalActive } from "../theme/meterTheme";
-
-/** 수거 대상으로 볼 최소 적재율 — 이 값 미만은 경로에서 제외한다. */
-export const ROUTE_FILL_THRESHOLD = 50;
+/** @deprecated 경로는 화면 모듈 전부 방문 — 적재율 필터 없음. UI 호환용. */
+export const ROUTE_FILL_THRESHOLD = 0;
 
 const EARTH_RADIUS_M = 6371000;
 /** 완전탐색 상한 — 이보다 많으면 NN+2-opt. */
@@ -139,15 +137,12 @@ function exactBestOrder(origin, stops) {
 }
 
 /**
- * 방문 순서 산출.
- * 1) 활성·좌표·적재율≥threshold 만 후보
- * 2) 만재 우선 urgency TSP (소수는 완전탐색, 다수는 NN+2-opt)
+ * 화면에 보이는 모듈을 모두 방문하는 최적 순서.
+ * 적재율이 높은 거점을 먼저 들르도록 urgency TSP.
  */
-export function buildCollectionRoute(visibleModules, userPos, threshold = ROUTE_FILL_THRESHOLD) {
+export function buildCollectionRoute(visibleModules, userPos, _threshold = ROUTE_FILL_THRESHOLD) {
   const candidates = (visibleModules || [])
     .filter((m) => Number.isFinite(Number(m.lat)) && Number.isFinite(Number(m.lon)))
-    .filter((m) => isSignalActive(m))
-    .filter((m) => clampFill(m.fillPercent) >= threshold)
     .map((m) => ({
       serialNumber: m.serialNumber,
       lat: Number(m.lat),
@@ -156,8 +151,8 @@ export function buildCollectionRoute(visibleModules, userPos, threshold = ROUTE_
       type: m.type,
       deviceType: m.deviceType,
       dummy: Boolean(m.dummy),
+      series: m.series,
     }))
-    /* 동일 좌표 중복 제거 — 시리얼 기준 유지, 더 높은 적재율 우선 */
     .sort((a, b) => b.fillPercent - a.fillPercent);
 
   const deduped = [];
@@ -177,7 +172,7 @@ export function buildCollectionRoute(visibleModules, userPos, threshold = ROUTE_
       totalMeters: 0,
       roadMeters: 0,
       usedRoadNetwork: false,
-      reason: `화면 안에 적재율 ${threshold}% 이상인 활성 모듈이 없습니다.`,
+      reason: "화면에 좌표가 있는 모듈이 없습니다.",
     };
   }
 

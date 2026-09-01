@@ -54,8 +54,11 @@ public class ModuleSchemaMigration {
             }
             jdbcTemplate.update("""
                     INSERT INTO dummy_modules
-                      (serial_number, organization, lat, lon, type, fill_percent, depth_cm, last_signal_at, created_at)
-                    SELECT serial_number, organization, lat, lon, type, fill_percent, depth_cm,
+                      (serial_number, organization, lat, lon, type, device_type, fill_percent, depth_cm, last_signal_at, created_at)
+                    SELECT serial_number, organization, lat, lon, type,
+                           CASE WHEN LOWER(serial_number) LIKE 'r%' OR device_type = 'VISION_CAM'
+                                THEN 'VISION_CAM' ELSE 'HEIGHT_SENSOR' END,
+                           fill_percent, depth_cm,
                            COALESCE(last_signal_at, NOW(6)), COALESCE(created_at, NOW(6))
                     FROM modules
                     WHERE dummy = 1
@@ -78,6 +81,7 @@ public class ModuleSchemaMigration {
                       lat DOUBLE,
                       lon DOUBLE,
                       type VARCHAR(16),
+                      device_type VARCHAR(16) NOT NULL DEFAULT 'HEIGHT_SENSOR',
                       fill_percent DOUBLE,
                       depth_cm DOUBLE,
                       last_signal_at DATETIME(6),
@@ -88,6 +92,24 @@ public class ModuleSchemaMigration {
                     """);
         } catch (Exception e) {
             log.warn("dummy_modules 테이블 생성 실패: {}", e.getMessage());
+        }
+        ensureDummyDeviceTypeColumn();
+    }
+
+    private void ensureDummyDeviceTypeColumn() {
+        try {
+            Integer count = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM information_schema.columns "
+                            + "WHERE table_schema = DATABASE() AND table_name = 'dummy_modules' AND column_name = 'device_type'",
+                    Integer.class);
+            if (count != null && count > 0) {
+                return;
+            }
+            jdbcTemplate.execute(
+                    "ALTER TABLE dummy_modules ADD COLUMN device_type VARCHAR(16) NOT NULL DEFAULT 'HEIGHT_SENSOR'");
+            log.info("dummy_modules.device_type 컬럼 추가");
+        } catch (Exception e) {
+            log.warn("dummy_modules.device_type 추가 실패: {}", e.getMessage());
         }
     }
 
