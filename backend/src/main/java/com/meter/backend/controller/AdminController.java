@@ -58,17 +58,7 @@ public class AdminController {
     }
 
     private Map<String, Object> toModuleDto(Module module) {
-        Map<String, Object> dto = new LinkedHashMap<>();
-        dto.put("id", module.getId());
-        dto.put("serialNumber", module.getSerialNumber());
-        dto.put("organization", module.getOrganization());
-        dto.put("lat", module.getLat());
-        dto.put("lon", module.getLon());
-        dto.put("type", module.getType());
-        dto.put("status", module.getStatus());
-        dto.put("totalDisposalCount", module.getTotalDisposalCount());
-        dto.put("lastHeartbeat", module.getLastHeartbeat());
-        return dto;
+        return ModuleController.toDto(module);
     }
 
     private Map<String, Object> toRecordDto(DisposalRecord record) {

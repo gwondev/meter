@@ -29,9 +29,11 @@ import { motion } from "framer-motion";
 import { getUser, clearAuth } from "../services/auth";
 import { apiFetch } from "../services/api";
 import { moduleTypeLabel } from "../constants/wasteLabels";
+import { formatSignalAge } from "../theme/meterTheme";
 import EditRoundedIcon from "@mui/icons-material/EditRounded";
 import DeleteOutlineRoundedIcon from "@mui/icons-material/DeleteOutlineRounded";
 import AddRoundedIcon from "@mui/icons-material/AddRounded";
+import CleaningServicesRoundedIcon from "@mui/icons-material/CleaningServicesRounded";
 import ArrowBackIosNewRoundedIcon from "@mui/icons-material/ArrowBackIosNewRounded";
 
 const cellHead = {
@@ -45,7 +47,7 @@ const cellBody = {
   borderColor: "rgba(255,255,255,0.08)",
 };
 
-const MODULE_STATUS_OPTIONS = ["DEFAULT", "READY", "CHECK", "FULL"];
+const MODULE_TYPE_OPTIONS = ["CLOTHING", "PLASTIC", "CAN", "MEDICINE", "GENERAL"];
 
 const Manage = () => {
   const navigate = useNavigate();
@@ -77,9 +79,8 @@ const Manage = () => {
     organization: "CHOSUN_IT",
     lat: "35.1469",
     lon: "126.9228",
-    type: "PLASTIC",
-    status: "DEFAULT",
-    totalDisposalCount: "0",
+    type: "GENERAL",
+    depthCm: "",
   });
   const [moduleDeleteTarget, setModuleDeleteTarget] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -122,9 +123,8 @@ const Manage = () => {
         organization: m.organization ?? "CHOSUN_IT",
         lat: String(m.lat ?? "35.1469"),
         lon: String(m.lon ?? "126.9228"),
-        type: m.type ?? "PLASTIC",
-        status: m.status ?? "DEFAULT",
-        totalDisposalCount: String(m.totalDisposalCount ?? 0),
+        type: m.type ?? "GENERAL",
+        depthCm: m.depthCm == null ? "" : String(m.depthCm),
       });
     } else {
       setEditingModule(null);
@@ -133,9 +133,8 @@ const Manage = () => {
         organization: "CHOSUN_IT",
         lat: "35.1469",
         lon: "126.9228",
-        type: "PLASTIC",
-        status: "DEFAULT",
-        totalDisposalCount: "0",
+        type: "GENERAL",
+        depthCm: "",
       });
     }
     setModuleDialogOpen(true);
@@ -152,8 +151,7 @@ const Manage = () => {
         lat: Number(moduleForm.lat),
         lon: Number(moduleForm.lon),
         type: moduleForm.type.trim().toUpperCase(),
-        status: (moduleForm.status || "DEFAULT").trim().toUpperCase(),
-        totalDisposalCount: Math.max(0, Number(moduleForm.totalDisposalCount) || 0),
+        depthCm: moduleForm.depthCm.trim() === "" ? null : Number(moduleForm.depthCm),
       };
       if (editingModule) {
         await apiFetch(`/modules/${editingModule.id}`, {
@@ -170,6 +168,21 @@ const Manage = () => {
       loadOverview();
     } catch (e) {
       setError(e.message || "모듈 저장 실패");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  /** 10일 이상 신호가 없던 모듈을 즉시 걷어낸다. 스케줄러도 매시 같은 작업을 수행한다. */
+  const cleanupStaleModules = async () => {
+    try {
+      setSaving(true);
+      setError("");
+      const res = await apiFetch("/modules/cleanup", { method: "POST", body: "{}" });
+      setSuccess(`무신호 모듈 ${res?.removed ?? 0}건 정리 (기준 ${res?.retentionDays ?? 10}일)`);
+      loadOverview();
+    } catch (e) {
+      setError(e.message || "무신호 모듈 정리 실패");
     } finally {
       setSaving(false);
     }
@@ -385,14 +398,25 @@ const Manage = () => {
                 · 총 {overview.modules.length}개
               </Box>
             </Typography>
-            <Button size="small" startIcon={<AddRoundedIcon />} onClick={() => openModuleDialog(null)} sx={{ color: "#000", bgcolor: "#ffffff", fontWeight: 800 }}>
-              모듈 추가
-            </Button>
+            <Stack direction="row" spacing={1}>
+              <Button
+                size="small"
+                startIcon={<CleaningServicesRoundedIcon />}
+                onClick={cleanupStaleModules}
+                disabled={saving}
+                sx={{ color: "rgba(255,255,255,0.85)", border: "1px solid rgba(255,255,255,0.2)", fontWeight: 700 }}
+              >
+                무신호 정리
+              </Button>
+              <Button size="small" startIcon={<AddRoundedIcon />} onClick={() => openModuleDialog(null)} sx={{ color: "#000", bgcolor: "#ffffff", fontWeight: 800 }}>
+                모듈 추가
+              </Button>
+            </Stack>
           </Stack>
           <Table size="small" sx={{ tableLayout: "fixed", minWidth: 0 }}>
             <TableHead>
               <TableRow>
-                {["ID", "SERIAL", "ORG", "TYPE", "STATUS", "LAT", "LON", "COUNT", "작업"].map((h) => (
+                {["ID", "SERIAL", "계열", "TYPE", "신호", "적재율", "LAT", "LON", "작업"].map((h) => (
                   <TableCell key={h} sx={cellHead} align={h === "작업" ? "right" : "left"}>
                     {h}
                   </TableCell>
@@ -404,17 +428,22 @@ const Manage = () => {
                 <TableRow key={m.id} sx={{ "&:nth-of-type(odd)": { bgcolor: "rgba(255,255,255,0.03)" } }}>
                   <TableCell sx={cellBody}>{m.id}</TableCell>
                   <TableCell sx={cellBody}>{m.serialNumber}</TableCell>
-                  <TableCell sx={cellBody}>{m.organization}</TableCell>
+                  <TableCell sx={cellBody}>{m.deviceType === "VISION_CAM" ? "영상" : "초음파"}</TableCell>
                   <TableCell sx={cellBody}>
                     <Box component="span" sx={{ fontWeight: 700 }}>{m.type}</Box>
                     <Box component="span" sx={{ display: "block", fontSize: "0.72rem", opacity: 0.78, mt: 0.25, lineHeight: 1.3 }}>
                       {moduleTypeLabel(m.type)}
                     </Box>
                   </TableCell>
-                  <TableCell sx={cellBody}>{m.status}</TableCell>
-                  <TableCell sx={cellBody}>{m.lat}</TableCell>
-                  <TableCell sx={cellBody}>{m.lon}</TableCell>
-                  <TableCell sx={cellBody}>{m.totalDisposalCount}</TableCell>
+                  <TableCell sx={{ ...cellBody, color: m.signalState === "ACTIVE" ? "#7cff72" : "rgba(255,255,255,0.45)", fontWeight: 700 }}>
+                    {m.signalState === "ACTIVE" ? "활성" : "대기중"}
+                    <Box component="span" sx={{ display: "block", fontSize: "0.68rem", opacity: 0.7, fontWeight: 500 }}>
+                      {formatSignalAge(m.lastSignalAt)}
+                    </Box>
+                  </TableCell>
+                  <TableCell sx={cellBody}>{m.fillPercent == null ? "—" : `${Math.round(m.fillPercent)}%`}</TableCell>
+                  <TableCell sx={cellBody}>{m.lat ?? "—"}</TableCell>
+                  <TableCell sx={cellBody}>{m.lon ?? "—"}</TableCell>
                   <TableCell sx={cellBody} align="right">
                     <IconButton size="small" sx={{ color: "#ffffff" }} onClick={() => openModuleDialog(m)}>
                       <EditRoundedIcon fontSize="small" />
@@ -521,39 +550,35 @@ const Manage = () => {
             <TextField label="lat" value={moduleForm.lat} onChange={(e) => setModuleForm((f) => ({ ...f, lat: e.target.value }))} fullWidth sx={{ input: { color: "#fff" } }} />
             <TextField label="lon" value={moduleForm.lon} onChange={(e) => setModuleForm((f) => ({ ...f, lon: e.target.value }))} fullWidth sx={{ input: { color: "#fff" } }} />
           </Stack>
-          <TextField
-            label="type (CLOTHING/PLASTIC/CAN/MEDICINE)"
-            value={moduleForm.type}
-            onChange={(e) => setModuleForm((f) => ({ ...f, type: e.target.value }))}
-            fullWidth
-            sx={{ input: { color: "#fff" } }}
-            helperText="METER 거점 분류: 의류수거함 · 플라스틱 · 캔 · 폐의약품"
-            FormHelperTextProps={{ sx: { color: "rgba(255,255,255,0.55)" } }}
-          />
-          <TextField
-            label="count (totalDisposalCount)"
-            type="number"
-            value={moduleForm.totalDisposalCount}
-            onChange={(e) => setModuleForm((f) => ({ ...f, totalDisposalCount: e.target.value }))}
-            fullWidth
-            sx={{ input: { color: "#fff" } }}
-            inputProps={{ min: 0 }}
-          />
           <FormControl fullWidth>
-            <InputLabel sx={{ color: "rgba(255,255,255,0.7)" }}>모듈 상태</InputLabel>
+            <InputLabel sx={{ color: "rgba(255,255,255,0.7)" }}>type</InputLabel>
             <Select
-              label="모듈 상태"
-              value={MODULE_STATUS_OPTIONS.includes((moduleForm.status || "").toUpperCase()) ? (moduleForm.status || "DEFAULT").toUpperCase() : "DEFAULT"}
-              onChange={(e) => setModuleForm((f) => ({ ...f, status: e.target.value }))}
+              label="type"
+              value={MODULE_TYPE_OPTIONS.includes((moduleForm.type || "").toUpperCase()) ? moduleForm.type.toUpperCase() : "GENERAL"}
+              onChange={(e) => setModuleForm((f) => ({ ...f, type: e.target.value }))}
               sx={{ color: "#fff" }}
             >
-              {MODULE_STATUS_OPTIONS.map((st) => (
-                <MenuItem key={st} value={st}>
-                  {st}
+              {MODULE_TYPE_OPTIONS.map((t) => (
+                <MenuItem key={t} value={t}>
+                  {t} · {moduleTypeLabel(t)}
                 </MenuItem>
               ))}
             </Select>
           </FormControl>
+          <TextField
+            label="depthCm (모듈1 용기 깊이)"
+            type="number"
+            value={moduleForm.depthCm}
+            onChange={(e) => setModuleForm((f) => ({ ...f, depthCm: e.target.value }))}
+            fullWidth
+            sx={{ input: { color: "#fff" } }}
+            inputProps={{ min: 1 }}
+            helperText="초음파 높이값을 적재율로 환산하는 기준. 비우면 서버 기본값(60cm)을 쓴다."
+            FormHelperTextProps={{ sx: { color: "rgba(255,255,255,0.55)" } }}
+          />
+          <Typography sx={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.55)" }}>
+            적재율과 신호 상태는 모듈이 직접 보고하므로 여기서 수정하지 않는다. 시리얼이 m 으로 시작하면 초음파, r 로 시작하면 영상 판정 계열로 자동 분류된다.
+          </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={() => setModuleDialogOpen(false)} disabled={saving}>

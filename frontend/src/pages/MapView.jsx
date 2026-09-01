@@ -1,7 +1,12 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Box } from "@mui/material";
 import { moduleTypeLabel } from "../constants/wasteLabels";
-import { formatModuleConnectivity, fillLevelFromHeight, isModuleOffline, meterColors } from "../theme/meterTheme";
+import {
+  deviceTypeLabel,
+  formatSignalAge,
+  meterColors,
+  moduleDisplayState,
+} from "../theme/meterTheme";
 
 const KAKAO_APP_KEY = import.meta.env.VITE_KAKAO_API || import.meta.env.KAKAO_API || "";
 const KAKAO_SDK_URL = `https://dapi.kakao.com/v2/maps/sdk.js?appkey=${KAKAO_APP_KEY}&autoload=false`;
@@ -16,19 +21,31 @@ const TYPE_SYMBOLS = {
   HAZARD: "☣️",
 };
 
-export default function MapView({ userPos, modules, onDispose, centerTrigger = 0 }) {
+/**
+ * 카카오 지도 렌더러.
+ *
+ * @param route         [{lat, lon, serialNumber}] 순서대로 이은 수거 경로. 비면 경로를 지운다.
+ * @param onBoundsChange 화면에 보이는 모듈 시리얼 목록을 부모에 알린다 (최적경로 계산 범위).
+ */
+export default function MapView({ userPos, modules, route = [], centerTrigger = 0, onBoundsChange }) {
   const fallback = [35.1462, 126.9229];
   const center = userPos && userPos[0] != null && userPos[1] != null ? userPos : fallback;
   const containerRef = useRef(null);
   const mapRef = useRef(null);
   const markersRef = useRef([]);
   const overlaysRef = useRef([]);
+  const routeShapesRef = useRef([]);
   const userOverlayRef = useRef(null);
   const infoRef = useRef(null);
   const centeredOnceRef = useRef(false);
   const latestCenterTriggerRef = useRef(centerTrigger);
+  const modulesRef = useRef(modules);
+  const boundsCallbackRef = useRef(onBoundsChange);
   const [sdkReady, setSdkReady] = useState(false);
   const [debugMessage, setDebugMessage] = useState("");
+
+  modulesRef.current = modules;
+  boundsCallbackRef.current = onBoundsChange;
 
   useEffect(() => {
     if (!KAKAO_APP_KEY) return undefined;
@@ -75,6 +92,20 @@ export default function MapView({ userPos, modules, onDispose, centerTrigger = 0
     };
   }, []);
 
+  /** 현재 지도 영역 안의 모듈만 골라 부모에게 넘긴다. */
+  const reportVisibleModules = useCallback(() => {
+    const map = mapRef.current;
+    const notify = boundsCallbackRef.current;
+    if (!map || !notify || !window.kakao?.maps) return;
+
+    const bounds = map.getBounds();
+    const visible = (modulesRef.current || []).filter((m) => {
+      if (m.lat == null || m.lon == null) return false;
+      return bounds.contain(new window.kakao.maps.LatLng(m.lat, m.lon));
+    });
+    notify(visible);
+  }, []);
+
   useEffect(() => {
     if (!KAKAO_APP_KEY || !sdkReady || !containerRef.current || !window.kakao?.maps) return;
     if (mapRef.current) return;
@@ -86,10 +117,12 @@ export default function MapView({ userPos, modules, onDispose, centerTrigger = 0
       });
       mapRef.current = map;
       infoRef.current = new window.kakao.maps.InfoWindow({ zIndex: 3 });
+      window.kakao.maps.event.addListener(map, "idle", reportVisibleModules);
+      reportVisibleModules();
     } catch (e) {
       setDebugMessage(`[KAKAO MAP ERROR] map init failed: ${e?.message || String(e)}`);
     }
-  }, [center, sdkReady]);
+  }, [center, reportVisibleModules, sdkReady]);
 
   useEffect(() => {
     if (!sdkReady || !mapRef.current || !window.kakao?.maps) return;
@@ -118,37 +151,33 @@ export default function MapView({ userPos, modules, onDispose, centerTrigger = 0
       if (m.lat == null || m.lon == null) return;
 
       const serial = (m.serialNumber && String(m.serialNumber).trim()) || "—";
-      const isFull = String(m.status || "").toUpperCase() === "FULL";
-      const typeKey = String(m.type || "PLASTIC").toUpperCase();
+      const typeKey = String(m.type || "GENERAL").toUpperCase();
       const typeTitle = moduleTypeLabel(m.type);
       const typeSymbol = TYPE_SYMBOLS[typeKey] || "📍";
-      const connectivity = formatModuleConnectivity(m.lastHeartbeat);
-      const offline = isModuleOffline(m.lastHeartbeat);
-      const needsCheck = connectivity === "모듈점검필요";
-      const fill = fillLevelFromHeight(m.heightCm);
-      const grayed = offline || isFull || fill.level === "critical";
+      const state = moduleDisplayState(m);
+      const waiting = !state.active;
       const position = new window.kakao.maps.LatLng(m.lat, m.lon);
 
       const marker = new window.kakao.maps.Marker({
         map,
         position,
         title: `${typeTitle} (${serial})`,
+        opacity: waiting ? 0.45 : 1,
       });
       markersRef.current.push(marker);
 
       const badge = document.createElement("div");
-      badge.style.padding = "3px 8px";
+      badge.style.padding = "3px 9px";
       badge.style.borderRadius = "999px";
-      badge.style.border = `1px solid ${grayed ? "rgba(140,140,140,0.55)" : needsCheck ? meterColors.danger : meterColors.borderStrong}`;
-      badge.style.background = grayed ? "rgba(60,60,60,0.9)" : "rgba(0,0,0,0.85)";
-      badge.style.color = grayed ? "rgba(200,200,200,0.85)" : needsCheck ? meterColors.danger : meterColors.primary;
+      badge.style.border = `1px solid ${waiting ? "rgba(140,140,140,0.5)" : state.color}`;
+      badge.style.background = waiting ? "rgba(48,48,48,0.9)" : "rgba(0,0,0,0.86)";
+      badge.style.color = waiting ? "rgba(190,190,190,0.85)" : state.color;
       badge.style.fontWeight = "800";
       badge.style.fontSize = "11px";
       badge.style.whiteSpace = "nowrap";
-      badge.style.boxShadow = grayed ? "none" : "0 4px 12px rgba(0,0,0,0.35)";
-      badge.style.opacity = grayed ? "0.72" : "1";
-      badge.style.filter = grayed ? "grayscale(0.75)" : "none";
-      badge.textContent = `${typeSymbol} ${typeTitle}${offline ? " · 오프라인" : ""}`;
+      badge.style.boxShadow = waiting ? "none" : "0 4px 12px rgba(0,0,0,0.35)";
+      badge.style.filter = waiting ? "grayscale(1)" : "none";
+      badge.textContent = waiting ? `${typeSymbol} 신호 대기중` : `${typeSymbol} ${state.label}`;
 
       const labelOverlay = new window.kakao.maps.CustomOverlay({
         position,
@@ -160,74 +189,55 @@ export default function MapView({ userPos, modules, onDispose, centerTrigger = 0
 
       window.kakao.maps.event.addListener(marker, "click", () => {
         const info = document.createElement("div");
-        info.style.minWidth = "200px";
-        info.style.maxWidth = "260px";
+        info.style.minWidth = "210px";
+        info.style.maxWidth = "270px";
         info.style.padding = "12px 14px";
-        info.style.background = grayed ? "#1a1a1a" : "#111";
-        info.style.border = `1px solid ${grayed ? "rgba(120,120,120,0.4)" : meterColors.borderStrong}`;
+        info.style.background = waiting ? "#1a1a1a" : "#111";
+        info.style.border = `1px solid ${waiting ? "rgba(120,120,120,0.4)" : meterColors.borderStrong}`;
         info.style.borderRadius = "12px";
         info.style.color = meterColors.primaryMuted;
         info.style.fontSize = "12px";
-        info.style.lineHeight = "1.5";
+        info.style.lineHeight = "1.6";
         info.style.boxShadow = "0 12px 32px rgba(0,0,0,0.45)";
 
-        const title = document.createElement("div");
-        title.style.fontWeight = "800";
-        title.style.color = meterColors.primary;
-        title.style.marginBottom = "6px";
-        title.style.fontSize = "14px";
-        title.textContent = `${typeSymbol} ${typeTitle}`;
+        const appendLine = (text, style = {}) => {
+          const line = document.createElement("div");
+          Object.assign(line.style, style);
+          line.textContent = text;
+          info.appendChild(line);
+        };
 
-        const serialLine = document.createElement("div");
-        serialLine.style.opacity = "0.75";
-        serialLine.style.marginBottom = "4px";
-        serialLine.textContent = `모듈 ${serial}`;
-
-        const connLine = document.createElement("div");
-        connLine.style.fontWeight = "700";
-        connLine.style.color = offline ? meterColors.secondary : needsCheck ? meterColors.danger : meterColors.primaryMuted;
-        connLine.style.marginBottom = "4px";
-        connLine.textContent = connectivity;
-
-        const fillLine = document.createElement("div");
-        fillLine.style.fontWeight = "600";
-        fillLine.style.color = fill.color;
-        fillLine.style.marginBottom = "4px";
-        fillLine.textContent = m.heightCm != null ? `적재 높이 ${Number(m.heightCm).toFixed(1)}cm · ${fill.label}` : fill.label;
-
-        const total = document.createElement("div");
-        total.style.opacity = "0.65";
-        total.style.marginBottom = "8px";
-        total.textContent = `누적 투입 ${m.totalDisposalCount ?? 0}회`;
-
-        info.appendChild(title);
-        info.appendChild(serialLine);
-        info.appendChild(connLine);
-        info.appendChild(fillLine);
-        info.appendChild(total);
-
-        const action = document.createElement("button");
-        action.type = "button";
-        action.style.marginTop = "4px";
-        action.style.width = "100%";
-        action.style.border = "none";
-        action.style.borderRadius = "8px";
-        action.style.padding = "10px 12px";
-        action.style.fontWeight = "800";
-        action.style.cursor = needsCheck || isFull || offline ? "not-allowed" : "pointer";
-        action.style.background = needsCheck || isFull || offline ? "rgba(255,255,255,0.12)" : meterColors.primary;
-        action.style.color = needsCheck || isFull || offline ? "rgba(255,255,255,0.5)" : "#0a0a0a";
-        action.disabled = needsCheck || isFull || offline;
-        action.textContent = offline ? "오프라인" : needsCheck ? "점검 필요" : isFull ? "만재 (FULL)" : "버리기";
-        action.addEventListener("click", () => {
-          if (!action.disabled) onDispose(m.serialNumber);
+        appendLine(`${typeSymbol} ${typeTitle}`, {
+          fontWeight: "800",
+          color: meterColors.primary,
+          fontSize: "14px",
+          marginBottom: "6px",
         });
-        info.appendChild(action);
+        appendLine(`모듈 ${serial} · ${deviceTypeLabel(m)}`, { opacity: "0.72" });
+        appendLine(state.label, { fontWeight: "700", color: state.color });
+        appendLine(`마지막 신호 ${formatSignalAge(m.lastSignalAt)}`, { opacity: "0.65" });
+        if (m.heightCm != null) {
+          appendLine(`측정 높이 ${Number(m.heightCm).toFixed(1)}cm`, { opacity: "0.65" });
+        }
+
+        if (m.lastImageUrl) {
+          const img = document.createElement("img");
+          img.src = m.lastImageUrl;
+          img.alt = `${serial} 스냅샷`;
+          img.style.marginTop = "8px";
+          img.style.width = "100%";
+          img.style.borderRadius = "8px";
+          img.style.border = `1px solid ${meterColors.border}`;
+          img.style.filter = waiting ? "grayscale(1)" : "none";
+          info.appendChild(img);
+        }
 
         infoWindow.setContent(info);
         infoWindow.open(map, marker);
       });
     });
+
+    reportVisibleModules();
 
     return () => {
       markersRef.current.forEach((mk) => mk.setMap(null));
@@ -235,7 +245,83 @@ export default function MapView({ userPos, modules, onDispose, centerTrigger = 0
       markersRef.current = [];
       overlaysRef.current = [];
     };
-  }, [modules, onDispose, sdkReady]);
+  }, [modules, reportVisibleModules, sdkReady]);
+
+  /* 최적 수거 경로 — 지도 위에 직접 폴리라인과 순번 배지를 얹는다. */
+  useEffect(() => {
+    if (!sdkReady || !mapRef.current || !window.kakao?.maps) return;
+
+    routeShapesRef.current.forEach((shape) => shape.setMap(null));
+    routeShapesRef.current = [];
+
+    if (!route || route.length < 2) return undefined;
+
+    const map = mapRef.current;
+    const path = route
+      .filter((p) => p.lat != null && p.lon != null)
+      .map((p) => new window.kakao.maps.LatLng(p.lat, p.lon));
+    if (path.length < 2) return undefined;
+
+    const glow = new window.kakao.maps.Polyline({
+      path,
+      strokeWeight: 11,
+      strokeColor: "#ffffff",
+      strokeOpacity: 0.2,
+      strokeStyle: "solid",
+    });
+    glow.setMap(map);
+    routeShapesRef.current.push(glow);
+
+    const line = new window.kakao.maps.Polyline({
+      path,
+      strokeWeight: 5,
+      strokeColor: "#ffffff",
+      strokeOpacity: 0.95,
+      strokeStyle: "solid",
+    });
+    line.setMap(map);
+    routeShapesRef.current.push(line);
+
+    route.forEach((point, index) => {
+      if (point.lat == null || point.lon == null) return;
+
+      const pin = document.createElement("div");
+      pin.style.display = "flex";
+      pin.style.alignItems = "center";
+      pin.style.justifyContent = "center";
+      pin.style.width = "26px";
+      pin.style.height = "26px";
+      pin.style.borderRadius = "50%";
+      pin.style.fontSize = "12px";
+      pin.style.fontWeight = "900";
+      pin.style.boxShadow = "0 4px 14px rgba(0,0,0,0.55)";
+
+      const isStart = point.isOrigin === true;
+      pin.style.background = isStart ? "#0a0a0a" : "#ffffff";
+      pin.style.color = isStart ? "#ffffff" : "#0a0a0a";
+      pin.style.border = `2px solid ${isStart ? "#ffffff" : "#0a0a0a"}`;
+      pin.textContent = point.label ?? String(index + 1);
+
+      const overlay = new window.kakao.maps.CustomOverlay({
+        position: new window.kakao.maps.LatLng(point.lat, point.lon),
+        content: pin,
+        yAnchor: 0.5,
+        zIndex: 6,
+      });
+      overlay.setMap(map);
+      routeShapesRef.current.push(overlay);
+    });
+
+    /* 경로 전체가 한 화면에 들어오도록 맞춘다. */
+    const bounds = new window.kakao.maps.LatLngBounds();
+    path.forEach((p) => bounds.extend(p));
+    map.setBounds(bounds, 60, 60, 60, 60);
+
+    return () => {
+      routeShapesRef.current.forEach((shape) => shape.setMap(null));
+      routeShapesRef.current = [];
+    };
+  }, [route, sdkReady]);
 
   useEffect(() => {
     if (!sdkReady || !mapRef.current || !window.kakao?.maps) return;

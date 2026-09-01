@@ -20,13 +20,13 @@ import { useNavigate } from "react-router-dom";
 import { apiFetch } from "../services/api";
 import { moduleTypeLabel } from "../constants/wasteLabels";
 import {
-  fillLevelFromHeight,
-  formatModuleConnectivity,
-  isModuleOffline,
+  deviceTypeLabel,
+  formatSignalAge,
   meterColors,
+  moduleDisplayState,
 } from "../theme/meterTheme";
 
-const TYPE_ORDER = ["CLOTHING", "PLASTIC", "CAN", "MEDICINE"];
+const TYPE_ORDER = ["CLOTHING", "PLASTIC", "CAN", "MEDICINE", "GENERAL"];
 
 export default function ModuleDB() {
   const navigate = useNavigate();
@@ -55,11 +55,11 @@ export default function ModuleDB() {
   const grouped = useMemo(() => {
     const map = new Map(TYPE_ORDER.map((t) => [t, []]));
     modules.forEach((m) => {
-      const key = String(m.type || "PLASTIC").toUpperCase();
+      const key = String(m.type || "GENERAL").toUpperCase();
       if (!map.has(key)) map.set(key, []);
       map.get(key).push(m);
     });
-    return TYPE_ORDER.map((type) => ({ type, items: map.get(type) || [] }));
+    return [...map.entries()].map(([type, items]) => ({ type, items }));
   }, [modules]);
 
   return (
@@ -81,7 +81,7 @@ export default function ModuleDB() {
           </Stack>
 
           <Typography sx={{ color: meterColors.secondary, fontSize: "0.9rem" }}>
-            모듈 유형별 적재·연결·투입 데이터를 누구나 열람할 수 있습니다.
+            모듈 유형별 적재율과 신호 상태를 누구나 열람할 수 있습니다. 신호가 끊긴 모듈은 «신호 대기중» 으로 표시됩니다.
           </Typography>
 
           {loading && <Typography sx={{ color: meterColors.secondary }}>불러오는 중…</Typography>}
@@ -110,33 +110,31 @@ export default function ModuleDB() {
                     <TableHead>
                       <TableRow>
                         <TableCell sx={{ color: meterColors.secondary, borderColor: meterColors.border }}>시리얼</TableCell>
-                        <TableCell sx={{ color: meterColors.secondary, borderColor: meterColors.border }}>연결</TableCell>
-                        <TableCell sx={{ color: meterColors.secondary, borderColor: meterColors.border }}>적재</TableCell>
-                        <TableCell sx={{ color: meterColors.secondary, borderColor: meterColors.border }}>투입</TableCell>
-                        <TableCell sx={{ color: meterColors.secondary, borderColor: meterColors.border }}>상태</TableCell>
+                        <TableCell sx={{ color: meterColors.secondary, borderColor: meterColors.border }}>계열</TableCell>
+                        <TableCell sx={{ color: meterColors.secondary, borderColor: meterColors.border }}>적재율</TableCell>
+                        <TableCell sx={{ color: meterColors.secondary, borderColor: meterColors.border }}>원본 측정</TableCell>
+                        <TableCell sx={{ color: meterColors.secondary, borderColor: meterColors.border }}>마지막 신호</TableCell>
                       </TableRow>
                     </TableHead>
                     <TableBody>
                       {items.map((m) => {
-                        const offline = isModuleOffline(m.lastHeartbeat);
-                        const fill = fillLevelFromHeight(m.heightCm);
-                        const conn = formatModuleConnectivity(m.lastHeartbeat);
+                        const state = moduleDisplayState(m);
                         return (
-                          <TableRow key={m.id ?? m.serialNumber} sx={{ opacity: offline ? 0.55 : 1 }}>
+                          <TableRow key={m.id ?? m.serialNumber} sx={{ opacity: state.active ? 1 : 0.55 }}>
                             <TableCell sx={{ color: meterColors.primary, borderColor: meterColors.border, fontWeight: 700 }}>
                               {m.serialNumber}
                             </TableCell>
-                            <TableCell sx={{ color: offline ? meterColors.secondary : meterColors.primaryMuted, borderColor: meterColors.border }}>
-                              {conn}
+                            <TableCell sx={{ color: meterColors.secondary, borderColor: meterColors.border, fontSize: "0.78rem" }}>
+                              {deviceTypeLabel(m)}
                             </TableCell>
-                            <TableCell sx={{ color: fill.color, borderColor: meterColors.border }}>
-                              {m.heightCm != null ? `${Number(m.heightCm).toFixed(1)}cm` : "—"} · {fill.label}
-                            </TableCell>
-                            <TableCell sx={{ color: meterColors.primaryMuted, borderColor: meterColors.border }}>
-                              {m.totalDisposalCount ?? 0}회
+                            <TableCell sx={{ color: state.color, borderColor: meterColors.border, fontWeight: 700 }}>
+                              {state.label}
                             </TableCell>
                             <TableCell sx={{ color: meterColors.primaryMuted, borderColor: meterColors.border }}>
-                              {m.status ?? "—"}
+                              {m.heightCm != null ? `${Number(m.heightCm).toFixed(1)}cm` : "—"}
+                            </TableCell>
+                            <TableCell sx={{ color: meterColors.primaryMuted, borderColor: meterColors.border }}>
+                              {formatSignalAge(m.lastSignalAt)}
                             </TableCell>
                           </TableRow>
                         );

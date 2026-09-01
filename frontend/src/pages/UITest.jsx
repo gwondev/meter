@@ -22,7 +22,6 @@ const SCREEN_GROUPS = [
       { id: "camera", label: "AI 카메라", route: "/camera" },
       { id: "input", label: "투입", route: "/input" },
       { id: "db", label: "DB", route: "/db" },
-      { id: "route", label: "최적경로", route: "/map/route" },
       { id: "mypage", label: "마이", route: "/mypage" },
     ],
   },

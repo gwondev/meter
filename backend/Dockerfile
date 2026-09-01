@@ -34,6 +34,9 @@ WORKDIR /backend
 COPY --from=builder /backend/build/libs/*.jar backend.jar
 #호스트(빌드 단계)의 빌드된 jar파일을 컨테이너의 backend.jar로 복사
 
+# 모듈2 스냅샷 저장 위치 — compose 의 backend_uploads 볼륨이 여기에 마운트된다
+RUN mkdir -p /backend/uploads
+
 EXPOSE 8080
 #컨테이너가 8080포트를 사용한다고 명시
 

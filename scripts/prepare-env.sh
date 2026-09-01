@@ -46,6 +46,13 @@ MQTT_CLIENT_ID="${MQTT_CLIENT_ID:-meter-backend}"
 VITE_API_BASE_URL="${VITE_API_BASE_URL:-/api}"
 GEMINI_MODELS="${GEMINI_MODELS:-gemini-2.5-flash,gemini-2.5-flash-lite}"
 
+# IoT 디바이스(모듈2 등) 전용 토큰 — 없으면 /api/device/** 가 503 으로 차단된다.
+METER_DEVICE_TOKEN="${METER_DEVICE_TOKEN:-}"
+if [[ -z "$METER_DEVICE_TOKEN" ]]; then
+  echo "prepare-env: 경고 — METER_DEVICE_TOKEN 미설정. /api/device/** 는 차단됩니다."
+  echo "             생성: openssl rand -hex 32"
+fi
+
 umask 077
 
 cat > "$PROJECT_ROOT/backend/.env.production" <<EOF
@@ -57,6 +64,7 @@ GEMINI_API_KEY=${METER_GEMINI_API_KEY}
 GEMINI_MODELS=${GEMINI_MODELS}
 MQTT_BROKER_URL=${MQTT_BROKER_URL}
 MQTT_CLIENT_ID=${MQTT_CLIENT_ID}
+METER_DEVICE_TOKEN=${METER_DEVICE_TOKEN}
 EOF
 
 cat > "$PROJECT_ROOT/frontend/.env.production" <<EOF

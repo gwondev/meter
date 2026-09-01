@@ -18,19 +18,34 @@ import { apiFetch } from "../services/api";
 import { meterColors } from "../theme/meterTheme";
 
 const SUGGESTIONS = [
-  "이번 주 집중 관리가 필요한 모듈은?",
-  "적재량이 가장 높은 모듈은?",
-  "오프라인 모듈이 몇 개인가요?",
+  "지금 수거해야 하는 모듈은?",
+  "적재율이 가장 높은 모듈은?",
+  "신호 대기중인 모듈 몇 개?",
 ];
 
 const spring = { type: "spring", stiffness: 420, damping: 32, mass: 0.85 };
+
+/** 서버에서 한 번 걸러내지만, 모델이 규칙을 어긴 응답이 화면에 그대로 나오지 않게 막는다. */
+function stripMarkdown(text) {
+  if (!text) return "";
+  return String(text)
+    .replace(/^\s{0,3}#{1,6}\s*/gm, "")
+    .replace(/\*\*\*(.+?)\*\*\*/g, "$1")
+    .replace(/\*\*(.+?)\*\*/g, "$1")
+    .replace(/(?<![\w*])\*(?!\s)(.+?)(?<!\s)\*(?![\w*])/g, "$1")
+    .replace(/__(.+?)__/g, "$1")
+    .replace(/`{1,3}/g, "")
+    .replace(/^\s*[*+]\s+/gm, "- ")
+    .replace(/\n{3,}/g, "\n\n")
+    .trim();
+}
 
 export default function MeterChatbot() {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([
     {
       role: "bot",
-      text: "METER AI입니다. 모듈 DB 적재·연결·투입 데이터를 바탕으로 질문해 주세요.",
+      text: "METER AI입니다. 모듈 적재율·신호 상태 데이터를 바탕으로 질문해 주세요.",
     },
   ]);
   const [input, setInput] = useState("");
@@ -54,7 +69,7 @@ export default function MeterChatbot() {
         method: "POST",
         body: JSON.stringify({ message: msg }),
       });
-      setMessages((prev) => [...prev, { role: "bot", text: res?.reply || "응답 없음" }]);
+      setMessages((prev) => [...prev, { role: "bot", text: stripMarkdown(res?.reply) || "응답 없음" }]);
     } catch (e) {
       setMessages((prev) => [...prev, { role: "bot", text: e?.message || "챗봇 오류" }]);
     } finally {
@@ -89,8 +104,8 @@ export default function MeterChatbot() {
             <Paper
               elevation={8}
               sx={{
-                width: { xs: "min(92vw, 360px)", sm: 380 },
-                height: { xs: "min(62dvh, 520px)", sm: 500 },
+                width: { xs: "min(94vw, 440px)", sm: 480 },
+                height: { xs: "min(76dvh, 620px)", sm: 640 },
                 display: "flex",
                 flexDirection: "column",
                 bgcolor: meterColors.bgElevated,
@@ -113,8 +128,8 @@ export default function MeterChatbot() {
               >
                 <Box
                   sx={{
-                    width: 36,
-                    height: 36,
+                    width: 42,
+                    height: 42,
                     borderRadius: "50%",
                     display: "grid",
                     placeItems: "center",
@@ -122,11 +137,11 @@ export default function MeterChatbot() {
                     border: `1px solid ${meterColors.border}`,
                   }}
                 >
-                  <SmartToyRoundedIcon sx={{ fontSize: 20, color: meterColors.primaryMuted }} />
+                  <SmartToyRoundedIcon sx={{ fontSize: 24, color: meterColors.primaryMuted }} />
                 </Box>
                 <Box sx={{ flex: 1, minWidth: 0 }}>
-                  <Typography sx={{ fontWeight: 800, fontSize: "0.9rem", lineHeight: 1.2 }}>METER AI</Typography>
-                  <Typography sx={{ fontSize: "0.68rem", color: meterColors.secondary }}>모듈 데이터 기반 상담</Typography>
+                  <Typography sx={{ fontWeight: 800, fontSize: "1.02rem", lineHeight: 1.2 }}>METER AI</Typography>
+                  <Typography sx={{ fontSize: "0.75rem", color: meterColors.secondary }}>모듈 데이터 기반 상담</Typography>
                 </Box>
                 <IconButton size="small" onClick={() => setOpen(false)} aria-label="챗봇 닫기">
                   <CloseRoundedIcon fontSize="small" />
@@ -146,8 +161,8 @@ export default function MeterChatbot() {
                         sx={{
                           alignSelf: m.role === "user" ? "flex-end" : "flex-start",
                           maxWidth: "92%",
-                          px: 1.2,
-                          py: 0.9,
+                          px: 1.5,
+                          py: 1.1,
                           borderRadius: m.role === "user" ? "16px 16px 4px 16px" : "16px 16px 16px 4px",
                           bgcolor: m.role === "user" ? "rgba(255,255,255,0.14)" : "rgba(255,255,255,0.05)",
                           border: `1px solid ${meterColors.border}`,
@@ -155,7 +170,7 @@ export default function MeterChatbot() {
                           mr: m.role === "user" ? 0 : "auto",
                         }}
                       >
-                        <Typography sx={{ fontSize: "0.82rem", lineHeight: 1.55, whiteSpace: "pre-wrap" }}>{m.text}</Typography>
+                        <Typography sx={{ fontSize: "0.95rem", lineHeight: 1.65, whiteSpace: "pre-wrap" }}>{m.text}</Typography>
                       </Box>
                     </motion.div>
                   ))}
@@ -175,11 +190,13 @@ export default function MeterChatbot() {
                     size="small"
                     onClick={() => send(s)}
                     sx={{
-                      fontSize: "0.68rem",
+                      fontSize: "0.76rem",
                       textTransform: "none",
+                      borderRadius: 999,
                       color: meterColors.secondary,
                       border: `1px solid ${meterColors.border}`,
-                      py: 0.2,
+                      px: 1.2,
+                      py: 0.4,
                     }}
                   >
                     {s}
@@ -205,7 +222,7 @@ export default function MeterChatbot() {
                     ),
                   }}
                   sx={{
-                    "& .MuiOutlinedInput-root": { color: meterColors.primary, fontSize: "0.85rem" },
+                    "& .MuiOutlinedInput-root": { color: meterColors.primary, fontSize: "0.95rem", py: 0.4 },
                   }}
                 />
               </Stack>
@@ -225,8 +242,8 @@ export default function MeterChatbot() {
               onClick={() => setOpen(true)}
               aria-label="METER AI 챗봇 열기"
               sx={{
-                width: 56,
-                height: 56,
+                width: 64,
+                height: 64,
                 bgcolor: meterColors.primary,
                 color: meterColors.bg,
                 border: `2px solid ${meterColors.borderStrong}`,

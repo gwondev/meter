@@ -1,23 +1,22 @@
 package com.meter.backend.mqtt;
 
 /**
- * ESP32 토픽: {@code meter/{serialNumber}/…} — serialNumber는 DB modules.serial_number (예: m1, m2).
+ * METER MQTT 토픽 규약.
+ *
+ * <p>모듈 → 서버 단방향이며 토픽은 {@code meter/{serialNumber}/status} 하나뿐이다.
+ * serialNumber 는 DB {@code modules.serial_number} 와 동일하다 (m1, m2 … / r1, r2 …).
  */
 public final class MeterMqttTopics {
 
     private MeterMqttTopics() {}
 
-    /** 백엔드 → 모듈 (레거시 호환용, METER는 주로 status 단방향) */
-    public static String cmd(String serialNumber) {
-        return "meter/" + serialNumber + "/cmd";
-    }
-
-    /** 모듈 → 백엔드: HEARTBEAT / HEIGHT / FULL 등 */
+    /** 모듈 → 백엔드 측정값 발행 토픽. */
     public static String status(String serialNumber) {
         return "meter/" + serialNumber + "/status";
     }
 
-    public static String events(String serialNumber) {
-        return "meter/" + serialNumber + "/events";
+    /** 백엔드 구독용 와일드카드. */
+    public static String statusWildcard() {
+        return "meter/+/status";
     }
 }

@@ -13,3 +13,8 @@ spring:
 meter:
   dev-user:
     enabled: true
+  device:
+    token: ${METER_DEVICE_TOKEN:local-dev-device-token}
+  upload:
+    # 로컬은 컨테이너 볼륨이 없으므로 프로젝트 하위에 저장한다
+    dir: ${METER_UPLOAD_DIR:./build/uploads}

@@ -18,7 +18,6 @@ import OperationsHub from "./pages/features/OperationsHub";
 import MyPage from "./pages/MyPage";
 import Mosquitto from "./pages/Mosquitto";
 import ModuleDB from "./pages/ModuleDB";
-import RouteGuide from "./pages/RouteGuide";
 import UITest from "./pages/UITest";
 import TeamIntro from "./pages/TeamIntro";
 import ProjectIntro from "./pages/ProjectIntro";
@@ -88,7 +87,8 @@ function App() {
           <Route path="/camera" element={<ProtectedRoute><Camera /></ProtectedRoute>} />
           <Route path="/input" element={<ProtectedRoute><Input /></ProtectedRoute>} />
           <Route path="/db" element={<ProtectedRoute><ModuleDB /></ProtectedRoute>} />
-          <Route path="/map/route" element={<ProtectedRoute><RouteGuide /></ProtectedRoute>} />
+          {/* 최적경로는 별도 페이지 없이 /map 위에 직접 그린다 */}
+          <Route path="/map/route" element={<Navigate to="/map" replace />} />
           <Route path="/mypage" element={<ProtectedRoute><MyPage /></ProtectedRoute>} />
 
           {/* 관리자 전용 페이지 */}

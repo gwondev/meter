@@ -17,7 +17,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 /**
- * IoT → 백엔드: {@code meter/+/status}, {@code meter/+/events} 구독.
+ * IoT → 백엔드: {@code meter/+/status} 구독 (수신 전용, 하향 명령 없음).
  */
 @Component
 @RequiredArgsConstructor
@@ -113,8 +113,6 @@ public class MqttSubscriberService implements Runnable {
                     String suffix = parts[2];
                     if ("status".equals(suffix)) {
                         moduleIotMqttHandler.handleStatusPayload(serial, payload);
-                    } else if ("events".equals(suffix)) {
-                        moduleIotMqttHandler.handleEventsPayload(serial, payload);
                     }
                 } catch (Exception e) {
                     log.error("MQTT subscriber message handling failed. topic={}", topic, e);
@@ -142,8 +140,7 @@ public class MqttSubscriberService implements Runnable {
             return;
         }
         client.subscribe("meter/+/status", 1);
-        client.subscribe("meter/+/events", 1);
-        log.info("MQTT subscriber subscribed meter/+/status, meter/+/events");
+        log.info("MQTT subscriber subscribed meter/+/status");
     }
 
     private void disconnectQuietly() {

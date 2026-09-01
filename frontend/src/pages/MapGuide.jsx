@@ -128,7 +128,7 @@ const MapGuide = () => {
             <Button
               variant="outlined"
               startIcon={<RouteRoundedIcon />}
-              onClick={() => navigate("/map/route")}
+              onClick={() => navigate("/map")}
               sx={{
                 px: 3.2,
                 py: 1.15,
@@ -139,7 +139,7 @@ const MapGuide = () => {
                 textTransform: "none",
               }}
             >
-              최적경로
+              최적경로 (지도에서)
             </Button>
           </Stack>
         </Box>

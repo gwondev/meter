@@ -7,6 +7,9 @@ services:
       - ./backend/.env.production
     depends_on:
       - mosquitto
+    volumes:
+      # 모듈2 스냅샷 — 재배포에도 유지되어야 하므로 명명 볼륨 사용
+      - backend_uploads:/backend/uploads
     networks:
       - global_network
 
@@ -40,3 +43,4 @@ networks:
 volumes:
   mosquitto_data:
   mosquitto_log:
+  backend_uploads:
