@@ -32,11 +32,13 @@ public class MosquittoController {
      */
     @GetMapping("/diag")
     public Map<String, Object> diag() {
-        Map<String, Object> out = new LinkedHashMap<>(mqttPublisherService.diagnostics());
+        /* buildVerifyTag 가 보이면 새 백엔드 JAR 배포 확인 */
+        Map<String, Object> out = new LinkedHashMap<>();
+        out.put("buildVerifyTag", MqttSubscriberService.BUILD_VERIFY_TAG);
+        out.putAll(mqttPublisherService.diagnostics());
         out.putAll(mqttSubscriberService.diagnostics());
         out.put("inLogCount", mqttTrafficLogService.latest(100).stream()
                 .filter(r -> "IN".equals(r.get("direction"))).count());
-        // deployMarker 는 subscriber diagnostics 에 포함됨 — UI/curl 로 배포 여부 확인
         return out;
     }
 }

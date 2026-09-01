@@ -16,8 +16,8 @@ import { getUser, ensureSession, needsNickname } from "../services/auth";
 import { apiFetch } from "../services/api";
 import PhotoCameraRoundedIcon from "@mui/icons-material/PhotoCameraRounded";
 import RouteRoundedIcon from "@mui/icons-material/RouteRounded";
-import MyLocationRoundedIcon from "@mui/icons-material/MyLocationRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+import MyLocationRoundedIcon from "@mui/icons-material/MyLocationRounded";
 import UserMenu from "../components/UserMenu";
 import MeterChatbot from "../components/MeterChatbot";
 
@@ -172,30 +172,12 @@ const Map = () => {
   if (!user?.oauthId) return null;
 
   const displayName = user?.nickname?.trim() || "닉네임 설정";
-
-  const sideBtnSx = {
-    minWidth: 0,
-    px: { xs: 1.1, sm: 1.4 },
-    py: 1.2,
-    borderRadius: 2.5,
-    fontWeight: 800,
-    textTransform: "none",
-    fontSize: { xs: "0.72rem", sm: "0.82rem" },
-    border: `1px solid ${meterColors.borderStrong}`,
-    color: meterColors.primary,
-    bgcolor: "rgba(0,0,0,0.9)",
-    backdropFilter: "blur(10px)",
-    boxShadow: "0 8px 28px rgba(0,0,0,0.45)",
-    "&:hover": {
-      bgcolor: "rgba(24,24,24,0.96)",
-      borderColor: meterColors.primary,
-    },
-  };
+  const hasNickname = Boolean(user?.nickname?.trim());
 
   const bottomBtnSx = {
-    minWidth: { xs: 118, sm: 140 },
-    px: 1.8,
-    py: 1.35,
+    minWidth: { xs: 108, sm: 136 },
+    px: { xs: 1.4, sm: 2 },
+    py: 1.25,
     borderRadius: 2.5,
     fontWeight: 800,
     textTransform: "none",
@@ -219,6 +201,12 @@ const Map = () => {
     bgcolor: meterColors.primary,
     borderColor: meterColors.primary,
     "&:hover": { bgcolor: "#e8e8e8", borderColor: "#e8e8e8" },
+  };
+
+  const sideBtnSx = {
+    ...bottomBtnSx,
+    minWidth: { xs: 88, sm: 110 },
+    px: { xs: 1.2, sm: 1.6 },
   };
 
   return (
@@ -250,7 +238,7 @@ const Map = () => {
         </Suspense>
       </Box>
 
-      {/* 상단: 좌측 통합 패널 + 우측 메뉴 */}
+      {/* 상단: 왼쪽 통합 패널 + 오른쪽 메뉴 */}
       <Stack
         direction="row"
         justifyContent="space-between"
@@ -270,21 +258,22 @@ const Map = () => {
         <Box
           sx={{
             minWidth: { xs: 168, sm: 196 },
+            maxWidth: { xs: 220, sm: 260 },
             px: 1.35,
-            py: 1.1,
+            py: 1.15,
             borderRadius: 2.5,
-            bgcolor: "rgba(0,0,0,0.88)",
+            bgcolor: "rgba(8,8,8,0.92)",
             border: `1px solid ${meterColors.borderStrong}`,
-            boxShadow: "0 10px 32px rgba(0,0,0,0.5)",
+            boxShadow: "0 10px 32px rgba(0,0,0,0.55)",
             backdropFilter: "blur(12px)",
           }}
         >
-          <Stack direction="row" alignItems="baseline" justifyContent="space-between" spacing={1}>
+          <Stack direction="row" alignItems="baseline" spacing={0.9} sx={{ mb: 0.85 }}>
             <Typography
               sx={{
                 fontWeight: 900,
                 fontSize: { xs: "0.95rem", sm: "1.05rem" },
-                letterSpacing: "0.08em",
+                letterSpacing: "0.12em",
                 lineHeight: 1,
               }}
             >
@@ -292,50 +281,60 @@ const Map = () => {
             </Typography>
             <Typography
               onClick={() => {
-                if (!user?.nickname?.trim()) navigate("/nickname");
+                if (!hasNickname) navigate("/nickname");
               }}
               sx={{
-                fontSize: "0.68rem",
+                fontSize: { xs: "0.72rem", sm: "0.78rem" },
                 fontWeight: 700,
-                color: user?.nickname?.trim() ? meterColors.secondary : meterColors.warning,
-                cursor: user?.nickname?.trim() ? "default" : "pointer",
-                maxWidth: 88,
+                color: hasNickname ? meterColors.secondary : meterColors.warning,
+                cursor: hasNickname ? "default" : "pointer",
+                lineHeight: 1,
+                whiteSpace: "nowrap",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
-                whiteSpace: "nowrap",
+                maxWidth: 110,
               }}
             >
               {displayName}
             </Typography>
           </Stack>
 
-          <Stack direction="row" spacing={1.2} sx={{ mt: 1 }}>
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography sx={{ fontSize: "0.58rem", color: meterColors.secondary, fontWeight: 700, letterSpacing: "0.04em" }}>
+          <Stack direction="row" spacing={1.2} alignItems="center">
+            <Stack spacing={0.15}>
+              <Typography sx={{ fontSize: "0.58rem", color: meterColors.secondary, letterSpacing: "0.04em", whiteSpace: "nowrap" }}>
                 활성
               </Typography>
-              <Typography sx={{ fontSize: "1.05rem", fontWeight: 900, color: meterColors.fillGreen, lineHeight: 1.1 }}>
+              <Typography sx={{ fontSize: "0.95rem", fontWeight: 900, color: meterColors.fillGreen, lineHeight: 1 }}>
                 {activeCount}
               </Typography>
-            </Box>
-            <Box sx={{ width: "1px", bgcolor: meterColors.border, alignSelf: "stretch" }} />
-            <Box sx={{ flex: 1, minWidth: 0 }}>
-              <Typography sx={{ fontSize: "0.58rem", color: meterColors.secondary, fontWeight: 700, letterSpacing: "0.04em" }}>
+            </Stack>
+            <Box sx={{ width: 1, alignSelf: "stretch", bgcolor: meterColors.border, opacity: 0.7 }} />
+            <Stack spacing={0.15}>
+              <Typography sx={{ fontSize: "0.58rem", color: meterColors.secondary, letterSpacing: "0.04em", whiteSpace: "nowrap" }}>
                 대기
               </Typography>
-              <Typography sx={{ fontSize: "1.05rem", fontWeight: 900, color: WAITING_COLOR, lineHeight: 1.1 }}>
+              <Typography sx={{ fontSize: "0.95rem", fontWeight: 900, color: WAITING_COLOR, lineHeight: 1 }}>
                 {waitingCount}
               </Typography>
-            </Box>
+            </Stack>
             {heldTypeSummary && (
               <>
-                <Box sx={{ width: "1px", bgcolor: meterColors.border, alignSelf: "stretch" }} />
-                <Box sx={{ flex: 1.2, minWidth: 0 }}>
-                  <Typography sx={{ fontSize: "0.58rem", color: meterColors.secondary, fontWeight: 700 }}>
+                <Box sx={{ width: 1, alignSelf: "stretch", bgcolor: meterColors.border, opacity: 0.7 }} />
+                <Stack spacing={0.15} sx={{ minWidth: 0, flex: 1 }}>
+                  <Typography sx={{ fontSize: "0.58rem", color: meterColors.secondary, whiteSpace: "nowrap" }}>
                     분류
                   </Typography>
                   <Stack direction="row" alignItems="center" spacing={0.3}>
-                    <Typography sx={{ fontSize: "0.72rem", fontWeight: 800, whiteSpace: "nowrap" }} noWrap>
+                    <Typography
+                      sx={{
+                        fontSize: "0.72rem",
+                        fontWeight: 800,
+                        color: meterColors.primary,
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
                       {heldTypeSummary}
                     </Typography>
                     <IconButton
@@ -344,12 +343,12 @@ const Map = () => {
                         sessionStorage.removeItem(HELD_KEY);
                         setHeldType("");
                       }}
-                      sx={{ p: 0.15, color: meterColors.secondary }}
+                      sx={{ color: meterColors.secondary, p: 0.15 }}
                     >
-                      <CloseRoundedIcon sx={{ fontSize: "0.75rem" }} />
+                      <CloseRoundedIcon sx={{ fontSize: "0.85rem" }} />
                     </IconButton>
                   </Stack>
-                </Box>
+                </Stack>
               </>
             )}
           </Stack>
@@ -362,7 +361,7 @@ const Map = () => {
           severity="warning"
           sx={{
             position: "absolute",
-            top: 108,
+            top: 92,
             left: { xs: 8, sm: 12 },
             right: { xs: 8, sm: "auto" },
             maxWidth: 360,
@@ -396,15 +395,15 @@ const Map = () => {
           }}
         >
           <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 0.6 }}>
-            <Typography sx={{ fontSize: "0.74rem", fontWeight: 900 }}>
-              최적 수거 경로 · {(route.totalMeters / 1000).toFixed(2)}km
+            <Typography sx={{ fontSize: "0.74rem", fontWeight: 900, whiteSpace: "nowrap" }}>
+              경로 · {(route.totalMeters / 1000).toFixed(2)}km
             </Typography>
             <IconButton size="small" onClick={() => setRoute(null)} sx={{ color: meterColors.secondary, p: 0.2 }}>
               <CloseRoundedIcon sx={{ fontSize: "1rem" }} />
             </IconButton>
           </Stack>
-          <Typography sx={{ fontSize: "0.62rem", color: meterColors.secondary, mb: 0.8 }} noWrap>
-            현재 화면 · 적재율 {ROUTE_FILL_THRESHOLD}% 이상
+          <Typography sx={{ fontSize: "0.62rem", color: meterColors.secondary, mb: 0.8, whiteSpace: "nowrap" }}>
+            화면 · 적재율 {ROUTE_FILL_THRESHOLD}%↑
           </Typography>
           <Stack spacing={0.5}>
             {route.stops.map((stop) => (
@@ -437,7 +436,7 @@ const Map = () => {
         </Box>
       )}
 
-      {/* 하단 한 줄: 내 위치 | AI 카메라·최적경로 | 챗봇 */}
+      {/* 하단: 내 위치 · AI카메라/최적경로 · 챗봇 — 같은 높이 */}
       <Box
         sx={{
           position: "absolute",
@@ -457,7 +456,7 @@ const Map = () => {
           "& > *": { pointerEvents: "auto" },
         }}
       >
-        <Button startIcon={<MyLocationRoundedIcon sx={{ fontSize: "1.05rem !important" }} />} onClick={focusMyLocation} sx={sideBtnSx}>
+        <Button startIcon={<MyLocationRoundedIcon sx={{ fontSize: "1rem !important" }} />} onClick={focusMyLocation} sx={sideBtnSx}>
           내 위치
         </Button>
 
@@ -470,7 +469,7 @@ const Map = () => {
           </Button>
         </Stack>
 
-        <MeterChatbot docked />
+        <MeterChatbot embed />
       </Box>
 
       {(loading || error) && (
@@ -478,10 +477,11 @@ const Map = () => {
           sx={{
             position: "absolute",
             left: 12,
-            bottom: 78,
+            bottom: 72,
             zIndex: 1190,
             fontSize: "0.7rem",
             color: error ? meterColors.danger : meterColors.secondary,
+            whiteSpace: "nowrap",
           }}
         >
           {error || "모듈 갱신 중…"}

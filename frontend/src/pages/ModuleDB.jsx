@@ -80,8 +80,16 @@ export default function ModuleDB() {
             </Button>
           </Stack>
 
-          <Typography sx={{ color: meterColors.secondary, fontSize: "0.9rem" }}>
-            모듈 유형별 적재율과 신호 상태를 누구나 열람할 수 있습니다. 신호가 끊긴 모듈은 «신호 대기중» 으로 표시됩니다.
+          <Typography
+            sx={{
+              color: meterColors.secondary,
+              fontSize: "0.9rem",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            유형별 적재율·신호 상태 조회. 끊긴 모듈은 신호 대기중.
           </Typography>
 
           {loading && <Typography sx={{ color: meterColors.secondary }}>불러오는 중…</Typography>}

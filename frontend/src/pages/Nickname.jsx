@@ -97,11 +97,11 @@ const NicknamePage = () => {
       />
 
       <Container maxWidth="sm" sx={{ position: "relative", zIndex: 1 }}>
-        <Stack spacing={3.5} alignItems="center" sx={{ animation: `${fadeInUp} 0.8s ease-out` }}>
+        <Stack spacing={4} alignItems="center" sx={{ animation: `${fadeInUp} 0.8s ease-out` }}>
           <Box
             sx={{
-              width: 72,
-              height: 72,
+              width: 80,
+              height: 80,
               borderRadius: 4,
               display: "flex",
               alignItems: "center",
@@ -111,24 +111,26 @@ const NicknamePage = () => {
               border: `1px solid ${meterColors.border}`,
             }}
           >
-            <AccountCircleRoundedIcon sx={{ fontSize: 40 }} />
+            <AccountCircleRoundedIcon sx={{ fontSize: 44 }} />
           </Box>
 
-          <Stack spacing={0.8} alignItems="center" sx={{ maxWidth: "100%" }}>
-            <Typography variant="h4" sx={{ fontWeight: 900, letterSpacing: "-0.03em", whiteSpace: "nowrap" }}>
-              METER 시작하기
+          <Stack spacing={0.8} sx={{ width: "100%", maxWidth: 400 }}>
+            <Typography
+              variant="h4"
+              sx={{ fontWeight: 900, letterSpacing: "-0.03em", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}
+            >
+              별명 설정
             </Typography>
             <Typography
               sx={{
                 color: meterColors.secondary,
-                fontSize: { xs: "0.88rem", sm: "0.95rem" },
+                fontSize: "0.95rem",
                 whiteSpace: "nowrap",
                 overflow: "hidden",
                 textOverflow: "ellipsis",
-                maxWidth: "100%",
               }}
             >
-              서비스에서 사용할 별명을 입력해 주세요.
+              서비스에서 쓸 별명을 입력하세요.
             </Typography>
           </Stack>
 
@@ -149,7 +151,7 @@ const NicknamePage = () => {
               ),
             }}
             sx={{
-              maxWidth: 360,
+              maxWidth: 400,
               "& .MuiOutlinedInput-root": {
                 color: meterColors.primary,
                 backgroundColor: "rgba(255,255,255,0.03)",
@@ -179,21 +181,22 @@ const NicknamePage = () => {
             onClick={handleSubmit}
             endIcon={<ArrowForwardRoundedIcon />}
             sx={{
-              maxWidth: 280,
-              height: 52,
+              maxWidth: 320,
+              height: 56,
               borderRadius: 999,
-              fontSize: "1.05rem",
+              fontSize: "1.1rem",
               fontWeight: 800,
               color: "#000",
               backgroundColor: meterColors.primary,
               textTransform: "none",
+              whiteSpace: "nowrap",
               "&:hover": {
                 backgroundColor: "#e8e8e8",
                 transform: "translateY(-2px)",
               },
             }}
           >
-            METER 입장
+            입장하기
           </Button>
         </Stack>
       </Container>

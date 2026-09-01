@@ -129,7 +129,15 @@ export default function FeatureIntroLayout({
                       py: 0.35,
                     }}
                   >
-                    <Typography sx={{ color: meterColors.primaryMuted, fontSize: "0.92rem", lineHeight: 1.65 }}>
+                    <Typography
+                      sx={{
+                        color: meterColors.primaryMuted,
+                        fontSize: "0.88rem",
+                        whiteSpace: "nowrap",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                      }}
+                    >
                       {text}
                     </Typography>
                   </Box>

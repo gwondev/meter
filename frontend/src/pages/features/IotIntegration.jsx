@@ -18,7 +18,7 @@ export default function IotIntegration() {
       }
       title="IoT 실시간 적재 측정"
       subtitle="탈부착형 모듈 · 초음파 · MQTT"
-      description="수거 용기에 부착한 IoT 모듈이 적재 높이를 실시간 전송합니다."
+      description="용기 IoT 모듈이 적재 높이를 실시간 전송합니다."
       highlights={["5초 발행", "MQTT", "LED 상태"]}
       bullets={[
         "초음파 센서로 용기 내부 적재 높이를 측정합니다.",

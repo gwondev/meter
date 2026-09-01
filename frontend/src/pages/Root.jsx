@@ -242,15 +242,17 @@ const Root = () => {
 
             <Typography
               sx={{
-                fontSize: { xs: "0.98rem", sm: "1.15rem", md: "1.3rem" },
+                fontSize: { xs: "0.88rem", sm: "1.05rem", md: "1.15rem" },
                 color: "rgba(255,255,255,0.74)",
                 fontWeight: 400,
                 letterSpacing: "-0.01em",
                 maxWidth: 820,
-                lineHeight: 1.7,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
               }}
             >
-              범용 탈부착형 AIoT 모듈 기반 적재 자원 통합관리 플랫폼
+              탈부착형 AIoT 모듈 기반 적재 자원 통합관리 플랫폼
             </Typography>
           </Stack>
 

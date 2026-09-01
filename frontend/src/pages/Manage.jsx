@@ -290,10 +290,12 @@ const Manage = () => {
                 fontSize: { xs: "0.72rem", sm: "0.82rem" },
                 color: "rgba(255,255,255,0.55)",
                 fontWeight: 600,
-                lineHeight: 1.4,
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
               }}
             >
-              MQTT 수신 로그 · 유저 · 모듈
+              MQTT 로그 · 유저 · 모듈
             </Typography>
           </Box>
           <Stack direction="row" spacing={1} useFlexGap flexWrap="wrap" sx={{ width: { xs: "100%", sm: "auto" }, flexShrink: 0 }}>
