@@ -63,7 +63,7 @@ meter/
 ├── meter_HW/         # 하드웨어 CAD
 ├── mosquitto/        # MQTT 브로커 설정
 ├── scripts/          # prepare-env.sh
-├── docs/             # DEVICE_SPEC.md (모듈·서버·웹 통합 명세)
+├── docs/             # DEVICE_SPEC.txt (모듈·서버·웹 통합 명세), R_MODULE_HANDOFF.txt
 ├── docker-compose.yml
 └── 로고(METER).png
 ```
@@ -72,7 +72,8 @@ meter/
 
 ## 디바이스 통신
 
-전체 명세는 **[`docs/DEVICE_SPEC.md`](docs/DEVICE_SPEC.md)** 를 참조한다 (모듈1·모듈2·모듈3·서버·웹).
+전체 명세는 **[`docs/DEVICE_SPEC.txt`](docs/DEVICE_SPEC.txt)** 를 참조한다 (모듈1·모듈2·모듈3·서버·웹).
+R(라즈베리) 담당자 전달용은 **[`docs/R_MODULE_HANDOFF.txt`](docs/R_MODULE_HANDOFF.txt)**.
 
 ### 시리얼 규약
 
