@@ -118,7 +118,7 @@ public class MeterChatService {
                     .append(" signal=").append(active ? "ACTIVE" : "WAITING")
                     .append(" fillPercent=").append(fill)
                     .append(" series=").append(
-                            Module.DEVICE_VISION_CAM.equals(m.getDeviceType()) ? "R" : "M");
+                            Module.DEVICE_VISION_CAM.equals(m.getDeviceType()) ? "R" : "M")
                     .append(" lastSignalAt=").append(m.getLastSignalAt())
                     .append("\n");
         }
