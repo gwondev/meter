@@ -118,7 +118,7 @@ const MapGuide = () => {
                 borderRadius: 999,
                 fontWeight: 800,
                 bgcolor: meterColors.primary,
-                color: "#0a0a0a",
+                color: "#000000",
                 textTransform: "none",
                 "&:hover": { bgcolor: "#e0e0e0" },
               }}

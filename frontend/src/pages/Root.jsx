@@ -33,26 +33,26 @@ const glowPulse = keyframes`
 
 const featureItems = [
   {
-    title: "AI 카메라",
-    subtitle: "유형 판별 · 거점 안내",
+    title: "AI 자원순환 안내",
+    subtitle: "분리배출 · 거점 위치",
     icon: <PhotoCameraRoundedIcon sx={{ fontSize: 26 }} />,
     path: "/features/smart-disposal",
   },
   {
-    title: "IoT 실시간 적재 측정",
-    subtitle: "초음파 · MQTT · LED",
+    title: "사각지대 감시",
+    subtitle: "D모듈 · R모듈 데이터",
     icon: <SensorsRoundedIcon sx={{ fontSize: 26 }} />,
     path: "/features/iot",
   },
   {
-    title: "데이터 분석 & 수거 동선",
-    subtitle: "만재 우선 · 최적 경로",
+    title: "최적 수거 경로",
+    subtitle: "만재 우선 · 도로망",
     icon: <InsightsRoundedIcon sx={{ fontSize: 26 }} />,
     path: "/features/reward",
   },
   {
-    title: "통합 관제 플랫폼",
-    subtitle: "지도 · DB · 모듈 점검",
+    title: "통합 관제",
+    subtitle: "지도 · AI · 모듈 점검",
     icon: <DashboardRoundedIcon sx={{ fontSize: 26 }} />,
     path: "/features/operations",
   },
@@ -142,7 +142,7 @@ const Root = () => {
     <Box
       sx={{
         minHeight: "100dvh",
-        bgcolor: "#0a0a0a",
+        bgcolor: "#000000",
         color: "#fff",
         position: "relative",
         overflow: "hidden",
@@ -252,7 +252,7 @@ const Root = () => {
                 textOverflow: "ellipsis",
               }}
             >
-              탈부착형 AIoT 모듈 기반 적재 자원 통합관리 플랫폼
+              사각지대 감시와 최적 수거를 잇는 자원순환 AIoT 플랫폼
             </Typography>
           </Stack>
 

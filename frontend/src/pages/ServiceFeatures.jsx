@@ -4,28 +4,28 @@ import { meterColors } from "../theme/meterTheme";
 
 const FEATURES = [
   {
-    title: "IoT 적재량 수집",
-    desc: "초음파로 적재 높이를 재고 MQTT로 서버에 전송합니다.",
+    title: "사각지대 감시",
+    desc: "D모듈·R모듈이 적재율을 산출해 MQTT로 전송합니다.",
     icon: <Icons.Sensors />,
   },
   {
     title: "통합 관제 대시보드",
-    desc: "지도에서 모듈 위치·적재·연결을 실시간 확인합니다.",
+    desc: "지도에서 모듈 위치·적재·신호를 실시간 확인합니다.",
     icon: <Icons.Dashboard />,
   },
   {
     title: "AI 챗봇 분석",
-    desc: "자연어로 적재·우선 관리 인사이트를 묻습니다.",
+    desc: "현재 모듈 현황을 바탕으로 자연어로 물어봅니다.",
     icon: <Icons.SmartToy />,
   },
   {
-    title: "AI 카메라",
-    desc: "촬영 유형을 판별하고 인근 거점을 안내합니다.",
+    title: "AI 자원순환 안내",
+    desc: "촬영으로 품목을 판별하고 인근 거점을 안내합니다.",
     icon: <Icons.PhotoCamera />,
   },
   {
     title: "최적 수거 경로",
-    desc: "적재율이 높은 모듈 순으로 방문 경로를 제안합니다.",
+    desc: "화면 안 모듈을 만재 우선으로 잇는 도로망 경로를 제안합니다.",
     icon: <Icons.Route />,
   },
   {
@@ -48,7 +48,7 @@ export default function ServiceFeatures() {
           <Stack spacing={1} textAlign="center">
             <Typography variant="h4" sx={{ fontWeight: 900 }}>핵심 기능</Typography>
             <Typography sx={{ color: meterColors.secondary, maxWidth: 520, mx: "auto", fontSize: "0.9rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-              의류·쓰레기·폐의약품 수거를 하나의 AIoT 플랫폼으로 관리합니다.
+              감시하고, 최적 경로로 수거하며, 카메라까지 이어지는 하나의 AIoT 플랫폼입니다.
             </Typography>
           </Stack>
 

@@ -42,7 +42,7 @@ export default function OverviewPage() {
                     fontWeight: 900,
                     textTransform: "none",
                     ...(active
-                      ? { color: "#0a0a0a", bgcolor: meterColors.primary, "&:hover": { bgcolor: "#e0e0e0" } }
+                      ? { color: "#000000", bgcolor: meterColors.primary, "&:hover": { bgcolor: "#e0e0e0" } }
                       : { color: meterColors.primaryMuted, borderColor: meterColors.border }),
                   }}
                 >

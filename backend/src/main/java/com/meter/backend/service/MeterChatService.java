@@ -45,23 +45,23 @@ public class MeterChatService {
 
         String context = buildModuleContext();
         String system = """
-                당신은 METER(범용 탈부착형 AIoT 모듈 기반 적재 자원 통합관리 플랫폼) 운영 분석 AI입니다.
-                아래 DB 스냅샷을 근거로 한국어로 답하세요.
+                당신은 METER(사각지대 감시와 최적 수거를 잇는 자원순환 AIoT 플랫폼) 운영 도우미입니다.
+                아래 모듈 현황을 근거로 한국어로 답하세요. 현장 관리자·시민이 바로 이해할 말로 말하세요.
 
                 답변 규칙:
-                - 마크다운 문법을 절대 쓰지 마세요. **굵게**, *기울임*, #제목, `코드`, 표 모두 금지입니다.
-                - 순수 텍스트로만 답하세요. 목록이 필요하면 문장 앞에 "- " 만 붙이세요.
-                - 3문장 이내로 결론부터 말하세요. 서론과 되묻기는 생략합니다.
-                - 수치를 인용할 때는 모듈 시리얼과 값만 짧게 적으세요.
-                - 추측은 '추정'이라고 표시하고, 데이터에 없으면 모른다고 하세요.
-                - 리워드·포인트·상품권은 이 서비스에 없습니다. 언급하지 마세요.
+                - 마크다운 금지. 순수 텍스트만. 목록은 "- " 만 사용.
+                - 2~3문장으로 결론부터. 서론·되묻기 생략.
+                - 적재율은 정수% 로만 말하세요. 예: 71%. fillPercent 같은 영문 필드명은 쓰지 마세요.
+                - 시리얼은 m1, r1 처럼 짧게. 예: "m1(적재율 80%, 수거 필요)".
+                - 추측은 '추정'이라고 표시. 데이터 없으면 모른다고 하세요.
+                - 리워드·포인트·상품권은 없습니다.
 
                 용어:
-                - fillPercent 는 수거 우선도 0~100 입니다. 100 이면 즉시 수거 대상입니다.
-                - m 으로 시작하는 모듈은 초음파 높이 센서, r 로 시작하는 모듈은 카메라 영상 판정 노드입니다.
-                - 신호대기중은 현재 신호가 끊긴 상태를 뜻합니다.
+                - 적재율 0~100: 높을수록 수거 급함. 80 이상=수거 필요, 50 이상=주의.
+                - m*=D모듈(초음파), r*=R모듈(카메라).
+                - 신호 없음=현재 통신이 끊긴 상태.
 
-                [모듈 DB 스냅샷]
+                [모듈 현황]
                 """ + context;
 
         String model = modelsCsv.split(",")[0].trim();
@@ -112,18 +112,17 @@ public class MeterChatService {
             Double fill = m.getFillPercent();
             if (fill != null && fill >= 80) urgent++;
 
-            sb.append("- serial=").append(m.getSerialNumber())
-                    .append(" device=").append(m.getDeviceType())
-                    .append(" type=").append(type)
-                    .append(" signal=").append(active ? "ACTIVE" : "WAITING")
-                    .append(" fillPercent=").append(fill)
-                    .append(" series=").append(
-                            Module.DEVICE_VISION_CAM.equals(m.getDeviceType()) ? "R" : "M")
-                    .append(" lastSignalAt=").append(m.getLastSignalAt())
+            String fillText = fill == null ? "측정없음" : ((int) Math.round(fill)) + "%";
+            String series = Module.DEVICE_VISION_CAM.equals(m.getDeviceType()) ? "R" : "D";
+            sb.append("- ").append(m.getSerialNumber())
+                    .append(" (").append(series).append(")")
+                    .append(" 유형=").append(type)
+                    .append(" 신호=").append(active ? "정상" : "없음")
+                    .append(" 적재율=").append(fillText)
                     .append("\n");
         }
-        sb.insert(0, "요약: 모듈 " + modules.size() + "개, 신호대기중 " + waiting
-                + "개, 수거우선(80% 이상) " + urgent + "개, 유형별=" + byType + "\n\n");
+        sb.insert(0, "요약: 전체 " + modules.size() + "개, 신호 없음 " + waiting
+                + "개, 수거 필요(80%↑) " + urgent + "개, 유형별=" + byType + "\n\n");
         return sb.toString();
     }
 

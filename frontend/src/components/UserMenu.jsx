@@ -55,7 +55,7 @@ export default function UserMenu() {
         onClose={() => setAnchor(null)}
         PaperProps={{
           sx: {
-            bgcolor: "#0a0a0a",
+            bgcolor: "#000000",
             border: `1px solid ${meterColors.borderStrong}`,
             minWidth: 220,
             mt: 0.5,

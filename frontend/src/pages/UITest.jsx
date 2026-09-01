@@ -256,7 +256,7 @@ export default function UITest() {
           sx={{
             flex: 1,
             overflow: "auto",
-            bgcolor: isFullBleed ? "#0a0a0a" : meterColors.bg,
+            bgcolor: isFullBleed ? "#000000" : meterColors.bg,
           }}
         >
           <DesignNote lines={SCREEN_DESCRIPTIONS[active.id] ?? SCREEN_DESCRIPTIONS.main} />

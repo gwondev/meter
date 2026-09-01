@@ -1,6 +1,6 @@
 /** METER 공통 UI 팔레트 — 화이트 & 블랙 */
 export const meterColors = {
-  bg: "#0a0a0a",
+  bg: "#000000",
   bgElevated: "#111111",
   bgPaper: "rgba(255,255,255,0.06)",
   primary: "#ffffff",

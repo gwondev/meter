@@ -133,7 +133,7 @@ export function MapWireframe() {
   const bottomBtns = ["서비스개요", "AI 카메라", "최적경로", "DB", "관리자"];
 
   return (
-    <Box sx={{ position: "relative", minHeight: 520, bgcolor: "#0a0a0a" }}>
+    <Box sx={{ position: "relative", minHeight: 520, bgcolor: "#000000" }}>
       <Box sx={{ position: "absolute", inset: 0, p: 1.5 }}>
         <WireArea label="지도 화면" hint="KAKAO MAP · 모듈 마커 · 사용자 위치" height="100%" />
       </Box>

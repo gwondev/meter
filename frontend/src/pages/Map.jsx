@@ -206,7 +206,7 @@ const Map = () => {
 
   const bottomBtnActiveSx = {
     ...bottomBtnSx,
-    color: "#0a0a0a",
+    color: "#000000",
     bgcolor: meterColors.primary,
     borderColor: meterColors.primary,
     "&:hover": { bgcolor: "#e8e8e8", borderColor: "#e8e8e8" },
@@ -224,7 +224,7 @@ const Map = () => {
         position: "relative",
         height: "100dvh",
         width: "100%",
-        bgcolor: "#0a0a0a",
+        bgcolor: "#000000",
         color: meterColors.primary,
         overflow: "hidden",
       }}
@@ -394,7 +394,7 @@ const Map = () => {
                     display: "grid",
                     placeItems: "center",
                     bgcolor: meterColors.primary,
-                    color: "#0a0a0a",
+                    color: "#000000",
                     fontSize: "0.6rem",
                     fontWeight: 900,
                     flexShrink: 0,

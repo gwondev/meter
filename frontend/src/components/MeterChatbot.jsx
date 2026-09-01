@@ -17,7 +17,11 @@ import { AnimatePresence, motion } from "framer-motion";
 import { apiFetch } from "../services/api";
 import { meterColors } from "../theme/meterTheme";
 
-const SUGGESTIONS = ["수거 필요 모듈?", "적재율 최고 모듈?", "신호 대기 몇 개?"];
+const SUGGESTIONS = [
+  "집중 관리가 필요한 모듈은?",
+  "지금 수거 가면 어디부터?",
+  "신호 없는 모듈 있어?",
+];
 
 const spring = { type: "spring", stiffness: 420, damping: 32, mass: 0.85 };
 
@@ -46,7 +50,7 @@ export default function MeterChatbot({ embed = false }) {
   const [messages, setMessages] = useState([
     {
       role: "bot",
-      text: "METER AI입니다. 모듈 적재·신호 데이터를 기준으로 질문해 주세요.",
+      text: "METER AI입니다. 지금 지도에 보이는 모듈 상태를 바탕으로 질문해 주세요.",
     },
   ]);
   const [input, setInput] = useState("");
@@ -200,7 +204,7 @@ export default function MeterChatbot({ embed = false }) {
           <TextField
             fullWidth
             size="small"
-            placeholder="모듈 데이터에 대해 질문…"
+            placeholder="지금 상황을 물어보세요…"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && send()}

@@ -387,7 +387,7 @@ export default function MapView({ userPos, modules, route = null, centerTrigger 
     };
 
     if (pathPts.length >= 2) {
-      drawKindSegments("road", "solid", 5, "#0a0a0a", 1);
+      drawKindSegments("road", "solid", 5, "#000000", 1);
       drawKindSegments("link", "shortdash", 4, "#111111", 0.95);
     }
 
@@ -400,7 +400,7 @@ export default function MapView({ userPos, modules, route = null, centerTrigger 
         "height:0",
         "border-left:5px solid transparent",
         "border-right:5px solid transparent",
-        "border-bottom:11px solid #0a0a0a",
+        "border-bottom:11px solid #000000",
         `transform:rotate(${Number(a.bearing) || 0}deg)`,
         "filter:drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff)",
         "pointer-events:none",
@@ -431,9 +431,9 @@ export default function MapView({ userPos, modules, route = null, centerTrigger 
       pin.style.boxShadow = "0 4px 14px rgba(0,0,0,0.55)";
 
       const isStart = point.isOrigin === true;
-      pin.style.background = isStart ? "#0a0a0a" : "#ffffff";
-      pin.style.color = isStart ? "#ffffff" : "#0a0a0a";
-      pin.style.border = `2px solid ${isStart ? "#ffffff" : "#0a0a0a"}`;
+      pin.style.background = isStart ? "#000000" : "#ffffff";
+      pin.style.color = isStart ? "#ffffff" : "#000000";
+      pin.style.border = `2px solid ${isStart ? "#ffffff" : "#000000"}`;
       pin.textContent = point.label ?? String(index + 1);
 
       const overlay = new window.kakao.maps.CustomOverlay({
@@ -597,7 +597,7 @@ export default function MapView({ userPos, modules, route = null, centerTrigger 
 
   return (
     <Box sx={{ position: "absolute", inset: 0, minHeight: 280 }}>
-      <Box ref={containerRef} sx={{ height: "100%", width: "100%", bgcolor: "#0a0a0a" }} />
+      <Box ref={containerRef} sx={{ height: "100%", width: "100%", bgcolor: "#000000" }} />
     </Box>
   );
 }

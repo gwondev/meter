@@ -16,7 +16,7 @@ export default function IotIntegration() {
           }}
         />
       }
-      title="IoT 실시간 적재 측정"
+      title="사각지대 IoT 감시"
       subtitle="D모듈 · R모듈 · MQTT"
       description="보드가 fillPercent(0~100)를 계산해 MQTT로만 전송합니다."
       highlights={["fillPercent", "MQTT", "HTTP 없음"]}
