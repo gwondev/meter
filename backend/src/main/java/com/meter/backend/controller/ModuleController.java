@@ -186,7 +186,7 @@ public class ModuleController {
         Map<String, Object> dto = new LinkedHashMap<>();
         boolean dummy = module.isDummy() || Module.DEVICE_DUMMY.equals(module.getDeviceType());
         dto.put("id", module.getId());
-        dto.put("idDisplay", dummy ? "-" : String.valueOf(module.getId()));
+        dto.put("idDisplay", module.getId() == null ? "-" : String.valueOf(module.getId()));
         dto.put("serialNumber", module.getSerialNumber());
         dto.put("organization", module.getOrganization());
         dto.put("lat", module.getLat());

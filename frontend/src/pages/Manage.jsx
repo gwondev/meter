@@ -579,8 +579,8 @@ const Manage = () => {
             <TableBody>
               {[...overview.modules].sort((a, b) => (a.id ?? 0) - (b.id ?? 0)).map((m) => (
                 <TableRow key={m.id} sx={{ "&:nth-of-type(odd)": { bgcolor: "rgba(255,255,255,0.03)" } }}>
-                  <TableCell sx={{ ...cellBody, fontWeight: 900, color: m.dummy ? "rgba(255,255,255,0.45)" : "#7cff72" }}>
-                    {m.dummy ? (m.idDisplay || "-") : (m.idDisplay || m.id)}
+                  <TableCell sx={{ ...cellBody, fontWeight: 900, color: "#7cff72" }}>
+                    {m.idDisplay || m.id}
                   </TableCell>
                   <TableCell sx={cellBody}>
                     {m.serialNumber}
