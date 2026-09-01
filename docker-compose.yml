@@ -11,6 +11,8 @@ services:
       # 모듈2 스냅샷 — 재배포에도 유지되어야 하므로 명명 볼륨 사용
       - backend_uploads:/backend/uploads
     networks:
+      # MQTT 는 meter_internal 만 사용 — global_network 의 다른 mosquitto 와 혼동 방지
+      - meter_internal
       - global_network
 
   mosquitto:
@@ -22,7 +24,11 @@ services:
       - mosquitto_data:/mosquitto/data
       - mosquitto_log:/mosquitto/log
     networks:
-      - global_network
+      meter_internal:
+        aliases:
+          - meter-mosquitto
+          - meter-mqtt
+      global_network: {}
 
   frontend:
     restart: always
@@ -37,6 +43,8 @@ services:
       - global_network
 
 networks:
+  meter_internal:
+    driver: bridge
   global_network:
     external: true
 

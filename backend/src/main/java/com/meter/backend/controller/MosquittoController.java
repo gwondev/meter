@@ -12,6 +12,9 @@ import org.springframework.web.bind.annotation.RestController;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.net.InetAddress;
+import java.net.URI;
+import java.util.Arrays;
 
 @RestController
 @RequestMapping("/api/mosquitto")
@@ -39,6 +42,38 @@ public class MosquittoController {
         out.putAll(mqttSubscriberService.diagnostics());
         out.put("inLogCount", mqttTrafficLogService.latest(100).stream()
                 .filter(r -> "IN".equals(r.get("direction"))).count());
+        out.put("brokerDns", resolveBrokerDns(out.get("brokerUrl")));
         return out;
+    }
+
+    private static Map<String, Object> resolveBrokerDns(Object brokerUrlObj) {
+        Map<String, Object> dns = new LinkedHashMap<>();
+        String brokerUrl = brokerUrlObj != null ? brokerUrlObj.toString() : "";
+        String host = extractHost(brokerUrl);
+        dns.put("host", host);
+        try {
+            dns.put("ips", Arrays.stream(InetAddress.getAllByName(host))
+                    .map(InetAddress::getHostAddress)
+                    .toList());
+        } catch (Exception e) {
+            dns.put("error", e.getMessage());
+        }
+        try {
+            dns.put("meterMosquittoIps", Arrays.stream(InetAddress.getAllByName("meter-mosquitto"))
+                    .map(InetAddress::getHostAddress)
+                    .toList());
+        } catch (Exception e) {
+            dns.put("meterMosquittoError", e.getMessage());
+        }
+        return dns;
+    }
+
+    private static String extractHost(String brokerUrl) {
+        try {
+            URI uri = URI.create(brokerUrl.replace("tcp://", "http://").replace("ssl://", "https://"));
+            return uri.getHost();
+        } catch (Exception e) {
+            return brokerUrl;
+        }
     }
 }

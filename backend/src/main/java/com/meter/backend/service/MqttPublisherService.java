@@ -24,7 +24,7 @@ public class MqttPublisherService {
 
     private final MqttTrafficLogService mqttTrafficLogService;
 
-    @Value("${mqtt.broker-url:tcp://mosquitto:1883}")
+    @Value("${mqtt.broker-url:tcp://meter-mosquitto:1883}")
     private String brokerUrl;
 
     @Value("${mqtt.client-id:meter-backend}")

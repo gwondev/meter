@@ -41,7 +41,8 @@ KAKAO_API_METER="${KAKAO_API_METER:-${KAKAO_API:-}}"
 : "${KAKAO_API_METER:?prepare-env: KAKAO_API_METER (또는 KAKAO_API) 가 $ROOT_ENV 에 없습니다}"
 
 DB_USERNAME="${DB_USERNAME:-gwon}"
-MQTT_BROKER_URL="${MQTT_BROKER_URL:-tcp://mosquitto:1883}"
+# meter-mosquitto 컨테이너 고정 (tcp://mosquitto 는 global_network 에 다른 브로커가 있으면 수신 0건)
+MQTT_BROKER_URL="${MQTT_BROKER_URL:-tcp://meter-mosquitto:1883}"
 MQTT_CLIENT_ID="${MQTT_CLIENT_ID:-meter-backend}"
 VITE_API_BASE_URL="${VITE_API_BASE_URL:-/api}"
 GEMINI_MODELS="${GEMINI_MODELS:-gemini-2.5-flash,gemini-2.5-flash-lite}"

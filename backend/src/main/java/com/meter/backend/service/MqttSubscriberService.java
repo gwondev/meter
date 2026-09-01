@@ -37,12 +37,12 @@ public class MqttSubscriberService implements Runnable {
      * 배포 확인용. docker compose up --build 후 /api/mosquitto/diag 또는 로그에
      * 이 문자열이 보이면 새 JAR 이 올라간 것이다. 코드를 고칠 때마다 태그를 바꾼다.
      */
-    public static final String BUILD_VERIFY_TAG = "METER-BE 2026-09-01c mqtt-sub-mem+uniq";
+    public static final String BUILD_VERIFY_TAG = "METER-BE 2026-09-01d broker=meter-mosquitto";
 
     private final ModuleIotMqttHandler moduleIotMqttHandler;
     private final MqttTrafficLogService mqttTrafficLogService;
 
-    @Value("${mqtt.broker-url:tcp://localhost:1883}")
+    @Value("${mqtt.broker-url:tcp://meter-mosquitto:1883}")
     private String brokerUrl;
 
     @Value("${mqtt.subscriber-client-id:meter-backend-sub}")

@@ -47,7 +47,8 @@ gemini:
     jpeg-quality: ${GEMINI_JPEG_QUALITY:0.8}
 
 mqtt:
-  broker-url: ${MQTT_BROKER_URL:tcp://mosquitto:1883}
+  # 반드시 meter-mosquitto 컨테이너 — global_network 의 다른 mosquitto 와 혼동 금지
+  broker-url: ${MQTT_BROKER_URL:tcp://meter-mosquitto:1883}
   client-id: ${MQTT_CLIENT_ID:meter-backend}
   subscriber-client-id: ${MQTT_SUBSCRIBER_CLIENT_ID:meter-backend-sub}
 
