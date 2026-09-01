@@ -51,8 +51,8 @@ public class Module {
     private String deviceType;
 
     /**
-     * 관리자 테스트용 더미 모듈 — 무신호 자동 정리 대상에서 제외.
-     * 실기기(m*/r*)와 시리얼 충돌을 피하려고 별도 플래그로 관리한다.
+     * 관리자 테스트용 더미 모듈 - 무신호 자동 정리 대상에서 제외.
+     * 실기기(m/r 접두어)와 시리얼 충돌을 피하려고 별도 플래그로 관리한다.
      */
     @Column(name = "dummy", nullable = false)
     @Builder.Default
@@ -89,7 +89,7 @@ public class Module {
         return DEVICE_HEIGHT_SENSOR;
     }
 
-    /** 실기기 시리얼(m*/r*) 여부 — 웹에서 시리얼 수정 잠금에 쓴다. */
+    /** 실기기 시리얼(m/r 접두어) 여부 - 웹에서 시리얼 수정 잠금에 쓴다. */
     public static boolean isDeviceSerial(String serialNumber) {
         if (serialNumber == null) return false;
         String s = serialNumber.trim().toLowerCase();

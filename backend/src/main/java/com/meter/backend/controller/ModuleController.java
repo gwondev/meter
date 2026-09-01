@@ -25,7 +25,7 @@ import java.util.Set;
  * 모듈 조회·관리 API.
  *
  * <p>모듈은 신호 수신 시 자동 등록되므로 여기서는 위치·분류 보정과 삭제만 다룬다.
- * m*/r* 실기기 시리얼은 웹에서 변경할 수 없다.
+ * m/r 접두어 실기기 시리얼은 웹에서 변경할 수 없다.
  */
 @RestController
 @RequestMapping("/api/modules")
