@@ -374,7 +374,7 @@ const Map = () => {
           <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 0.6 }}>
             <Typography sx={{ fontSize: "0.74rem", fontWeight: 900, whiteSpace: "nowrap" }}>
               경로 · {(route.totalMeters / 1000).toFixed(2)}km
-              {route.usedRoadNetwork ? " · 도로" : ""}
+              {route.usedRoadNetwork ? " · 도로+직전링크" : ""}
             </Typography>
             <IconButton size="small" onClick={() => setRoute(null)} sx={{ color: meterColors.secondary, p: 0.2 }}>
               <CloseRoundedIcon sx={{ fontSize: "1rem" }} />

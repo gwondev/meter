@@ -323,7 +323,7 @@ export default function MapView({ userPos, modules, route = null, centerTrigger 
     };
   }, [modules, reportVisibleModules, sdkReady]);
 
-  /* 최적 수거 경로 — 도로망 폴리라인(검정) + 방문 순번 배지. */
+  /* 최적 수거 경로 — 도로(실선) + 모듈 직전 링크(점선) + 방향 화살표. */
   useEffect(() => {
     if (!sdkReady || !mapRef.current || !window.kakao?.maps) return;
 
@@ -332,35 +332,89 @@ export default function MapView({ userPos, modules, route = null, centerTrigger 
 
     const pathPts = Array.isArray(route?.path) ? route.path : [];
     const markers = Array.isArray(route?.markers) ? route.markers : [];
+    const arrows = Array.isArray(route?.arrows) ? route.arrows : [];
     if (pathPts.length < 2 && markers.length < 2) return undefined;
 
     const map = mapRef.current;
-    const path = pathPts
-      .filter((p) => p.lat != null && p.lon != null)
-      .map((p) => new window.kakao.maps.LatLng(Number(p.lat), Number(p.lon)));
 
-    if (path.length >= 2) {
-      /* 흰 지도 위 가독성 — 바깥 얇은 테두리 + 검정 본선 */
-      const outline = new window.kakao.maps.Polyline({
-        path,
-        strokeWeight: 9,
-        strokeColor: "#ffffff",
-        strokeOpacity: 0.95,
-        strokeStyle: "solid",
-      });
-      outline.setMap(map);
-      routeShapesRef.current.push(outline);
+    const toLatLng = (p) => new window.kakao.maps.LatLng(Number(p.lat), Number(p.lon));
 
-      const line = new window.kakao.maps.Polyline({
-        path,
-        strokeWeight: 5,
-        strokeColor: "#0a0a0a",
-        strokeOpacity: 1,
-        strokeStyle: "solid",
+    /** kind 가 같은 연속 구간을 묶어 그린다 (road=실선, link=점선). */
+    const drawKindSegments = (kind, strokeStyle, weight, color, opacity) => {
+      let bucket = [];
+      const flush = () => {
+        if (bucket.length < 2) {
+          bucket = [];
+          return;
+        }
+        const outline = new window.kakao.maps.Polyline({
+          path: bucket.map(toLatLng),
+          strokeWeight: weight + 4,
+          strokeColor: "#ffffff",
+          strokeOpacity: 0.95,
+          strokeStyle: "solid",
+        });
+        outline.setMap(map);
+        routeShapesRef.current.push(outline);
+
+        const line = new window.kakao.maps.Polyline({
+          path: bucket.map(toLatLng),
+          strokeWeight: weight,
+          strokeColor: color,
+          strokeOpacity: opacity,
+          strokeStyle,
+        });
+        line.setMap(map);
+        routeShapesRef.current.push(line);
+        bucket = [];
+      };
+
+      pathPts.forEach((p, idx) => {
+        if (p.lat == null || p.lon == null) return;
+        const k = p.kind === "link" ? "link" : "road";
+        if (k !== kind) {
+          flush();
+          return;
+        }
+        /* 이전 점이 다른 kind 였어도 이어지도록 경계점 포함 */
+        if (bucket.length === 0 && idx > 0) {
+          const prev = pathPts[idx - 1];
+          if (prev?.lat != null && prev?.lon != null) bucket.push(prev);
+        }
+        bucket.push(p);
       });
-      line.setMap(map);
-      routeShapesRef.current.push(line);
+      flush();
+    };
+
+    if (pathPts.length >= 2) {
+      drawKindSegments("road", "solid", 5, "#0a0a0a", 1);
+      drawKindSegments("link", "shortdash", 4, "#111111", 0.95);
     }
+
+    /* 진행 방향 화살표 — 왕복·겹침 시에도 방향을 읽게 함 */
+    arrows.forEach((a) => {
+      if (a.lat == null || a.lon == null) return;
+      const el = document.createElement("div");
+      el.style.cssText = [
+        "width:0",
+        "height:0",
+        "border-left:5px solid transparent",
+        "border-right:5px solid transparent",
+        "border-bottom:11px solid #0a0a0a",
+        `transform:rotate(${Number(a.bearing) || 0}deg)`,
+        "filter:drop-shadow(0 0 1px #fff) drop-shadow(0 0 1px #fff)",
+        "pointer-events:none",
+      ].join(";");
+      const overlay = new window.kakao.maps.CustomOverlay({
+        position: toLatLng(a),
+        content: el,
+        yAnchor: 0.5,
+        xAnchor: 0.5,
+        zIndex: 5,
+      });
+      overlay.setMap(map);
+      routeShapesRef.current.push(overlay);
+    });
 
     markers.forEach((point, index) => {
       if (point.lat == null || point.lon == null) return;
@@ -383,7 +437,7 @@ export default function MapView({ userPos, modules, route = null, centerTrigger 
       pin.textContent = point.label ?? String(index + 1);
 
       const overlay = new window.kakao.maps.CustomOverlay({
-        position: new window.kakao.maps.LatLng(Number(point.lat), Number(point.lon)),
+        position: toLatLng(point),
         content: pin,
         yAnchor: 0.5,
         zIndex: 6,
@@ -393,10 +447,11 @@ export default function MapView({ userPos, modules, route = null, centerTrigger 
     });
 
     const bounds = new window.kakao.maps.LatLngBounds();
-    (path.length >= 2 ? path : markers
-      .filter((p) => p.lat != null && p.lon != null)
-      .map((p) => new window.kakao.maps.LatLng(Number(p.lat), Number(p.lon)))
-    ).forEach((p) => bounds.extend(p));
+    const boundPts =
+      pathPts.length >= 2
+        ? pathPts
+        : markers.filter((p) => p.lat != null && p.lon != null);
+    boundPts.forEach((p) => bounds.extend(toLatLng(p)));
     map.setBounds(bounds, 60, 60, 60, 60);
 
     return () => {

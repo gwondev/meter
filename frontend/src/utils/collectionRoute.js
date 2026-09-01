@@ -5,6 +5,10 @@ const EARTH_RADIUS_M = 6371000;
 /** 완전탐색 상한 — 이보다 많으면 NN+2-opt. */
 const EXACT_TSP_LIMIT = 8;
 const OSRM_BASE = "https://router.project-osrm.org/route/v1/driving";
+/** 도로가 모듈까지 이만큼 못 오면 직선(도보) 링크로 잇는다. */
+const ROAD_SNAP_GAP_M = 18;
+/** 화살표 간격(대략). */
+const ARROW_EVERY_M = 55;
 
 function toRad(deg) {
   return (deg * Math.PI) / 180;
@@ -26,11 +30,16 @@ export function haversineMeters(a, b) {
   return 2 * EARTH_RADIUS_M * Math.asin(Math.min(1, Math.sqrt(h)));
 }
 
-/**
- * 적재율 가중 이동 비용.
- * fill 100% → 거리×1, fill 50% → 거리×약 1.75, fill 0% → 거리×4.
- * 만재 거점을 먼저 방문하도록 NN·TSP·2-opt 가 같은 함수를 쓴다.
- */
+/** 방위각(도, 북=0 시계방향). 화살표 회전에 사용. */
+export function bearingDegrees(a, b) {
+  const φ1 = toRad(a.lat);
+  const φ2 = toRad(b.lat);
+  const Δλ = toRad(b.lon - a.lon);
+  const y = Math.sin(Δλ) * Math.cos(φ2);
+  const x = Math.cos(φ1) * Math.sin(φ2) - Math.sin(φ1) * Math.cos(φ2) * Math.cos(Δλ);
+  return ((Math.atan2(y, x) * 180) / Math.PI + 360) % 360;
+}
+
 function urgencyWeightedCost(from, to) {
   const distance = haversineMeters(from, to);
   const fill = clampFill(to.fillPercent);
@@ -38,7 +47,6 @@ function urgencyWeightedCost(from, to) {
   return distance * urgency;
 }
 
-/** 경로(origin → stops…) 전체 긴급도 가중 비용. */
 function tourCost(origin, stops) {
   let total = 0;
   let current = origin;
@@ -57,7 +65,6 @@ function pathLengthMeters(points) {
   return total;
 }
 
-/** 최근접 이웃 — 매 단계에서 urgencyWeightedCost 최소 후보 선택. */
 function nearestNeighborOrder(origin, stops) {
   const remaining = [...stops];
   const ordered = [];
@@ -80,7 +87,6 @@ function nearestNeighborOrder(origin, stops) {
   return ordered;
 }
 
-/** 2-opt — 직선거리 대신 동일 urgency 비용으로 교차·우회를 줄인다. */
 function twoOptImprove(origin, stops, maxPasses = 60) {
   if (stops.length < 3) return stops;
 
@@ -109,7 +115,6 @@ function twoOptImprove(origin, stops, maxPasses = 60) {
   return best;
 }
 
-/** n≤EXACT_TSP_LIMIT 이면 전순열로 최소 urgency 비용 순서를 고른다. */
 function exactBestOrder(origin, stops) {
   if (stops.length <= 1) return [...stops];
 
@@ -165,15 +170,7 @@ export function buildCollectionRoute(visibleModules, userPos, _threshold = ROUTE
   }
 
   if (deduped.length === 0) {
-    return {
-      path: [],
-      markers: [],
-      stops: [],
-      totalMeters: 0,
-      roadMeters: 0,
-      usedRoadNetwork: false,
-      reason: "화면에 좌표가 있는 모듈이 없습니다.",
-    };
+    return emptyRoute("화면에 좌표가 있는 모듈이 없습니다.");
   }
 
   const hasOrigin = Array.isArray(userPos) && userPos[0] != null && userPos[1] != null;
@@ -190,7 +187,6 @@ export function buildCollectionRoute(visibleModules, userPos, _threshold = ROUTE
     };
     stops = deduped;
   } else {
-    /* 위치 없으면 가장 만재 모듈을 출발점으로 */
     origin = { ...deduped[0], isOrigin: true, label: "1" };
     stops = deduped.slice(1);
   }
@@ -209,18 +205,15 @@ export function buildCollectionRoute(visibleModules, userPos, _threshold = ROUTE
 
   if (markers.length < 2) {
     return {
-      path: [],
+      ...emptyRoute("경로를 그리려면 모듈이 2곳 이상 필요합니다."),
       markers,
       stops: labeledStops,
-      totalMeters: 0,
-      roadMeters: 0,
-      usedRoadNetwork: false,
-      reason: "경로를 그리려면 활성 모듈이 2곳 이상 필요합니다.",
     };
   }
 
   return {
-    path: markers.map((p) => ({ lat: p.lat, lon: p.lon })),
+    path: markers.map((p) => ({ lat: p.lat, lon: p.lon, kind: "link" })),
+    arrows: [],
     markers,
     stops: hasOrigin ? labeledStops : [origin, ...labeledStops],
     totalMeters: Math.round(pathLengthMeters(markers)),
@@ -230,24 +223,29 @@ export function buildCollectionRoute(visibleModules, userPos, _threshold = ROUTE
   };
 }
 
-function dedupeNearPoints(points, minMeters = 2) {
-  if (!points.length) return [];
-  const out = [points[0]];
-  for (let i = 1; i < points.length; i += 1) {
-    if (haversineMeters(out[out.length - 1], points[i]) >= minMeters) {
-      out.push(points[i]);
-    }
-  }
-  return out;
+function emptyRoute(reason) {
+  return {
+    path: [],
+    arrows: [],
+    markers: [],
+    stops: [],
+    totalMeters: 0,
+    roadMeters: 0,
+    usedRoadNetwork: false,
+    reason,
+  };
 }
 
-/**
- * OSRM 도로망 경로. 실패 시 null.
- * waypoints 가 많으면 구간을 나눠 이어 붙인다.
- */
-async function fetchOsrmLeg(waypoints) {
-  if (waypoints.length < 2) return null;
-  const coords = waypoints.map((p) => `${p.lon},${p.lat}`).join(";");
+function pushPoint(path, point, kind) {
+  const next = { lat: Number(point.lat), lon: Number(point.lon), kind };
+  if (!Number.isFinite(next.lat) || !Number.isFinite(next.lon)) return;
+  const last = path[path.length - 1];
+  if (last && haversineMeters(last, next) < 1.2 && last.kind === kind) return;
+  path.push(next);
+}
+
+async function fetchOsrmLeg(from, to) {
+  const coords = `${from.lon},${from.lat};${to.lon},${to.lat}`;
   const url = `${OSRM_BASE}/${coords}?overview=full&geometries=geojson&steps=false`;
   const res = await fetch(url);
   if (!res.ok) throw new Error(`OSRM ${res.status}`);
@@ -261,36 +259,106 @@ async function fetchOsrmLeg(waypoints) {
   };
 }
 
+/**
+ * 구간마다 도로망 → 모듈까지 못 닿으면 직선 링크로 이어 자연스럽게 붙인다.
+ * kind: "road" | "link"
+ */
 async function fetchRoadGeometry(waypoints) {
   const clean = (waypoints || []).filter(
     (p) => Number.isFinite(Number(p.lat)) && Number.isFinite(Number(p.lon)),
   );
   if (clean.length < 2) return null;
 
-  /* OSRM URL/처리 한도 — 한 번에 최대 20점, 초과 시 청크 연결 */
-  const CHUNK = 20;
   const path = [];
   let meters = 0;
+  let usedRoad = false;
 
-  for (let start = 0; start < clean.length - 1; start += CHUNK - 1) {
-    const slice = clean.slice(start, Math.min(start + CHUNK, clean.length));
-    if (slice.length < 2) break;
-    const leg = await fetchOsrmLeg(slice);
-    if (!leg?.path?.length) throw new Error("empty leg");
-    const append = start === 0 ? leg.path : leg.path.slice(1);
-    path.push(...append);
-    meters += leg.meters;
+  pushPoint(path, clean[0], "road");
+
+  for (let i = 0; i < clean.length - 1; i += 1) {
+    const from = clean[i];
+    const to = clean[i + 1];
+
+    /* 현재 폴리라인 끝이 from 과 멀면 from 까지 직선 */
+    const tip = path[path.length - 1];
+    if (haversineMeters(tip, from) > 2) {
+      pushPoint(path, from, "link");
+      meters += haversineMeters(tip, from);
+    }
+
+    try {
+      const leg = await fetchOsrmLeg(from, to);
+      if (!leg?.path?.length) throw new Error("empty");
+
+      usedRoad = true;
+      const roadStart = leg.path[0];
+      const roadEnd = leg.path[leg.path.length - 1];
+
+      if (haversineMeters(from, roadStart) > ROAD_SNAP_GAP_M) {
+        pushPoint(path, roadStart, "link");
+        meters += haversineMeters(from, roadStart);
+      }
+
+      for (const p of leg.path) {
+        pushPoint(path, p, "road");
+      }
+      meters += leg.meters;
+
+      const gapToStop = haversineMeters(roadEnd, to);
+      if (gapToStop > 3) {
+        /* 도로가 모듈 앞에서 끊김 → 일직선으로 모듈까지 */
+        pushPoint(path, to, "link");
+        meters += gapToStop;
+      } else {
+        pushPoint(path, to, "road");
+      }
+    } catch {
+      /* 도로 실패 시 전 구간 직선 */
+      pushPoint(path, to, "link");
+      meters += haversineMeters(from, to);
+    }
   }
 
   return {
-    path: dedupeNearPoints(path),
+    path,
+    arrows: buildArrows(path),
     meters: Math.round(meters),
+    usedRoadNetwork: usedRoad,
   };
 }
 
+/** 진행 방향 화살표 — 왕복·겹침 구간에서도 방향을 알 수 있게. */
+function buildArrows(path) {
+  if (!path || path.length < 2) return [];
+  const arrows = [];
+  let traveled = 0;
+  let nextAt = ARROW_EVERY_M / 2;
+
+  for (let i = 0; i < path.length - 1; i += 1) {
+    const a = path[i];
+    const b = path[i + 1];
+    const seg = haversineMeters(a, b);
+    if (seg < 1) continue;
+
+    while (nextAt <= traveled + seg) {
+      const t = (nextAt - traveled) / seg;
+      const lat = a.lat + (b.lat - a.lat) * t;
+      const lon = a.lon + (b.lon - a.lon) * t;
+      arrows.push({
+        lat,
+        lon,
+        bearing: bearingDegrees(a, b),
+        kind: a.kind === "link" || b.kind === "link" ? "link" : "road",
+      });
+      nextAt += ARROW_EVERY_M;
+    }
+    traveled += seg;
+  }
+  return arrows;
+}
+
 /**
- * 방문 순서 산출 후 도로망 폴리라인을 붙인다.
- * 도로 API 실패 시 직선거리는 쓰지 않고 실패 reason 만 남긴다(호출부에서 안내).
+ * 방문 순서 + 도로망(+모듈 직전 직선 링크) + 방향 화살표.
  */
 export async function buildCollectionRouteWithRoads(
   visibleModules,
@@ -307,20 +375,23 @@ export async function buildCollectionRouteWithRoads(
         ...base,
         reason: "도로 경로를 가져오지 못했습니다. 잠시 후 다시 시도해 주세요.",
         path: [],
+        arrows: [],
       };
     }
     return {
       ...base,
       path: road.path,
+      arrows: road.arrows || [],
       totalMeters: road.meters,
       roadMeters: road.meters,
-      usedRoadNetwork: true,
+      usedRoadNetwork: road.usedRoadNetwork,
       reason: "",
     };
   } catch (e) {
     return {
       ...base,
       path: [],
+      arrows: [],
       reason: `도로 경로 조회 실패: ${e?.message || "network"}`,
     };
   }
