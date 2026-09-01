@@ -25,13 +25,17 @@ public class StartupDiagnostics {
 
     @EventListener(ApplicationReadyEvent.class)
     public void onReady() {
-        log.info("METER backend ready on port {}", environment.getProperty("server.port", "8080"));
+        // 배포 확인용 — docker logs meter-backend | grep DEPLOY 로 새 이미지 기동 여부 확인
+        log.info("[{}] METER backend ready on port {}",
+                com.meter.backend.service.MqttSubscriberService.DEPLOY_MARKER,
+                environment.getProperty("server.port", "8080"));
         log.info("DB url={}", environment.getProperty("spring.datasource.url"));
         log.info("DB username={}", environment.getProperty("spring.datasource.username"));
         log.info("google.client.id present={}", googleClientId != null && !googleClientId.isBlank());
         log.info("gemini.api.key present={}",
                 environment.getProperty("gemini.api.key") != null
                         && !environment.getProperty("gemini.api.key").isBlank());
+        log.info("mqtt.broker-url={}", environment.getProperty("mqtt.broker-url", "tcp://mosquitto:1883"));
 
         boolean deviceTokenPresent = deviceToken != null && !deviceToken.isBlank();
         log.info("meter.device.token present={}", deviceTokenPresent);

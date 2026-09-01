@@ -13,25 +13,25 @@ const steps = [
     n: 1,
     title: "촬영",
     icon: <PhotoCameraRoundedIcon sx={{ fontSize: 32, color: meterColors.primary }} />,
-    body: "지도 아래 「쓰레기촬영」에서 자원 사진을 올립니다.",
+    body: "지도 하단 AI 카메라로 자원 사진을 올립니다.",
   },
   {
     n: 2,
     title: "유형 확인",
     icon: <CategoryRoundedIcon sx={{ fontSize: 32, color: meterColors.primary }} />,
-    body: "AI가 판별한 유형을 확인하고 필요 시 수정합니다.",
+    body: "AI 판별 유형을 확인하고 필요 시 수정합니다.",
   },
   {
     n: 3,
     title: "모듈 선택",
     icon: <TouchAppRoundedIcon sx={{ fontSize: 32, color: meterColors.primary }} />,
-    body: "지도에서 해당 유형 METER 모듈 마커를 누릅니다.",
+    body: "지도에서 해당 유형 모듈 마커를 누릅니다.",
   },
   {
     n: 4,
     title: "DB · 경로",
     icon: <StorageRoundedIcon sx={{ fontSize: 32, color: meterColors.primary }} />,
-    body: "모듈 DB에서 적재 현황을 보거나 최적 수거 경로를 확인합니다.",
+    body: "모듈 DB·최적 수거 경로를 확인합니다.",
   },
 ];
 
@@ -46,7 +46,7 @@ const MapGuide = () => {
             <Typography variant="h5" sx={{ fontWeight: 900, letterSpacing: "-0.03em" }}>
               이용 방법
             </Typography>
-            <Typography sx={{ color: meterColors.secondary, mt: 0.75, fontSize: "0.9rem" }}>
+            <Typography sx={{ color: meterColors.secondary, mt: 0.75, fontSize: "0.9rem", whiteSpace: "nowrap" }}>
               촬영 → 분류 → 모듈 투입 순입니다.
             </Typography>
           </Box>
@@ -98,7 +98,7 @@ const MapGuide = () => {
                   {s.icon}
                   <Typography sx={{ fontWeight: 800, fontSize: "1rem" }}>{s.title}</Typography>
                 </Stack>
-                <Typography sx={{ color: meterColors.primaryMuted, lineHeight: 1.55, fontSize: "0.88rem", wordBreak: "keep-all" }}>
+                <Typography sx={{ color: meterColors.primaryMuted, fontSize: "0.88rem", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
                   {s.body}
                 </Typography>
               </Box>

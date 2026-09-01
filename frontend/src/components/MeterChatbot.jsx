@@ -40,12 +40,13 @@ function stripMarkdown(text) {
     .trim();
 }
 
-export default function MeterChatbot() {
+/** docked=true 이면 지도 하단 바에 인라인 배치(내 위치·AI 카메라와 같은 높이). */
+export default function MeterChatbot({ docked = false }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([
     {
       role: "bot",
-      text: "METER AI입니다. 모듈 적재율·신호 상태 데이터를 바탕으로 질문해 주세요.",
+      text: "모듈 적재율·신호 상태를 물어보세요.",
     },
   ]);
   const [input, setInput] = useState("");
@@ -80,9 +81,9 @@ export default function MeterChatbot() {
   return (
     <Box
       sx={{
-        position: "fixed",
-        right: { xs: 12, sm: 16 },
-        bottom: { xs: 88, sm: 92 },
+        position: docked ? "relative" : "fixed",
+        right: docked ? "auto" : { xs: 12, sm: 16 },
+        bottom: docked ? "auto" : { xs: 88, sm: 92 },
         zIndex: 1500,
         display: "flex",
         flexDirection: "column",
@@ -104,6 +105,9 @@ export default function MeterChatbot() {
             <Paper
               elevation={8}
               sx={{
+                position: docked ? "absolute" : "relative",
+                right: docked ? 0 : "auto",
+                bottom: docked ? "calc(100% + 10px)" : "auto",
                 width: { xs: "min(94vw, 440px)", sm: 480 },
                 height: { xs: "min(76dvh, 620px)", sm: 640 },
                 display: "flex",
@@ -242,8 +246,8 @@ export default function MeterChatbot() {
               onClick={() => setOpen(true)}
               aria-label="METER AI 챗봇 열기"
               sx={{
-                width: 64,
-                height: 64,
+                width: docked ? 48 : 64,
+                height: docked ? 48 : 64,
                 bgcolor: meterColors.primary,
                 color: meterColors.bg,
                 border: `2px solid ${meterColors.borderStrong}`,
@@ -251,7 +255,7 @@ export default function MeterChatbot() {
                 "&:hover": { bgcolor: "#fff", color: meterColors.bg },
               }}
             >
-              <SmartToyRoundedIcon />
+              <SmartToyRoundedIcon sx={{ fontSize: docked ? 24 : 28 }} />
             </IconButton>
           </motion.div>
         )}

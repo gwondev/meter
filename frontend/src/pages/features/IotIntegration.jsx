@@ -18,12 +18,12 @@ export default function IotIntegration() {
       }
       title="IoT 실시간 적재 측정"
       subtitle="탈부착형 모듈 · 초음파 · MQTT"
-      description="다양한 수거 용기에 부착한 IoT 모듈이 적재 높이를 실시간으로 전송합니다."
-      highlights={["5분 HEARTBEAT", "1분 HEIGHT", "LED 상태"]}
+      description="수거 용기에 부착한 IoT 모듈이 적재 높이를 실시간 전송합니다."
+      highlights={["5초 발행", "MQTT", "LED 상태"]}
       bullets={[
         "초음파 센서로 용기 내부 적재 높이를 측정합니다.",
-        "MQTT로 heartbeat·height 데이터를 서버에 전송합니다.",
-        "현장 LED로 10/30/50cm 구간별 상태를 표시합니다.",
+        "MQTT로 height 데이터를 서버에 전송합니다.",
+        "현장 LED로 연결·전송 상태를 표시합니다.",
       ]}
     />
   );

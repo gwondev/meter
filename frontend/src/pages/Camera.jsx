@@ -109,11 +109,20 @@ const Camera = () => {
           textAlign="center"
           sx={{ width: "min(100%, 520px)", mx: "auto" }}
         >
-          <Typography variant="h4" sx={{ fontWeight: 900, letterSpacing: "-0.03em" }}>
+          <Typography variant="h4" sx={{ fontWeight: 900, letterSpacing: "-0.03em", whiteSpace: "nowrap" }}>
             AI 카메라
           </Typography>
-          <Typography sx={{ color: "rgba(255,255,255,0.72)", lineHeight: 1.55, px: { xs: 0.4, sm: 1 }, fontSize: { xs: "0.86rem", sm: "1rem" } }}>
-            AI가 자원 유형을 판별합니다. 지도에서 맞는 METER 모듈 거점을 찾아 투입하세요.
+          <Typography
+            sx={{
+              color: "rgba(255,255,255,0.72)",
+              fontSize: { xs: "0.82rem", sm: "0.92rem" },
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              maxWidth: "100%",
+            }}
+          >
+            촬영하면 자원 유형을 판별하고 맞는 거점을 안내합니다.
           </Typography>
 
           <input

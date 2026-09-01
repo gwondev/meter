@@ -54,13 +54,6 @@ export default function FeatureIntroLayout({
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5, ease: [0.22, 1, 0.36, 1] }}
         >
-          <Box
-            component="img"
-            src="/meter-logo.png"
-            alt="METER"
-            sx={{ width: 40, height: 40, objectFit: "contain", mixBlendMode: "screen", opacity: 0.9 }}
-          />
-
           {badge && (
             <Chip
               label={badge}
@@ -82,14 +75,23 @@ export default function FeatureIntroLayout({
               {title}
             </Typography>
             {subtitle && (
-              <Typography sx={{ color: meterColors.primaryMuted, fontWeight: 600, fontSize: "0.95rem" }}>
+              <Typography sx={{ color: meterColors.primaryMuted, fontWeight: 600, fontSize: "0.95rem", whiteSpace: "nowrap" }}>
                 {subtitle}
               </Typography>
             )}
           </Stack>
 
           {description && (
-            <Typography sx={{ color: meterColors.secondary, lineHeight: 1.75, wordBreak: "keep-all", maxWidth: 420 }}>
+            <Typography
+              sx={{
+                color: meterColors.secondary,
+                fontSize: "0.92rem",
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                maxWidth: "100%",
+              }}
+            >
               {description}
             </Typography>
           )}

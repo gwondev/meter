@@ -97,44 +97,45 @@ const NicknamePage = () => {
       />
 
       <Container maxWidth="sm" sx={{ position: "relative", zIndex: 1 }}>
-        <Stack spacing={5} alignItems="center" sx={{ animation: `${fadeInUp} 0.8s ease-out` }}>
-          <Box
-            component="img"
-            src="/meter-logo.png"
-            alt="METER"
-            sx={{ width: 56, height: 56, objectFit: "contain", mixBlendMode: "screen", opacity: 0.9 }}
-          />
-
+        <Stack spacing={3.5} alignItems="center" sx={{ animation: `${fadeInUp} 0.8s ease-out` }}>
           <Box
             sx={{
-              width: 90,
-              height: 90,
-              borderRadius: 5,
+              width: 72,
+              height: 72,
+              borderRadius: 4,
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
               color: meterColors.primary,
               background: "rgba(255,255,255,0.04)",
               border: `1px solid ${meterColors.border}`,
-              boxShadow: "0 8px 32px rgba(0,0,0,0.2)",
             }}
           >
-            <AccountCircleRoundedIcon sx={{ fontSize: 48 }} />
+            <AccountCircleRoundedIcon sx={{ fontSize: 40 }} />
           </Box>
 
-          <Stack spacing={1.5}>
-            <Typography variant="h3" sx={{ fontWeight: 900, letterSpacing: "-0.03em" }}>
+          <Stack spacing={0.8} alignItems="center" sx={{ maxWidth: "100%" }}>
+            <Typography variant="h4" sx={{ fontWeight: 900, letterSpacing: "-0.03em", whiteSpace: "nowrap" }}>
               METER 시작하기
             </Typography>
-            <Typography sx={{ color: meterColors.secondary, fontSize: "1.1rem", lineHeight: 1.7, maxWidth: 420 }}>
-              환영합니다! 서비스에서 사용할 별명을 설정해 주세요.
+            <Typography
+              sx={{
+                color: meterColors.secondary,
+                fontSize: { xs: "0.88rem", sm: "0.95rem" },
+                whiteSpace: "nowrap",
+                overflow: "hidden",
+                textOverflow: "ellipsis",
+                maxWidth: "100%",
+              }}
+            >
+              서비스에서 사용할 별명을 입력해 주세요.
             </Typography>
           </Stack>
 
           <TextField
             fullWidth
             variant="outlined"
-            placeholder="별명 입력 (예: meter_user)"
+            placeholder="별명 입력"
             value={nickname}
             onChange={(e) => setNickname(e.target.value)}
             onKeyDown={(e) => {
@@ -148,16 +149,15 @@ const NicknamePage = () => {
               ),
             }}
             sx={{
-              maxWidth: 400,
+              maxWidth: 360,
               "& .MuiOutlinedInput-root": {
                 color: meterColors.primary,
                 backgroundColor: "rgba(255,255,255,0.03)",
-                fontSize: "1.1rem",
+                fontSize: "1.05rem",
                 fontWeight: 600,
                 "& fieldset": {
                   borderColor: meterColors.border,
                   borderRadius: 3,
-                  transition: "all 0.2s ease",
                 },
                 "&:hover fieldset": { borderColor: meterColors.borderStrong },
                 "&.Mui-focused fieldset": {
@@ -179,10 +179,10 @@ const NicknamePage = () => {
             onClick={handleSubmit}
             endIcon={<ArrowForwardRoundedIcon />}
             sx={{
-              maxWidth: 320,
-              height: 60,
+              maxWidth: 280,
+              height: 52,
               borderRadius: 999,
-              fontSize: "1.2rem",
+              fontSize: "1.05rem",
               fontWeight: 800,
               color: "#000",
               backgroundColor: meterColors.primary,
