@@ -72,18 +72,6 @@ public class ModuleSignalService {
     }
 
     @Transactional
-    public Module applyVisionReport(String serialNumber, double fillPercent, String imageUrl) {
-        applyFillPercent(serialNumber, fillPercent, imageUrl);
-        return moduleRepository.findBySerialNumber(serialNumber.trim()).orElseThrow();
-    }
-
-    @Deprecated
-    @Transactional
-    public void applyHeight(String serialNumber, double heightCm) {
-        applyHeightLegacy(serialNumber, heightCm);
-    }
-
-    @Transactional
     public void touch(String serialNumber) {
         Module module = findOrCreate(serialNumber);
         module.setLastSignalAt(LocalDateTime.now());

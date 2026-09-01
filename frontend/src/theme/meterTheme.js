@@ -144,8 +144,8 @@ export function moduleDisplayState(module) {
   return { active: true, label: `여유 ${fill}%`, color: meterColors.fillGreen, level: "ok", fillPercent: fill };
 }
 
-/** 디바이스 계열 표기 — 시리얼 접두어: m* 초음파, r* 카메라. 토픽은 같아도 계열은 시리얼로 갈린다. */
+/** 디바이스 계열 표기 — m*=D모듈(초음파), r*=R모듈(카메라). */
 export function deviceTypeLabel(module) {
-  if (module?.deviceType === "VISION_CAM") return "카메라 (라즈베리파이)";
-  return "초음파 높이 (ESP32)";
+  if (module?.deviceType === "VISION_CAM") return "R모듈 (카메라)";
+  return "D모듈 (초음파)";
 }

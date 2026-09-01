@@ -8,20 +8,20 @@ import java.time.LocalDateTime;
  * METER 수거 거점 모듈.
  *
  * <ul>
- *   <li>{@code m*} — M 계열 (부착 모듈). 보드가 {@code fillPercent} 0~100 을 보낸다.</li>
- *   <li>{@code r*} — R 계열 (카메라). 동일하게 {@code fillPercent} 0~100 (+사진 HTTP).</li>
+ *   <li>{@code m*} — D모듈 (초음파). 보드가 {@code fillPercent} 0~100 을 MQTT로 보낸다.</li>
+ *   <li>{@code r*} — R모듈 (카메라). 동일하게 {@code fillPercent} + 선택 {@code imageBase64} (MQTT만).</li>
  * </ul>
  *
- * <p>더미(임시 데이터)는 {@code dummy_modules} 에 두고, 계열은 여전히 M 또는 R 이다(D(M)/D(R)).
+ * <p>더미는 {@code dummy_modules} — 계열만 M(높이형)/R(카메라형). 제품명 D모듈과 혼동 주의.
  */
 @Entity
 @Table(name = "modules")
 @Getter @Setter @NoArgsConstructor @AllArgsConstructor @Builder
 public class Module {
 
-    /** M 계열 — 부착 모듈 (시리얼 m*) */
+    /** D모듈 — 초음파 높이 (시리얼 m*) */
     public static final String DEVICE_HEIGHT_SENSOR = "HEIGHT_SENSOR";
-    /** R 계열 — 카메라 (시리얼 r*) */
+    /** R모듈 — 카메라 (시리얼 r*) */
     public static final String DEVICE_VISION_CAM = "VISION_CAM";
 
     /** @deprecated 더미는 deviceType=M/R + dummy 플래그. 레거시 값만 잔존. */
@@ -70,7 +70,7 @@ public class Module {
     @Column(name = "fill_percent")
     private Double fillPercent;
 
-    /** 모듈2 최신 스냅샷 이미지 경로 (예: /api/uploads/r1/1738400000.jpg) */
+    /** R모듈 최신 스냅샷 경로 (예: /api/uploads/r1/1738400000.jpg) */
     @Column(name = "last_image_url", length = 255)
     private String lastImageUrl;
 
@@ -99,7 +99,7 @@ public class Module {
     /**
      * 지금 신호가 들어오고 있는지 — false 면 프론트에서 회색 «신호 대기중» 으로 표시한다.
      *
-     * <p>모듈1 발행 주기 30초 → 여유 90초. 모듈2 는 5분 간격 → 12분.
+     * <p>D모듈 발행 주기 30초 → 여유 90초. R모듈은 5분 간격 → 12분.
      * 더미는 항상 활성으로 취급한다(테스트 배치용).
      */
     @Transient

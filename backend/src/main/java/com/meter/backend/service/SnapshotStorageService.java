@@ -4,7 +4,6 @@ import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
-import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.server.ResponseStatusException;
 
 import java.io.IOException;
@@ -16,16 +15,15 @@ import java.util.List;
 import java.util.Locale;
 
 /**
- * 모듈2 스냅샷 이미지 저장 — 디스크에 쓰고 공개 URL 을 돌려준다.
+ * R모듈 스냅샷 저장 — MQTT로 받은 바이트를 디스크에 쓰고 공개 URL을 돌려준다.
  *
- * <p>모듈당 최근 {@code meter.upload.keep-per-module} 장만 남기고 오래된 파일은 삭제한다.
- * 5분 주기 업로드가 무한정 쌓이지 않게 하기 위함.
+ * <p>모듈당 최근 {@code meter.upload.keep-per-module} 장만 남긴다 (기본 20).
  */
 @Service
 @Slf4j
 public class SnapshotStorageService {
 
-    /** 공개 URL 접두어 — Cloudflare 가 /api/* 를 백엔드로 보내므로 터널 설정 변경이 필요 없다. */
+    /** 공개 URL 접두어 — Cloudflare 가 /api/* 를 백엔드로 보낸다. */
     public static final String PUBLIC_PREFIX = "/api/uploads/";
 
     private static final List<String> ALLOWED_EXTENSIONS = List.of("jpg", "jpeg", "png", "webp");
@@ -35,26 +33,10 @@ public class SnapshotStorageService {
 
     public SnapshotStorageService(
             @Value("${meter.upload.dir:/backend/uploads}") String uploadDir,
-            @Value("${meter.upload.keep-per-module:50}") int keepPerModule
+            @Value("${meter.upload.keep-per-module:20}") int keepPerModule
     ) {
         this.root = Paths.get(uploadDir).toAbsolutePath().normalize();
         this.keepPerModule = Math.max(1, keepPerModule);
-    }
-
-    /**
-     * @return 저장된 이미지의 공개 URL (예: {@code /api/uploads/r1/1738400000000.jpg})
-     */
-    public String store(String serialNumber, MultipartFile file) {
-        if (file == null || file.isEmpty()) {
-            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "image file is required");
-        }
-
-        try {
-            return storeBytes(serialNumber, file.getBytes(), resolveExtension(file.getOriginalFilename()));
-        } catch (IOException e) {
-            log.error("스냅샷 읽기 실패 serial={}", serialNumber, e);
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "failed to store snapshot");
-        }
     }
 
     /**
@@ -108,19 +90,6 @@ public class SnapshotStorageService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "invalid serialNumber");
         }
         return serial;
-    }
-
-    private static String resolveExtension(String originalFilename) {
-        if (originalFilename != null) {
-            int dot = originalFilename.lastIndexOf('.');
-            if (dot >= 0 && dot < originalFilename.length() - 1) {
-                String ext = originalFilename.substring(dot + 1).toLowerCase(Locale.ROOT);
-                if (ALLOWED_EXTENSIONS.contains(ext)) {
-                    return ext;
-                }
-            }
-        }
-        return "jpg";
     }
 
     private void pruneOldFiles(Path moduleDir) throws IOException {

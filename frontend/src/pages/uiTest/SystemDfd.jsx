@@ -47,33 +47,46 @@ export default function SystemDfd() {
         <Stack spacing={0.8}>
           <Typography sx={{ fontWeight: 900, fontSize: "1.05rem" }}>전체 시스템 DFD (추상)</Typography>
           <Typography sx={{ fontSize: "0.82rem", color: meterColors.secondary, lineHeight: 1.65 }}>
-            신청서 기준 핵심 흐름은 <Box component="span" sx={{ color: meterColors.primaryMuted }}>초음파 적재 높이(heightCm) 측정 → MQTT → 서버 저장 → 웹 지도 표시</Box>
-            입니다. IR·READY·CHECK 기반 투입 검증은 TRESS 프로토타입에서 이어받은 보조 경로이며, 현재 지도 「버리기」는 검증 없이 투입 횟수만 증가합니다.
+            핵심 흐름은{" "}
+            <Box component="span" sx={{ color: meterColors.primaryMuted }}>
+              보드에서 fillPercent(0~100) 산출 → MQTT meter/&#123;serial&#125;/status → 서버 저장 → 웹 지도
+            </Box>
+            입니다. 상세는 docs/DEVICE_SPEC.txt.
           </Typography>
         </Stack>
 
-        {/* IoT 핵심 흐름 */}
         <Box>
           <Typography sx={{ fontSize: "0.7rem", fontWeight: 800, color: meterColors.secondary, letterSpacing: "0.08em", mb: 1 }}>
-            ① IoT · 적재량 (신청서 메인)
+            ① D모듈 · 초음파 (구현 완료)
           </Typography>
           <Stack direction={{ xs: "column", sm: "row" }} alignItems="center" spacing={{ xs: 0.5, sm: 1 }}>
-            <DfdNode label="HC-SR04 센서" hint="초음파 거리" sx={{ flex: 1, width: "100%" }} />
+            <DfdNode label="HC-SR04P" hint="빈 거리" sx={{ flex: 1, width: "100%" }} />
             <DfdArrow />
-            <DfdNode label="ESP32 모듈" hint="펌웨어 · LED" sx={{ flex: 1, width: "100%" }} />
-            <DfdArrow label="MQTT" />
+            <DfdNode label="ESP32 D모듈" hint="fill% 산출" sx={{ flex: 1, width: "100%" }} />
+            <DfdArrow label="MQTT 30초" />
             <DfdNode label="Mosquitto" hint="Broker" sx={{ flex: 1, width: "100%" }} />
             <DfdArrow />
-            <DfdNode label="Spring Boot" hint="HEIGHT 처리" sx={{ flex: 1, width: "100%" }} />
+            <DfdNode label="Spring Boot" hint="status 구독" sx={{ flex: 1, width: "100%" }} />
             <DfdArrow />
-            <DfdNode label="MySQL" hint="Module.heightCm" sx={{ flex: 1, width: "100%" }} />
+            <DfdNode label="MySQL" hint="fillPercent" sx={{ flex: 1, width: "100%" }} />
           </Stack>
-          <Typography sx={{ fontSize: "0.68rem", color: meterColors.secondary, mt: 0.8, textAlign: "center" }}>
-            HEARTBEAT(5분) · HEIGHT(1분) · heightCm ≤ 10cm → FULL
-          </Typography>
         </Box>
 
-        {/* Web 흐름 */}
+        <Box>
+          <Typography sx={{ fontSize: "0.7rem", fontWeight: 800, color: meterColors.secondary, letterSpacing: "0.08em", mb: 1 }}>
+            ①′ R모듈 · 카메라 (인수 예정)
+          </Typography>
+          <Stack direction={{ xs: "column", sm: "row" }} alignItems="center" spacing={{ xs: 0.5, sm: 1 }}>
+            <DfdNode label="CSI 카메라" hint="1분 촬영" sx={{ flex: 1, width: "100%" }} />
+            <DfdArrow />
+            <DfdNode label="RPi5 R모듈" hint="원본 비교 → fill%" sx={{ flex: 1, width: "100%" }} />
+            <DfdArrow label="MQTT 5분" />
+            <DfdNode label="Mosquitto" hint="fill%+JPEG" sx={{ flex: 1, width: "100%" }} />
+            <DfdArrow />
+            <DfdNode label="Spring Boot" hint="스냅샷 20장" sx={{ flex: 1, width: "100%" }} />
+          </Stack>
+        </Box>
+
         <Box>
           <Typography sx={{ fontSize: "0.7rem", fontWeight: 800, color: meterColors.secondary, letterSpacing: "0.08em", mb: 1 }}>
             ② Web · 사용자 서비스
@@ -92,12 +105,11 @@ export default function SystemDfd() {
               <DfdNode label="Gemini API" hint="AI 카메라 · 챗봇" sx={{ minWidth: 120 }} />
             </Stack>
             <Typography sx={{ fontSize: "0.68rem", color: meterColors.secondary, textAlign: "center" }}>
-              GET /modules → heightCm · lastHeartbeat → 지도 마커 · 적재 상태 · 최적경로
+              GET /modules → fillPercent · lastSignalAt · lastImageUrl → 지도 · 최적경로
             </Typography>
           </Stack>
         </Box>
 
-        {/* AI 흐름 */}
         <Box>
           <Typography sx={{ fontSize: "0.7rem", fontWeight: 800, color: meterColors.secondary, letterSpacing: "0.08em", mb: 1 }}>
             ③ AI · 거점 안내
@@ -111,19 +123,17 @@ export default function SystemDfd() {
           </Stack>
         </Box>
 
-        {/* 보조 경로 */}
         <Box>
           <Typography sx={{ fontSize: "0.7rem", fontWeight: 800, color: meterColors.secondary, letterSpacing: "0.08em", mb: 1 }}>
-            ④ 보조 · 프로토타입 (신청서 비포함)
+            ④ 보조 · 프로토타입
           </Typography>
           <WireArea
             label="READY → CHECK 투입 검증 (레거시)"
-            hint="IR 감지 · PENDING 기록 · /input 폴링 — 현재 지도 dispose는 검증 없이 카운트만 +1"
+            hint="현재 지도 dispose는 검증 없이 카운트만 +1"
             height={56}
           />
         </Box>
 
-        {/* Mermaid — 제안서용 */}
         <Box
           sx={{
             p: 2,
@@ -134,7 +144,7 @@ export default function SystemDfd() {
           }}
         >
           <Typography sx={{ fontSize: "0.68rem", color: meterColors.secondary, mb: 1, fontWeight: 700 }}>
-            데이터 흐름 요약 (신청서 p.13 기준 + 구현)
+            데이터 흐름 요약
           </Typography>
           <Box
             component="pre"
@@ -147,17 +157,14 @@ export default function SystemDfd() {
               whiteSpace: "pre-wrap",
             }}
           >
-{`① 초음파 센서 → 적재 높이(cm) 측정
-② ESP32 AIoT 모듈 → 데이터 수집
-③ WiFi · MQTT → Mosquitto Broker
-④ Spring Boot → 처리 · 저장
-⑤ MySQL → Module.heightCm, lastHeartbeat
-⑥ AI 분석 → 수거 우선순위 · 최적경로 · 챗봇
-⑦ React 웹 → 지도 · DB · 대시보드
-⑧ 사용자 · 관리자 서비스 제공
+{`① D/R 보드 → fillPercent(0~100) 자체 산출
+② MQTT meter/{serial}/status → Mosquitto
+③ Spring Boot → Module.fillPercent (+ R lastImageUrl)
+④ React → 지도 · 신호상태 · 최적경로 · R 최신 이미지
+⑤ AI → 품목 분류 · 챗봇
 
-※ 투입 검증(IR/READY/CHECK)은 신청서 핵심 흐름이 아님
-※ 운영 핵심 지표 = 적재 높이 + 연결 상태 + 수거 경로`}
+※ 디바이스 HTTP / 토큰 없음
+※ 운영 핵심 지표 = fillPercent + 신호 + 수거 경로`}
           </Box>
         </Box>
       </Stack>

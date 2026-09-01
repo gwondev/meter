@@ -120,7 +120,6 @@ export default function ModuleDB() {
                         <TableCell sx={{ color: meterColors.secondary, borderColor: meterColors.border }}>시리얼</TableCell>
                         <TableCell sx={{ color: meterColors.secondary, borderColor: meterColors.border }}>계열</TableCell>
                         <TableCell sx={{ color: meterColors.secondary, borderColor: meterColors.border }}>적재율</TableCell>
-                        <TableCell sx={{ color: meterColors.secondary, borderColor: meterColors.border }}>원본 측정</TableCell>
                         <TableCell sx={{ color: meterColors.secondary, borderColor: meterColors.border }}>마지막 신호</TableCell>
                       </TableRow>
                     </TableHead>
@@ -137,9 +136,6 @@ export default function ModuleDB() {
                             </TableCell>
                             <TableCell sx={{ color: state.color, borderColor: meterColors.border, fontWeight: 700 }}>
                               {state.label}
-                            </TableCell>
-                            <TableCell sx={{ color: meterColors.primaryMuted, borderColor: meterColors.border }}>
-                              {m.heightCm != null ? `${Number(m.heightCm).toFixed(1)}cm` : "—"}
                             </TableCell>
                             <TableCell sx={{ color: meterColors.primaryMuted, borderColor: meterColors.border }}>
                               {formatSignalAge(m.lastSignalAt)}

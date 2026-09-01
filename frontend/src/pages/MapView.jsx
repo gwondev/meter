@@ -20,15 +20,15 @@ const TYPE_SYMBOLS = {
   HAZARD: "☣️",
 };
 
-/** M=부착모듈, R=카메라. 더미는 D(M)/D(R). */
+/** D=높이 모듈 아이콘, R=카메라 아이콘. 더미는 더미(D)/더미(R). */
 function seriesMeta(module) {
   const isR =
     module?.deviceType === "VISION_CAM" ||
     String(module?.series || "").toUpperCase().includes("R");
   if (module?.dummy) {
-    return { key: isR ? "D(R)" : "D(M)", icon: isR ? "📷" : "📟", isR };
+    return { key: isR ? "더미(R)" : "더미(D)", icon: isR ? "📷" : "📟", isR };
   }
-  return { key: isR ? "R" : "M", icon: isR ? "📷" : "📟", isR };
+  return { key: isR ? "R" : "D", icon: isR ? "📷" : "📟", isR };
 }
 
 /**

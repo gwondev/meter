@@ -22,9 +22,6 @@ public class StartupDiagnostics {
     @Value("${google.client.id:}")
     private String googleClientId;
 
-    @Value("${meter.device.token:}")
-    private String deviceToken;
-
     @Value("${mqtt.broker-url:tcp://meter-mosquitto:1883}")
     private String mqttBrokerUrl;
 
@@ -41,12 +38,6 @@ public class StartupDiagnostics {
         log.info("gemini.api.key present={}",
                 environment.getProperty("gemini.api.key") != null
                         && !environment.getProperty("gemini.api.key").isBlank());
-
-        boolean deviceTokenPresent = deviceToken != null && !deviceToken.isBlank();
-        log.info("meter.device.token present={}", deviceTokenPresent);
-        if (!deviceTokenPresent) {
-            log.warn("METER_DEVICE_TOKEN 미설정 — /api/device/** 는 503 으로 차단된다.");
-        }
 
         log.info("MQTT VERIFY={} brokerUrl={}", MqttSubscriberService.BUILD_VERIFY_TAG, mqttBrokerUrl);
         logBrokerDns("meter-mosquitto");

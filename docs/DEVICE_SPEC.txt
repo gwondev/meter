@@ -12,22 +12,23 @@ METER 명세서
     모듈 DB(적재율·신호)를 바탕으로 자연어 질의응답.
 
   AI 카메라
-    사진으로 쓰레기 품목 분류(Gemini) → 투입·리워드 연동.
+    사진으로 쓰레기 품목 분류(Gemini) → 투입 위치 안내
 
   지도
     카카오맵에 모듈 위치·적재율(0~100%)·신호 상태 표시.
-    M=모듈 아이콘, R=카메라 아이콘.
+    M/D(높이)=모듈 아이콘, R(카메라)=카메라 아이콘.
 
   최적 수거 경로
-    화면 안 모듈 전부 방문. 만재 우선 + 도로망.
-    도로가 모듈 앞에서 끊기면 직선 링크, 진행 방향 화살표.
+    화면 안 모듈 전부 방문. 만재 우선 정렬 + 도로망 경로.
+    도로가 모듈 앞에서 끊기면 직선으로 잇고, 진행 방향 화살표 표시.
 
   관리자
     모듈·더미·유저 관리, 무신호 정리, MQTT 진단.
 
-  공통 지표
+  ★공통 지표
     fillPercent 0~100 (0=수거 불필요, 100=즉시 수거).
-    M·R 모두 MQTT meter/{serial}/status 로 통일.
+    모듈 단에서 「수거가 필요한지」수치를 자체 계산해서 전송한다.
+    M·R 모두 MQTT meter/{serial}/status 만 사용한다. (HTTP 디바이스 API 없음)
 
 
 ────────────────────────────────────────
@@ -35,21 +36,33 @@ D모듈 — 높이 측정 (구현 완료)
 ────────────────────────────────────────
 
   상태
-    구현 완료. GitHub: https://github.com/gwondev/meter
+    구현 완료. 펌웨어·서버·웹 연동까지 동작 중.
+
+  GitHub
+    https://github.com/gwondev/meter
     소스: meter_iot/src/module1.cpp
 
   역할
-    초음파로 빈 거리 측정 → 보드에서 0~100% 환산 후 MQTT 발행.
+    초음파(HC-SR04P)로 빈 거리를 재고, 보드에서 0~100%로 환산해 전송.
 
   시리얼
     m1, m2, … (접두어 m)
 
-  MQTT
+  전송 (MQTT)
     URI      ws://mqtt-meter.gwon.run:80
     Topic    meter/{serial}/status   예: meter/m1/status
     주기     30초
     Payload  { "moduleSerial":"m1", "fillPercent":72.5 }
-    QoS 1 / retain false / 구독 없음
+    QoS 1 / retain false / 구독 없음(발행만)
+
+
+────────────────────────────────────────
+POWER TANK
+────────────────────────────────────────
+
+  보조배터리로 D모듈·R모듈(및 관련 보드)을 충전·상시 전원 공급.
+  권장: 20000mAh / 100W급 이상. (뚜껑 태양광은 보조 충전용)
+  서버·웹과 직접 통신하지 않음.
 
 
 ────────────────────────────────────────
@@ -57,124 +70,75 @@ R모듈 — 카메라 영상 판정 (인수 예정)  ★핵심
 ────────────────────────────────────────
 
   상태
-    인수 예정. D모듈과 같은 MQTT 경로로 붙인다.
-    HTTP 토큰 업로드는 쓰지 않는다 (레거시만 서버에 남아 있음).
+    인수 예정. D모듈과 같은 MQTT만 쓴다. HTTP·토큰 없음.
 
   보드
     Raspberry Pi 5 + CSI 카메라. 시리얼 r1, r2, …
 
-  해야 할 일
-    1) 설치/수거 직후 「빈 상태」원본 사진 로컬 보관
-    2) 5분마다 현재 촬영 → 원본 비교 → fillPercent 0~100
-    3) 압축 JPEG(권장 200~500KB)를 base64 로 넣어 MQTT 발행
-       (수치만 보내도 됨. 사진 없으면 지도에 스냅샷만 안 뜸)
+
+  보드에서 할 일
+    1) 설치/수거 직후 「빈 상태」원본 사진 여러 장 보관
+       (예: 5장. 사람·차 등 일시 물체를 걸러 내려면 다중 원본 비교가 필요할 수 있음)
+    2) 1분마다 현재 사진 촬영 → 원본들과 비교해 fillPercent 산출(로컬)
+    3) 5분마다 MQTT로 fillPercent + 압축 이미지 전송
 
 
-  [필수] MQTT — D모듈과 동일 브로커·토픽 규약
+  웹·서버
+    R 모듈 클릭 → 가장 최근 수신 이미지 표시 (lastImageUrl)
+    모듈당 최근 20장만 디스크에 보관 (초과분 삭제)
+
+
+  MQTT (D와 동일 브로커·토픽)
 
     URI      ws://mqtt-meter.gwon.run:80
-             (내부 브로커: 1883 mqtt / 9001 websockets)
     Topic    meter/{serial}/status   예: meter/r1/status
-    주기     5분 (300초)
-    QoS      1
-    retain   false
-    인증     없음 (브로커 allow_anonymous). 토큰·HTTP 불필요.
-    패킷 한도 브로커 max_packet_size 2MB (압축 JPEG + base64 여유)
+    주기     5분 (촬영·비교는 1분, 전송만 5분)
+    QoS      1 / retain false
+    인증     없음
+    패킷 한도 브로커 2MB (압축 JPEG + base64)
 
+  페이로드 — 수치만
 
-  페이로드 A — 수치만
+    { "moduleSerial":"r1", "fillPercent":72.5 }
 
-    {
-      "moduleSerial": "r1",
-      "fillPercent": 72.5
-    }
-
-
-  페이로드 B — 수치 + 압축 사진 (권장)
+  페이로드 — 수치 + 사진 (권장)
 
     {
       "moduleSerial": "r1",
       "fillPercent": 72.5,
-      "imageBase64": "<JPEG를 base64 인코딩한 문자열>",
+      "imageBase64": "<JPEG base64>",
       "imageFormat": "jpg"
     }
 
-    필드
-      moduleSerial   시리얼 (토픽의 serial 과 맞출 것)
-      fillPercent    0~100 실수/정수
-      imageBase64    선택. JPEG/PNG/WEBP 바이트의 base64
-                     data:image/jpeg;base64,... 형태도 허용
-      imageFormat    선택. jpg | png | webp (기본 jpg)
-                     별칭: imageExt / 필드명 image 도 imageBase64 대신 가능
-
-    사진 권장
-      해상도 축소 + JPEG 품질 낮춰 200~500KB 목표
-      디코드 후 서버 상한 약 900KB (초과 시 사진만 버리고 fill 은 반영)
+    사진: JPEG 압축 200~500KB 권장. 서버 디코드 상한 약 900KB.
 
 
-  서버 동작
-    수신 → fillPercent DB 반영 → imageBase64 있으면
-    /api/uploads/{serial}/{timestamp}.jpg 저장 → lastImageUrl 갱신
-    첫 신호 시 modules 자동 생성 (위치는 관리자 화면에서 지정)
-    12분 이상 미수신 → 지도 「신호 대기중」
+  최소 Python 골격
 
-
-  최소 Python 골격 (paho-mqtt)
-
-    import os, time, base64, json
+    import time, base64, json
     import paho.mqtt.client as mqtt
 
     SERIAL = "r1"
-    BROKER = "mqtt-meter.gwon.run"
-    PORT = 80          # WebSocket. TCP면 보통 1883 + 터널 정책 확인
     TOPIC = f"meter/{SERIAL}/status"
+    # 1분마다 capture+compare, 5분마다 아래 publish
 
-    def capture_jpeg_bytes() -> bytes: ...
-    def estimate_fill(jpeg: bytes) -> float: ...
-
-    def publish(client):
-        jpeg = capture_jpeg_bytes()       # 압축된 JPEG
-        fill = estimate_fill(jpeg)
+    def publish(client, fill, jpeg_bytes):
         payload = {
             "moduleSerial": SERIAL,
             "fillPercent": round(fill, 1),
-            "imageBase64": base64.b64encode(jpeg).decode("ascii"),
+            "imageBase64": base64.b64encode(jpeg_bytes).decode("ascii"),
             "imageFormat": "jpg",
         }
         client.publish(TOPIC, json.dumps(payload), qos=1)
 
-    # WebSocket 예 (환경에 맞게 transport 설정)
     client = mqtt.Client(client_id=f"{SERIAL}-rpi", transport="websockets")
     client.ws_set_options(path="/")
-    client.connect(BROKER, PORT, keepalive=60)
+    client.connect("mqtt-meter.gwon.run", 80, keepalive=60)
     client.loop_start()
-    while True:
-        try:
-            publish(client)
-        except Exception as e:
-            print("publish failed:", e)
-        time.sleep(300)
-
-
-  수치만 테스트 (mosquitto_pub, 브로커 접근 가능한 환경)
-
-    mosquitto_pub -h mqtt-meter.gwon.run -p 80 \
-      -t "meter/r1/status" -q 1 \
-      -m '{"moduleSerial":"r1","fillPercent":50}'
 
 
   하지 않아도 되는 것
-    HTTP / X-METER-DEVICE-TOKEN / 노션 토큰
-    지도 UI·경로·로그인·DB
-    모듈 사전 등록·위치 전송
-
-
-────────────────────────────────────────
-POWER TANK
-────────────────────────────────────────
-
-  보조배터리로 D·R 모듈 충전·상시 전원.
-  권장 20000mAh / 100W급. 서버 통신 없음.
+    HTTP / 토큰 / 지도 UI / DB / 모듈 사전 등록 / 위치 전송
 
 
 ────────────────────────────────────────
@@ -183,4 +147,4 @@ POWER TANK
 
   D모듈  --MQTT meter/m1/status (fill%)------------┐
                                                     ├→ mosquitto → backend → DB → 웹
-  R모듈  --MQTT meter/r1/status (fill% + 사진?)----┘
+  R모듈  --MQTT meter/r1/status (fill% + 사진)-----┘

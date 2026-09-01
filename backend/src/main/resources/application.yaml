@@ -59,18 +59,15 @@ meter:
   iot:
     mqtt-host: mqtt-meter.gwon.run
     mqtt-port: 80
-  device:
-    # /api/device/** 접근용 사전 공유 토큰. 미설정 시 해당 경로는 503으로 차단된다.
-    token: ${METER_DEVICE_TOKEN:}
   module:
     # depthCm 미지정 모듈의 기본 용기 깊이(cm) — heightCm → fillPercent 환산 기준
     default-depth-cm: ${METER_MODULE_DEFAULT_DEPTH_CM:60}
     # 신호가 이 기간 이상 끊긴 모듈은 자동 삭제된다
     stale-retention-days: ${METER_MODULE_STALE_RETENTION_DAYS:10}
   upload:
-    # 모듈2 스냅샷 저장 디렉터리 (컨테이너 볼륨)
+    # R모듈 스냅샷 저장 디렉터리 (컨테이너 볼륨)
     dir: ${METER_UPLOAD_DIR:/backend/uploads}
-    keep-per-module: ${METER_UPLOAD_KEEP_PER_MODULE:50}
+    keep-per-module: ${METER_UPLOAD_KEEP_PER_MODULE:20}
 
 server:
   port: 8080

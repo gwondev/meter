@@ -16,7 +16,7 @@ import java.util.Locale;
  * <ul>
  *   <li>{@code fillPercent} (0~100) — 필수에 가깝게 권장</li>
  *   <li>{@code imageBase64} + 선택 {@code imageFormat} — R 계열 압축 JPEG 등 (선택)</li>
- *   <li>구형 {@code heightCm} — M 레거시 환산</li>
+ *   <li>구형 {@code heightCm} — D모듈 레거시 환산</li>
  * </ul>
  */
 @Service

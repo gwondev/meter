@@ -4,7 +4,7 @@ import FeatureIntroLayout from "../../components/FeatureIntroLayout";
 export default function IotIntegration() {
   return (
     <FeatureIntroLayout
-      badge="IoT · ESP32"
+      badge="IoT · D / R"
       icon={
         <SensorsRoundedIcon
           sx={{
@@ -17,13 +17,13 @@ export default function IotIntegration() {
         />
       }
       title="IoT 실시간 적재 측정"
-      subtitle="탈부착형 모듈 · 초음파 · MQTT"
-      description="용기 IoT 모듈이 적재 높이를 실시간 전송합니다."
-      highlights={["5초 발행", "MQTT", "LED 상태"]}
+      subtitle="D모듈 · R모듈 · MQTT"
+      description="보드가 fillPercent(0~100)를 계산해 MQTT로만 전송합니다."
+      highlights={["fillPercent", "MQTT", "HTTP 없음"]}
       bullets={[
-        "초음파 센서로 용기 내부 적재 높이를 측정합니다.",
-        "MQTT로 height 데이터를 서버에 전송합니다.",
-        "현장 LED로 연결·전송 상태를 표시합니다.",
+        "D모듈: 초음파로 빈 거리를 재고 보드에서 적재율을 산출합니다 (30초).",
+        "R모듈: 원본 사진과 비교해 적재율을 산출하고 5분마다 이미지와 함께 보냅니다.",
+        "서버·웹은 meter/{serial}/status 구독만 합니다. 디바이스 HTTP API는 없습니다.",
       ]}
     />
   );

@@ -617,8 +617,8 @@ const Manage = () => {
                     </TableCell>
                   <TableCell sx={cellBody}>
                     {m.dummy
-                      ? (m.series || (m.deviceType === "VISION_CAM" ? "D(R)" : "D(M)"))
-                      : (m.series || (m.deviceType === "VISION_CAM" ? "R" : "M"))}
+                      ? (m.series === "R" || m.deviceType === "VISION_CAM" ? "더미(R)" : "더미(D)")
+                      : (m.deviceType === "VISION_CAM" || String(m.series || "").includes("R") ? "R" : "D")}
                   </TableCell>
                     <TableCell sx={cellBody}>
                       <Box component="span" sx={{ fontWeight: 700 }}>{m.type}</Box>
@@ -765,7 +765,7 @@ const Manage = () => {
             {editingModule && (
               <Typography sx={{ fontSize: "0.75rem", color: editingModule.dummy ? "#ffb74d" : "#7cff72", fontWeight: 700 }}>
                 {editingModule.dummy
-                  ? `더미 · ${editingModule.series || "D(M)"} (ID ${editingModule.id})`
+                  ? `더미 · ${editingModule.series === "R" ? "더미(R)" : "더미(D)"} (ID ${editingModule.id})`
                   : `실기기 · ${editingModule.series || "M"} (ID ${editingModule.id})`}
               </Typography>
             )}
@@ -813,8 +813,8 @@ const Manage = () => {
                 onChange={(e) => setModuleForm((f) => ({ ...f, series: e.target.value }))}
                 sx={{ color: "#fff" }}
               >
-                <MenuItem value="M">D(M) · 부착 모듈</MenuItem>
-                <MenuItem value="R">D(R) · 카메라</MenuItem>
+                <MenuItem value="M">더미(D) · D모듈형</MenuItem>
+                <MenuItem value="R">더미(R) · R모듈형</MenuItem>
               </Select>
             </FormControl>
           )}
@@ -858,8 +858,8 @@ const Manage = () => {
           )}
           <Typography sx={{ fontSize: "0.72rem", color: "rgba(255,255,255,0.55)" }}>
             {moduleForm.dummy
-              ? "더미는 임시 데이터(별도 ID). 계열 D(M)/D(R). 무신호 자동정리 제외."
-              : "실기기 m*=M, r*=R. 보드는 fillPercent만 전송. 측정 높이는 웹에 표시하지 않음."}
+              ? "더미는 임시 데이터(별도 ID). 계열 더미(D)/더미(R). 무신호 자동정리 제외."
+              : "실기기 m*=D모듈, r*=R모듈. 보드는 fillPercent만 MQTT 전송 (HTTP 없음)."}
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
