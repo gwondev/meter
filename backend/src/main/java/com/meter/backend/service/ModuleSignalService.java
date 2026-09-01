@@ -1,6 +1,7 @@
 package com.meter.backend.service;
 
 import com.meter.backend.entity.Module;
+import com.meter.backend.repository.DummyModuleRepository;
 import com.meter.backend.repository.ModuleRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
@@ -25,6 +26,7 @@ import java.time.LocalDateTime;
 public class ModuleSignalService {
 
     private final ModuleRepository moduleRepository;
+    private final DummyModuleRepository dummyModuleRepository;
     private final GeoAnchorService geoAnchorService;
     private final TableIdCompactionService tableIdCompactionService;
 
@@ -64,11 +66,15 @@ public class ModuleSignalService {
 
     private Module findOrCreate(String serialNumber) {
         String serial = serialNumber.trim();
+        if (dummyModuleRepository.existsBySerialNumber(serial)) {
+            throw new IllegalStateException("serial reserved by dummy_modules: " + serial);
+        }
         return moduleRepository.findBySerialNumber(serial).orElseGet(() -> {
             double[] pos = geoAnchorService.randomNearAnchor();
             Module created = Module.builder()
                     .serialNumber(serial)
                     .deviceType(Module.deviceTypeFromSerial(serial))
+                    .dummy(false)
                     .type("GENERAL")
                     .lat(round6(pos[0]))
                     .lon(round6(pos[1]))

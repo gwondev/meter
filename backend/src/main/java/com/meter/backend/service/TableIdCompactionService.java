@@ -27,9 +27,21 @@ public class TableIdCompactionService {
         try {
             compactUsers();
             compactModules();
+            compactDummyModulesInternal();
             compactDisposalRecords();
             compactRewardHistories();
             log.info("table id compaction completed");
+        } finally {
+            jdbcTemplate.execute("SET FOREIGN_KEY_CHECKS=1");
+        }
+    }
+
+    /** 더미 전용 — modules FK 와 무관한 별도 ID 공간. */
+    @Transactional
+    public void compactDummyModules() {
+        jdbcTemplate.execute("SET FOREIGN_KEY_CHECKS=0");
+        try {
+            compactDummyModulesInternal();
         } finally {
             jdbcTemplate.execute("SET FOREIGN_KEY_CHECKS=1");
         }
@@ -58,13 +70,14 @@ public class TableIdCompactionService {
     }
 
     private void compactModules() {
-        List<Long> ids = jdbcTemplate.queryForList("SELECT id FROM modules ORDER BY id", Long.class);
+        List<Long> ids = jdbcTemplate.queryForList(
+                "SELECT id FROM modules WHERE COALESCE(dummy, 0) = 0 ORDER BY id", Long.class);
         if (ids.isEmpty()) {
             resetAutoIncrement("modules", 1);
             return;
         }
 
-        jdbcTemplate.update("UPDATE modules SET id = id + ?", ID_OFFSET);
+        jdbcTemplate.update("UPDATE modules SET id = id + ? WHERE COALESCE(dummy, 0) = 0", ID_OFFSET);
         jdbcTemplate.update("UPDATE disposal_records SET module_id = module_id + ? WHERE module_id IS NOT NULL", ID_OFFSET);
 
         long nextId = 1;
@@ -75,6 +88,38 @@ public class TableIdCompactionService {
             nextId++;
         }
         resetAutoIncrement("modules", nextId);
+    }
+
+    private void compactDummyModulesInternal() {
+        if (!tableExists("dummy_modules")) {
+            return;
+        }
+        List<Long> ids = jdbcTemplate.queryForList("SELECT id FROM dummy_modules ORDER BY id", Long.class);
+        if (ids.isEmpty()) {
+            resetAutoIncrement("dummy_modules", 1);
+            return;
+        }
+
+        jdbcTemplate.update("UPDATE dummy_modules SET id = id + ?", ID_OFFSET);
+        long nextId = 1;
+        for (Long oldId : ids) {
+            long tempId = oldId + ID_OFFSET;
+            jdbcTemplate.update("UPDATE dummy_modules SET id = ? WHERE id = ?", nextId, tempId);
+            nextId++;
+        }
+        resetAutoIncrement("dummy_modules", nextId);
+    }
+
+    private boolean tableExists(String table) {
+        try {
+            Integer count = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM information_schema.tables "
+                            + "WHERE table_schema = DATABASE() AND table_name = ?",
+                    Integer.class, table);
+            return count != null && count > 0;
+        } catch (Exception e) {
+            return false;
+        }
     }
 
     private void compactDisposalRecords() {

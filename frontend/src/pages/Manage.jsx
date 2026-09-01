@@ -183,6 +183,7 @@ const Manage = () => {
       setSaving(true);
       setError("");
       setSuccess("");
+      const isDummy = Boolean(moduleForm.dummy) || Boolean(editingModule?.dummy);
       const body = {
         serialNumber: moduleForm.serialNumber.trim(),
         organization: moduleForm.organization.trim(),
@@ -190,20 +191,23 @@ const Manage = () => {
         lon: Number(moduleForm.lon),
         type: moduleForm.type.trim().toUpperCase(),
         depthCm: moduleForm.depthCm.trim() === "" ? null : Number(moduleForm.depthCm),
-        dummy: Boolean(moduleForm.dummy),
       };
-      if (moduleForm.dummy) {
+      if (isDummy) {
         body.fillPercent = moduleForm.fillPercent.trim() === "" ? 55 : Number(moduleForm.fillPercent);
       }
       if (editingModule) {
-        await apiFetch(`/modules/${editingModule.id}`, {
+        const path = editingModule.dummy
+          ? `/dummy-modules/${editingModule.id}`
+          : `/modules/${editingModule.id}`;
+        await apiFetch(path, {
           method: "PUT",
           body: JSON.stringify(body),
         });
         setSuccess("모듈이 수정되었습니다.");
       } else {
-        await apiFetch("/modules", { method: "POST", body: JSON.stringify(body) });
-        setSuccess(moduleForm.dummy ? "더미 모듈이 추가되었습니다." : "모듈이 추가되었습니다.");
+        const path = isDummy ? "/dummy-modules" : "/modules";
+        await apiFetch(path, { method: "POST", body: JSON.stringify(isDummy ? body : { ...body, dummy: false }) });
+        setSuccess(isDummy ? "더미 모듈이 추가되었습니다." : "모듈이 추가되었습니다.");
       }
       setModuleDialogOpen(false);
       setEditingModule(null);
@@ -234,7 +238,12 @@ const Manage = () => {
     if (!moduleDeleteTarget) return;
     try {
       setSaving(true);
-      await apiFetch(`/modules/${moduleDeleteTarget.id}`, { method: "DELETE" });
+      await apiFetch(
+        moduleDeleteTarget.dummy
+          ? `/dummy-modules/${moduleDeleteTarget.id}`
+          : `/modules/${moduleDeleteTarget.id}`,
+        { method: "DELETE" },
+      );
       setModuleDeleteTarget(null);
       setSuccess("모듈이 삭제되었습니다.");
       loadOverview();
@@ -548,7 +557,7 @@ const Manage = () => {
             <Typography sx={{ color: "#ffffff", fontWeight: 800, fontSize: { xs: "0.9rem", sm: "1rem" } }}>
               모듈
               <Box component="span" sx={{ color: "rgba(255,255,255,0.45)", fontWeight: 600, ml: 1, fontSize: { xs: "0.78rem", sm: "0.85rem" } }}>
-                · 총 {overview.modules.length}개
+                · 더미 {overview.modules.filter((m) => m.dummy).length} · 실기기 {overview.modules.filter((m) => !m.dummy).length}
               </Box>
             </Typography>
             <Stack direction="row" spacing={1}>
@@ -577,47 +586,112 @@ const Manage = () => {
               </TableRow>
             </TableHead>
             <TableBody>
-              {[...overview.modules].sort((a, b) => (a.id ?? 0) - (b.id ?? 0)).map((m) => (
-                <TableRow key={m.id} sx={{ "&:nth-of-type(odd)": { bgcolor: "rgba(255,255,255,0.03)" } }}>
-                  <TableCell sx={{ ...cellBody, fontWeight: 900, color: "#7cff72" }}>
-                    {m.idDisplay || m.id}
-                  </TableCell>
-                  <TableCell sx={cellBody}>
-                    {m.serialNumber}
-                    {m.dummy && (
-                      <Box component="span" sx={{ ml: 0.6, fontSize: "0.62rem", color: "#ffb74d", fontWeight: 800 }}>
-                        DUMMY
+              {(() => {
+                const dummies = [...overview.modules]
+                  .filter((m) => m.dummy)
+                  .sort((a, b) => (a.id ?? 0) - (b.id ?? 0));
+                const devices = [...overview.modules]
+                  .filter((m) => !m.dummy)
+                  .sort((a, b) => (a.id ?? 0) - (b.id ?? 0));
+
+                const renderRow = (m) => (
+                  <TableRow
+                    key={`${m.dummy ? "d" : "m"}-${m.id}`}
+                    sx={{ bgcolor: m.dummy ? "rgba(255,183,77,0.04)" : "rgba(255,255,255,0.02)" }}
+                  >
+                    <TableCell sx={{ ...cellBody, fontWeight: 900, color: m.dummy ? "#ffb74d" : "#7cff72" }}>
+                      {m.idDisplay || m.id}
+                    </TableCell>
+                    <TableCell sx={cellBody}>
+                      {m.serialNumber}
+                      {m.dummy && (
+                        <Box component="span" sx={{ ml: 0.6, fontSize: "0.62rem", color: "#ffb74d", fontWeight: 800 }}>
+                          DUMMY
+                        </Box>
+                      )}
+                    </TableCell>
+                    <TableCell sx={cellBody}>
+                      {m.dummy ? "더미" : m.deviceType === "VISION_CAM" ? "카메라" : "초음파"}
+                    </TableCell>
+                    <TableCell sx={cellBody}>
+                      <Box component="span" sx={{ fontWeight: 700 }}>{m.type}</Box>
+                      <Box component="span" sx={{ display: "block", fontSize: "0.72rem", opacity: 0.78, mt: 0.25, lineHeight: 1.3 }}>
+                        {moduleTypeLabel(m.type)}
                       </Box>
+                    </TableCell>
+                    <TableCell sx={{ ...cellBody, color: m.signalState === "ACTIVE" ? "#7cff72" : "rgba(255,255,255,0.45)", fontWeight: 700 }}>
+                      {m.signalState === "ACTIVE" ? "활성" : "대기중"}
+                      <Box component="span" sx={{ display: "block", fontSize: "0.68rem", opacity: 0.7, fontWeight: 500 }}>
+                        {formatSignalAge(m.lastSignalAt)}
+                      </Box>
+                    </TableCell>
+                    <TableCell sx={cellBody}>{m.fillPercent == null ? "—" : `${Math.round(m.fillPercent)}%`}</TableCell>
+                    <TableCell sx={cellBody}>{m.lat ?? "—"}</TableCell>
+                    <TableCell sx={cellBody}>{m.lon ?? "—"}</TableCell>
+                    <TableCell sx={cellBody} align="right">
+                      <IconButton size="small" sx={{ color: "#ffffff", borderRadius: 1 }} onClick={() => openModuleDialog(m)}>
+                        <EditRoundedIcon fontSize="small" />
+                      </IconButton>
+                      <IconButton size="small" sx={{ color: "#ff8a8a", borderRadius: 1 }} onClick={() => setModuleDeleteTarget(m)}>
+                        <DeleteOutlineRoundedIcon fontSize="small" />
+                      </IconButton>
+                    </TableCell>
+                  </TableRow>
+                );
+
+                return (
+                  <>
+                    {dummies.length > 0 && (
+                      <TableRow>
+                        <TableCell
+                          colSpan={9}
+                          sx={{
+                            ...cellBody,
+                            py: 1,
+                            bgcolor: "rgba(255,183,77,0.12)",
+                            borderTop: "2px solid rgba(255,183,77,0.55)",
+                            borderBottom: "1px solid rgba(255,183,77,0.35)",
+                            color: "#ffb74d",
+                            fontWeight: 900,
+                            letterSpacing: "0.04em",
+                          }}
+                        >
+                          더미 모듈 · ID 별도 테이블 (1…) · {dummies.length}개
+                        </TableCell>
+                      </TableRow>
                     )}
-                  </TableCell>
-                  <TableCell sx={cellBody}>
-                    {m.dummy ? "더미" : m.deviceType === "VISION_CAM" ? "카메라" : "초음파"}
-                  </TableCell>
-                  <TableCell sx={cellBody}>
-                    <Box component="span" sx={{ fontWeight: 700 }}>{m.type}</Box>
-                    <Box component="span" sx={{ display: "block", fontSize: "0.72rem", opacity: 0.78, mt: 0.25, lineHeight: 1.3 }}>
-                      {moduleTypeLabel(m.type)}
-                    </Box>
-                  </TableCell>
-                  <TableCell sx={{ ...cellBody, color: m.signalState === "ACTIVE" ? "#7cff72" : "rgba(255,255,255,0.45)", fontWeight: 700 }}>
-                    {m.signalState === "ACTIVE" ? "활성" : "대기중"}
-                    <Box component="span" sx={{ display: "block", fontSize: "0.68rem", opacity: 0.7, fontWeight: 500 }}>
-                      {formatSignalAge(m.lastSignalAt)}
-                    </Box>
-                  </TableCell>
-                  <TableCell sx={cellBody}>{m.fillPercent == null ? "—" : `${Math.round(m.fillPercent)}%`}</TableCell>
-                  <TableCell sx={cellBody}>{m.lat ?? "—"}</TableCell>
-                  <TableCell sx={cellBody}>{m.lon ?? "—"}</TableCell>
-                  <TableCell sx={cellBody} align="right">
-                    <IconButton size="small" sx={{ color: "#ffffff", borderRadius: 1 }} onClick={() => openModuleDialog(m)}>
-                      <EditRoundedIcon fontSize="small" />
-                    </IconButton>
-                    <IconButton size="small" sx={{ color: "#ff8a8a", borderRadius: 1 }} onClick={() => setModuleDeleteTarget(m)}>
-                      <DeleteOutlineRoundedIcon fontSize="small" />
-                    </IconButton>
-                  </TableCell>
-                </TableRow>
-              ))}
+                    {dummies.map(renderRow)}
+                    {devices.length > 0 && (
+                      <TableRow>
+                        <TableCell
+                          colSpan={9}
+                          sx={{
+                            ...cellBody,
+                            py: 1.15,
+                            mt: 1,
+                            bgcolor: "rgba(124,255,114,0.08)",
+                            borderTop: dummies.length ? "3px solid rgba(255,255,255,0.35)" : "2px solid rgba(124,255,114,0.45)",
+                            borderBottom: "1px solid rgba(124,255,114,0.35)",
+                            color: "#7cff72",
+                            fontWeight: 900,
+                            letterSpacing: "0.04em",
+                          }}
+                        >
+                          실기기 (m / r) · ID 별도 테이블 (1…) · {devices.length}개
+                        </TableCell>
+                      </TableRow>
+                    )}
+                    {devices.map(renderRow)}
+                    {dummies.length === 0 && devices.length === 0 && (
+                      <TableRow>
+                        <TableCell colSpan={9} sx={{ ...cellBody, color: "rgba(255,255,255,0.45)", py: 2 }}>
+                          등록된 모듈이 없습니다.
+                        </TableCell>
+                      </TableRow>
+                    )}
+                  </>
+                );
+              })()}
             </TableBody>
           </Table>
         </Paper>
@@ -686,6 +760,7 @@ const Manage = () => {
                 control={
                   <Checkbox
                     checked={Boolean(moduleForm.dummy)}
+                    disabled={Boolean(editingModule)}
                     onChange={(e) => setModuleForm((f) => ({ ...f, dummy: e.target.checked }))}
                     sx={{ color: "#ffb74d", "&.Mui-checked": { color: "#ffb74d" } }}
                   />
@@ -765,7 +840,9 @@ const Manage = () => {
             />
           )}
           <Typography sx={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.55)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-            {moduleForm.dummy ? "더미는 무신호 자동정리 대상에서 제외됩니다." : "실기기 시리얼(m/r)은 자동등록되며 웹에서 바꿀 수 없습니다."}
+            {moduleForm.dummy
+              ? "더미는 dummy_modules 테이블(별도 ID). 무신호 자동정리 제외. 시리얼에 m/r 접두어 불가."
+              : "실기기는 modules 테이블(별도 ID). m/r 시리얼은 자동등록되며 웹에서 바꿀 수 없습니다."}
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>

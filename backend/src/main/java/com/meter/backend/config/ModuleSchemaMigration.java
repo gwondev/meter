@@ -37,6 +37,58 @@ public class ModuleSchemaMigration {
         backfillLastSignalAt();
         LEGACY_COLUMNS.forEach(this::dropColumnIfPresent);
         ensureDummyColumn();
+        migrateDummiesToOwnTable();
+    }
+
+    /** modules.dummy=1 행을 dummy_modules 로 옮기고 원본 삭제 — ID 공간을 분리한다. */
+    private void migrateDummiesToOwnTable() {
+        ensureDummyModulesTable();
+        if (!hasColumn("dummy")) {
+            return;
+        }
+        try {
+            Integer pending = jdbcTemplate.queryForObject(
+                    "SELECT COUNT(*) FROM " + TABLE + " WHERE dummy = 1", Integer.class);
+            if (pending == null || pending == 0) {
+                return;
+            }
+            jdbcTemplate.update("""
+                    INSERT INTO dummy_modules
+                      (serial_number, organization, lat, lon, type, fill_percent, depth_cm, last_signal_at, created_at)
+                    SELECT serial_number, organization, lat, lon, type, fill_percent, depth_cm,
+                           COALESCE(last_signal_at, NOW(6)), COALESCE(created_at, NOW(6))
+                    FROM modules
+                    WHERE dummy = 1
+                      AND serial_number NOT IN (SELECT serial_number FROM dummy_modules)
+                    """);
+            int deleted = jdbcTemplate.update("DELETE FROM " + TABLE + " WHERE dummy = 1");
+            log.info("modules → dummy_modules 이관 후 modules 더미 {}건 삭제", deleted);
+        } catch (Exception e) {
+            log.warn("더미 테이블 이관 실패: {}", e.getMessage());
+        }
+    }
+
+    private void ensureDummyModulesTable() {
+        try {
+            jdbcTemplate.execute("""
+                    CREATE TABLE IF NOT EXISTS dummy_modules (
+                      id BIGINT NOT NULL AUTO_INCREMENT,
+                      serial_number VARCHAR(50) NOT NULL,
+                      organization VARCHAR(50),
+                      lat DOUBLE,
+                      lon DOUBLE,
+                      type VARCHAR(16),
+                      fill_percent DOUBLE,
+                      depth_cm DOUBLE,
+                      last_signal_at DATETIME(6),
+                      created_at DATETIME(6),
+                      PRIMARY KEY (id),
+                      UNIQUE KEY uk_dummy_serial (serial_number)
+                    )
+                    """);
+        } catch (Exception e) {
+            log.warn("dummy_modules 테이블 생성 실패: {}", e.getMessage());
+        }
     }
 
     /** 더미 모듈 플래그 — 없으면 추가하고 기존 행은 false. */

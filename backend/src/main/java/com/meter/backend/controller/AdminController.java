@@ -1,10 +1,10 @@
 package com.meter.backend.controller;
 
 import com.meter.backend.entity.DisposalRecord;
-import com.meter.backend.entity.Module;
 import com.meter.backend.entity.RewardHistory;
 import com.meter.backend.entity.User;
 import com.meter.backend.repository.DisposalRecordRepository;
+import com.meter.backend.repository.DummyModuleRepository;
 import com.meter.backend.repository.ModuleRepository;
 import com.meter.backend.repository.RewardHistoryRepository;
 import com.meter.backend.repository.UserRepository;
@@ -23,22 +23,19 @@ import java.util.Map;
 public class AdminController {
     private final UserRepository userRepository;
     private final ModuleRepository moduleRepository;
+    private final DummyModuleRepository dummyModuleRepository;
     private final DisposalRecordRepository disposalRecordRepository;
     private final RewardHistoryRepository rewardHistoryRepository;
 
     @GetMapping("/overview")
     public Map<String, Object> overview() {
         List<User> users = userRepository.findAll();
-        List<Module> modules = moduleRepository.findAll();
         List<DisposalRecord> records = disposalRecordRepository.findAll();
         List<RewardHistory> rewards = rewardHistoryRepository.findAll();
 
         return Map.of(
                 "users", users.stream().map(this::toUserDto).toList(),
-                "modules", modules.stream()
-                        .sorted(ModuleController.moduleListOrder())
-                        .map(this::toModuleDto)
-                        .toList(),
+                "modules", ModuleController.mergedModuleDtos(dummyModuleRepository, moduleRepository),
                 "disposalRecords", records.stream().map(this::toRecordDto).toList(),
                 "rewardHistories", rewards.stream().map(this::toRewardDto).toList()
         );
@@ -58,10 +55,6 @@ public class AdminController {
         dto.put("createdAt", user.getCreatedAt());
         dto.put("lastLoginAt", user.getLastLoginAt());
         return dto;
-    }
-
-    private Map<String, Object> toModuleDto(Module module) {
-        return ModuleController.toDto(module);
     }
 
     private Map<String, Object> toRecordDto(DisposalRecord record) {
