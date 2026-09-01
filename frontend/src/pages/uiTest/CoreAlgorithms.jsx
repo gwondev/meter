@@ -22,13 +22,13 @@ const ALGORITHMS = [
     summary:
       "다중 거점 모듈에 대한 Capacitated Vehicle Routing Problem(C-VRP) 변형을 적용하고, 우선순위 기반 방문 순서를 산출합니다.",
     bullets: [
-      "Multi-Criteria Priority Scoring — S(m)=α·(1/heightCm)+β·I(FULL)+γ·I(offline) 가중치 기반 긴급도 랭킹",
-      "Lexicographic Ordering — 1순위: 온라인 모듈 우선 · 2순위: heightCm 오름차순(만재·위험 거점 선방문)",
-      "TSP(Nearest-Neighbor Heuristic) — Haversine 거리 행렬 기반 탐욕적 최근접 이웃 순회로 이동 거리 근사 최소화",
-      "2-opt Local Search — 초기 경로에 대한 edge swap 국소 탐색으로 경로 길이 추가 개선 (고도화 단계)",
-      "VRP Extension — 수거 차량 용량·근무 시간 창(Time Window) 제약 하 다중 경로 분할 (확장 설계)",
+      "Multi-Criteria Urgency Cost — cost=dist×(1+((100−fill)/100)²×3); 만재일수록 방문 우선",
+      "Eligibility Gate — 활성 신호 · 좌표 유효 · fillPercent≥50% 만 후보",
+      "Exact TSP (n≤8) / NN+2-opt — 동일 urgency 비용으로 전순열 또는 국소 개선",
+      "Road Network Geometry — OSRM driving 경로로 도로를 따라가는 폴리라인 (직선 금지)",
+      "Kakao Map Overlay — 검정 본선+흰 외곽선으로 밝은 지도 위 가독성 확보",
     ],
-    impl: "구현: RouteGuide routePriority() · 좌표(lat/lon) 기반 방문 순서 · Kakao Map 시각화 연동",
+    impl: "구현: collectionRoute.js — urgency TSP(≤8 완전탐색 / NN+2-opt) · OSRM 도로망 폴리라인 · Kakao Map 검정 선 시각화",
   },
   {
     title: "생성형 AI 기반 NLU & Vision 품목 분류",

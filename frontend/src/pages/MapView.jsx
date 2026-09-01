@@ -23,10 +23,10 @@ const TYPE_SYMBOLS = {
 /**
  * 카카오 지도 렌더러.
  *
- * @param route         [{lat, lon, serialNumber}] 순서대로 이은 수거 경로. 비면 경로를 지운다.
+ * @param route  { path:[{lat,lon}], markers:[{lat,lon,label,isOrigin}] } 도로망 경로 + 방문 배지. 없으면 경로 숨김.
  * @param onBoundsChange 화면에 보이는 모듈 시리얼 목록을 부모에 알린다 (최적경로 계산 범위).
  */
-export default function MapView({ userPos, modules, route = [], centerTrigger = 0, onBoundsChange }) {
+export default function MapView({ userPos, modules, route = null, centerTrigger = 0, onBoundsChange }) {
   const fallback = [35.1462, 126.9229];
   const center = userPos && userPos[0] != null && userPos[1] != null ? userPos : fallback;
   const containerRef = useRef(null);
@@ -245,42 +245,46 @@ export default function MapView({ userPos, modules, route = [], centerTrigger = 
     };
   }, [modules, reportVisibleModules, sdkReady]);
 
-  /* 최적 수거 경로 — 지도 위에 직접 폴리라인과 순번 배지를 얹는다. */
+  /* 최적 수거 경로 — 도로망 폴리라인(검정) + 방문 순번 배지. */
   useEffect(() => {
     if (!sdkReady || !mapRef.current || !window.kakao?.maps) return;
 
     routeShapesRef.current.forEach((shape) => shape.setMap(null));
     routeShapesRef.current = [];
 
-    if (!route || route.length < 2) return undefined;
+    const pathPts = Array.isArray(route?.path) ? route.path : [];
+    const markers = Array.isArray(route?.markers) ? route.markers : [];
+    if (pathPts.length < 2 && markers.length < 2) return undefined;
 
     const map = mapRef.current;
-    const path = route
+    const path = pathPts
       .filter((p) => p.lat != null && p.lon != null)
-      .map((p) => new window.kakao.maps.LatLng(p.lat, p.lon));
-    if (path.length < 2) return undefined;
+      .map((p) => new window.kakao.maps.LatLng(Number(p.lat), Number(p.lon)));
 
-    const glow = new window.kakao.maps.Polyline({
-      path,
-      strokeWeight: 11,
-      strokeColor: "#ffffff",
-      strokeOpacity: 0.2,
-      strokeStyle: "solid",
-    });
-    glow.setMap(map);
-    routeShapesRef.current.push(glow);
+    if (path.length >= 2) {
+      /* 흰 지도 위 가독성 — 바깥 얇은 테두리 + 검정 본선 */
+      const outline = new window.kakao.maps.Polyline({
+        path,
+        strokeWeight: 9,
+        strokeColor: "#ffffff",
+        strokeOpacity: 0.95,
+        strokeStyle: "solid",
+      });
+      outline.setMap(map);
+      routeShapesRef.current.push(outline);
 
-    const line = new window.kakao.maps.Polyline({
-      path,
-      strokeWeight: 5,
-      strokeColor: "#ffffff",
-      strokeOpacity: 0.95,
-      strokeStyle: "solid",
-    });
-    line.setMap(map);
-    routeShapesRef.current.push(line);
+      const line = new window.kakao.maps.Polyline({
+        path,
+        strokeWeight: 5,
+        strokeColor: "#0a0a0a",
+        strokeOpacity: 1,
+        strokeStyle: "solid",
+      });
+      line.setMap(map);
+      routeShapesRef.current.push(line);
+    }
 
-    route.forEach((point, index) => {
+    markers.forEach((point, index) => {
       if (point.lat == null || point.lon == null) return;
 
       const pin = document.createElement("div");
@@ -301,7 +305,7 @@ export default function MapView({ userPos, modules, route = [], centerTrigger = 
       pin.textContent = point.label ?? String(index + 1);
 
       const overlay = new window.kakao.maps.CustomOverlay({
-        position: new window.kakao.maps.LatLng(point.lat, point.lon),
+        position: new window.kakao.maps.LatLng(Number(point.lat), Number(point.lon)),
         content: pin,
         yAnchor: 0.5,
         zIndex: 6,
@@ -310,9 +314,11 @@ export default function MapView({ userPos, modules, route = [], centerTrigger = 
       routeShapesRef.current.push(overlay);
     });
 
-    /* 경로 전체가 한 화면에 들어오도록 맞춘다. */
     const bounds = new window.kakao.maps.LatLngBounds();
-    path.forEach((p) => bounds.extend(p));
+    (path.length >= 2 ? path : markers
+      .filter((p) => p.lat != null && p.lon != null)
+      .map((p) => new window.kakao.maps.LatLng(Number(p.lat), Number(p.lon)))
+    ).forEach((p) => bounds.extend(p));
     map.setBounds(bounds, 60, 60, 60, 60);
 
     return () => {

@@ -1,7 +1,7 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { moduleTypeMatchesHeld, HELD_TYPE_LABELS, moduleTypeLabel } from "../constants/wasteLabels";
 import { meterColors } from "../theme/meterTheme";
-import { buildCollectionRoute, ROUTE_FILL_THRESHOLD } from "../utils/collectionRoute";
+import { buildCollectionRouteWithRoads, ROUTE_FILL_THRESHOLD } from "../utils/collectionRoute";
 import {
   Typography,
   Box,
@@ -39,6 +39,7 @@ const Map = () => {
   const [toast, setToast] = useState("");
   const [visibleModules, setVisibleModules] = useState([]);
   const [route, setRoute] = useState(null);
+  const [routeLoading, setRouteLoading] = useState(false);
   const isLocalNoEnv = import.meta.env.DEV && !String(import.meta.env.VITE_GOOGLE_CLIENT_ID || "").trim();
 
   useEffect(() => {
@@ -150,17 +151,25 @@ const Map = () => {
     return modules.filter((m) => moduleTypeMatchesHeld(m.type, h));
   }, [modules, heldType, isLocalNoEnv]);
 
-  const toggleRoute = () => {
+  const toggleRoute = async () => {
     if (route) {
       setRoute(null);
       return;
     }
-    const result = buildCollectionRoute(visibleModules, userPos);
-    if (result.points.length < 2) {
-      setToast(result.reason || "경로를 만들 수 없습니다.");
-      return;
+    if (routeLoading) return;
+    setRouteLoading(true);
+    try {
+      const result = await buildCollectionRouteWithRoads(visibleModules, userPos);
+      if (!result.path || result.path.length < 2) {
+        setToast(result.reason || "경로를 만들 수 없습니다.");
+        return;
+      }
+      setRoute(result);
+    } catch (e) {
+      setToast(e?.message || "경로 계산에 실패했습니다.");
+    } finally {
+      setRouteLoading(false);
     }
-    setRoute(result);
   };
 
   const heldTypeSummary = useMemo(() => {
@@ -231,7 +240,7 @@ const Map = () => {
           <MapView
             userPos={userPos}
             modules={modulesForMap}
-            route={route?.points || []}
+            route={route}
             centerTrigger={centerTrigger}
             onBoundsChange={handleBoundsChange}
           />
@@ -365,6 +374,7 @@ const Map = () => {
           <Stack direction="row" alignItems="center" justifyContent="space-between" sx={{ mb: 0.6 }}>
             <Typography sx={{ fontSize: "0.74rem", fontWeight: 900, whiteSpace: "nowrap" }}>
               경로 · {(route.totalMeters / 1000).toFixed(2)}km
+              {route.usedRoadNetwork ? " · 도로" : ""}
             </Typography>
             <IconButton size="small" onClick={() => setRoute(null)} sx={{ color: meterColors.secondary, p: 0.2 }}>
               <CloseRoundedIcon sx={{ fontSize: "1rem" }} />
@@ -432,8 +442,13 @@ const Map = () => {
           <Button startIcon={<PhotoCameraRoundedIcon />} onClick={() => navigate("/camera")} sx={bottomBtnSx}>
             AI 카메라
           </Button>
-          <Button startIcon={<RouteRoundedIcon />} onClick={toggleRoute} sx={route ? bottomBtnActiveSx : bottomBtnSx}>
-            {route ? "경로 해제" : "최적경로"}
+          <Button
+            startIcon={<RouteRoundedIcon />}
+            onClick={toggleRoute}
+            disabled={routeLoading}
+            sx={route ? bottomBtnActiveSx : bottomBtnSx}
+          >
+            {routeLoading ? "경로 계산중" : route ? "경로 해제" : "최적경로"}
           </Button>
         </Stack>
 
