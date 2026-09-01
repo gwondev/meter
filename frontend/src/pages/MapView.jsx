@@ -2,7 +2,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { Box } from "@mui/material";
 import { moduleTypeLabel } from "../constants/wasteLabels";
 import {
-  deviceTypeLabel,
   formatSignalAge,
   meterColors,
   moduleDisplayState,
@@ -207,18 +206,17 @@ export default function MapView({ userPos, modules, route = [], centerTrigger = 
           info.appendChild(line);
         };
 
-        appendLine(`${typeSymbol} ${typeTitle}`, {
+        /* 팝업: 상태 · 측정높이 · 마지막신호만 */
+        appendLine(state.label, {
           fontWeight: "800",
-          color: meterColors.primary,
+          color: state.color,
           fontSize: "14px",
           marginBottom: "6px",
         });
-        appendLine(`모듈 ${serial} · ${deviceTypeLabel(m)}`, { opacity: "0.72" });
-        appendLine(state.label, { fontWeight: "700", color: state.color });
-        appendLine(`마지막 신호 ${formatSignalAge(m.lastSignalAt)}`, { opacity: "0.65" });
         if (m.heightCm != null) {
-          appendLine(`측정 높이 ${Number(m.heightCm).toFixed(1)}cm`, { opacity: "0.65" });
+          appendLine(`측정 높이 ${Number(m.heightCm).toFixed(1)}cm`, { opacity: "0.75" });
         }
+        appendLine(`마지막 신호 ${formatSignalAge(m.lastSignalAt)}`, { opacity: "0.65" });
 
         if (m.lastImageUrl) {
           const img = document.createElement("img");
@@ -226,7 +224,7 @@ export default function MapView({ userPos, modules, route = [], centerTrigger = 
           img.alt = `${serial} 스냅샷`;
           img.style.marginTop = "8px";
           img.style.width = "100%";
-          img.style.borderRadius = "8px";
+          img.style.borderRadius = "4px";
           img.style.border = `1px solid ${meterColors.border}`;
           img.style.filter = waiting ? "grayscale(1)" : "none";
           info.appendChild(img);

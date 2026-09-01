@@ -24,6 +24,8 @@ public class Module {
     public static final String DEVICE_HEIGHT_SENSOR = "HEIGHT_SENSOR";
     /** 영상 판정 계열 (r1, r2 …) */
     public static final String DEVICE_VISION_CAM = "VISION_CAM";
+    /** 관리자 더미 (지도·경로 테스트용, 자동 삭제 안 함) */
+    public static final String DEVICE_DUMMY = "DUMMY";
 
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     private Long id;
@@ -44,9 +46,17 @@ public class Module {
     @Column(name = "type", length = 16)
     private String type;
 
-    /** 디바이스 계열 — 시리얼 접두어로 결정된다. {@link #deviceTypeFromSerial(String)} */
+    /** 디바이스 계열 — 시리얼 접두어로 결정. 더미는 {@link #DEVICE_DUMMY}. */
     @Column(name = "device_type", length = 16)
     private String deviceType;
+
+    /**
+     * 관리자 테스트용 더미 모듈 — 무신호 자동 정리 대상에서 제외.
+     * 실기기(m*/r*)와 시리얼 충돌을 피하려고 별도 플래그로 관리한다.
+     */
+    @Column(name = "dummy", nullable = false)
+    @Builder.Default
+    private boolean dummy = false;
 
     /** 모듈1 원본 측정값 — 센서에서 내용물 표면까지의 빈 거리(cm). 작을수록 가득 찬 상태. */
     @Column(name = "height_cm")
@@ -71,7 +81,7 @@ public class Module {
     @Column(name = "created_at")
     private LocalDateTime createdAt;
 
-    /** 시리얼 접두어로 디바이스 계열을 판별한다. r* → 영상 판정, 그 외 → 높이 센서. */
+    /** 시리얼 접두어로 디바이스 계열을 판별한다. r* → 영상, m* → 초음파. */
     public static String deviceTypeFromSerial(String serialNumber) {
         if (serialNumber != null && serialNumber.trim().toLowerCase().startsWith("r")) {
             return DEVICE_VISION_CAM;
@@ -79,18 +89,28 @@ public class Module {
         return DEVICE_HEIGHT_SENSOR;
     }
 
+    /** 실기기 시리얼(m*/r*) 여부 — 웹에서 시리얼 수정 잠금에 쓴다. */
+    public static boolean isDeviceSerial(String serialNumber) {
+        if (serialNumber == null) return false;
+        String s = serialNumber.trim().toLowerCase();
+        return s.startsWith("m") || s.startsWith("r");
+    }
+
     /**
      * 지금 신호가 들어오고 있는지 — false 면 프론트에서 회색 «신호 대기중» 으로 표시한다.
      *
-     * <p>허용 지연은 계열별 발행 주기에 맞춘다. 모듈1 은 5초, 모듈2 는 5분 간격이므로
-     * 한두 번 유실되어도 곧바로 회색으로 떨어지지 않을 만큼의 여유를 둔다.
+     * <p>모듈1 발행 주기 30초 → 여유 90초. 모듈2 는 5분 간격 → 12분.
+     * 더미는 항상 활성으로 취급한다(테스트 배치용).
      */
     @Transient
     public boolean isSignalActive() {
+        if (dummy || DEVICE_DUMMY.equals(deviceType)) {
+            return true;
+        }
         if (lastSignalAt == null) {
             return false;
         }
-        long allowedSeconds = DEVICE_VISION_CAM.equals(deviceType) ? 12 * 60 : 60;
+        long allowedSeconds = DEVICE_VISION_CAM.equals(deviceType) ? 12 * 60 : 90;
         return lastSignalAt.isAfter(LocalDateTime.now().minusSeconds(allowedSeconds));
     }
 }

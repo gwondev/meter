@@ -1,6 +1,6 @@
 import { lazy, Suspense, useCallback, useEffect, useMemo, useState } from "react";
 import { moduleTypeMatchesHeld, HELD_TYPE_LABELS, moduleTypeLabel } from "../constants/wasteLabels";
-import { meterColors, WAITING_COLOR } from "../theme/meterTheme";
+import { meterColors } from "../theme/meterTheme";
 import { buildCollectionRoute, ROUTE_FILL_THRESHOLD } from "../utils/collectionRoute";
 import {
   Typography,
@@ -10,6 +10,7 @@ import {
   Alert,
   Snackbar,
   IconButton,
+  Chip,
 } from "@mui/material";
 import { useLocation, useNavigate } from "react-router-dom";
 import { getUser, ensureSession, needsNickname } from "../services/auth";
@@ -67,8 +68,14 @@ const Map = () => {
     const pull = () => {
       navigator.geolocation.getCurrentPosition(
         (pos) => {
-          setUserPos([pos.coords.latitude, pos.coords.longitude]);
+          const lat = pos.coords.latitude;
+          const lon = pos.coords.longitude;
+          setUserPos([lat, lon]);
           setGeoMessage("");
+          apiFetch("/geo/anchor", {
+            method: "POST",
+            body: JSON.stringify({ lat, lon }),
+          }).catch(() => {});
         },
         () => setGeoMessage("위치 권한이 필요합니다.")
       );
@@ -142,13 +149,6 @@ const Map = () => {
     if (!h) return modules;
     return modules.filter((m) => moduleTypeMatchesHeld(m.type, h));
   }, [modules, heldType, isLocalNoEnv]);
-
-  const waitingCount = useMemo(
-    () => modulesForMap.filter((m) => m.signalState !== "ACTIVE").length,
-    [modulesForMap]
-  );
-
-  const activeCount = modulesForMap.length - waitingCount;
 
   const toggleRoute = () => {
     if (route) {
@@ -257,23 +257,21 @@ const Map = () => {
       >
         <Box
           sx={{
-            minWidth: { xs: 168, sm: 196 },
-            maxWidth: { xs: 220, sm: 260 },
             px: 1.35,
-            py: 1.15,
-            borderRadius: 2.5,
+            py: 0.95,
+            borderRadius: 1,
             bgcolor: "rgba(8,8,8,0.92)",
             border: `1px solid ${meterColors.borderStrong}`,
-            boxShadow: "0 10px 32px rgba(0,0,0,0.55)",
+            boxShadow: "0 8px 24px rgba(0,0,0,0.5)",
             backdropFilter: "blur(12px)",
           }}
         >
-          <Stack direction="row" alignItems="baseline" spacing={0.9} sx={{ mb: 0.85 }}>
+          <Stack direction="row" alignItems="baseline" spacing={1}>
             <Typography
               sx={{
                 fontWeight: 900,
                 fontSize: { xs: "0.95rem", sm: "1.05rem" },
-                letterSpacing: "0.12em",
+                letterSpacing: "0.14em",
                 lineHeight: 1,
               }}
             >
@@ -284,77 +282,47 @@ const Map = () => {
                 if (!hasNickname) navigate("/nickname");
               }}
               sx={{
-                fontSize: { xs: "0.72rem", sm: "0.78rem" },
+                fontSize: { xs: "0.74rem", sm: "0.8rem" },
                 fontWeight: 700,
                 color: hasNickname ? meterColors.secondary : meterColors.warning,
                 cursor: hasNickname ? "default" : "pointer",
                 lineHeight: 1,
                 whiteSpace: "nowrap",
+                maxWidth: 120,
                 overflow: "hidden",
                 textOverflow: "ellipsis",
-                maxWidth: 110,
               }}
             >
               {displayName}
             </Typography>
           </Stack>
-
-          <Stack direction="row" spacing={1.2} alignItems="center">
-            <Stack spacing={0.15}>
-              <Typography sx={{ fontSize: "0.58rem", color: meterColors.secondary, letterSpacing: "0.04em", whiteSpace: "nowrap" }}>
-                활성
-              </Typography>
-              <Typography sx={{ fontSize: "0.95rem", fontWeight: 900, color: meterColors.fillGreen, lineHeight: 1 }}>
-                {activeCount}
-              </Typography>
-            </Stack>
-            <Box sx={{ width: 1, alignSelf: "stretch", bgcolor: meterColors.border, opacity: 0.7 }} />
-            <Stack spacing={0.15}>
-              <Typography sx={{ fontSize: "0.58rem", color: meterColors.secondary, letterSpacing: "0.04em", whiteSpace: "nowrap" }}>
-                대기
-              </Typography>
-              <Typography sx={{ fontSize: "0.95rem", fontWeight: 900, color: WAITING_COLOR, lineHeight: 1 }}>
-                {waitingCount}
-              </Typography>
-            </Stack>
-            {heldTypeSummary && (
-              <>
-                <Box sx={{ width: 1, alignSelf: "stretch", bgcolor: meterColors.border, opacity: 0.7 }} />
-                <Stack spacing={0.15} sx={{ minWidth: 0, flex: 1 }}>
-                  <Typography sx={{ fontSize: "0.58rem", color: meterColors.secondary, whiteSpace: "nowrap" }}>
-                    분류
-                  </Typography>
-                  <Stack direction="row" alignItems="center" spacing={0.3}>
-                    <Typography
-                      sx={{
-                        fontSize: "0.72rem",
-                        fontWeight: 800,
-                        color: meterColors.primary,
-                        whiteSpace: "nowrap",
-                        overflow: "hidden",
-                        textOverflow: "ellipsis",
-                      }}
-                    >
-                      {heldTypeSummary}
-                    </Typography>
-                    <IconButton
-                      size="small"
-                      onClick={() => {
-                        sessionStorage.removeItem(HELD_KEY);
-                        setHeldType("");
-                      }}
-                      sx={{ color: meterColors.secondary, p: 0.15 }}
-                    >
-                      <CloseRoundedIcon sx={{ fontSize: "0.85rem" }} />
-                    </IconButton>
-                  </Stack>
-                </Stack>
-              </>
-            )}
-          </Stack>
         </Box>
         <UserMenu />
       </Stack>
+
+      {heldTypeSummary && (
+        <Chip
+          size="small"
+          label={`분류 ${heldTypeSummary}`}
+          onDelete={() => {
+            sessionStorage.removeItem(HELD_KEY);
+            setHeldType("");
+          }}
+          sx={{
+            position: "absolute",
+            top: 52,
+            left: { xs: 8, sm: 12 },
+            zIndex: 1250,
+            height: 24,
+            fontSize: "0.68rem",
+            fontWeight: 800,
+            borderRadius: 1,
+            bgcolor: "rgba(0,0,0,0.86)",
+            color: meterColors.primary,
+            border: `1px solid ${meterColors.border}`,
+          }}
+        />
+      )}
 
       {geoMessage && (
         <Alert

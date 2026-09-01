@@ -25,6 +25,8 @@ import {
   InputLabel,
   Select,
   Grid,
+  Checkbox,
+  FormControlLabel,
 } from "@mui/material";
 import { useNavigate } from "react-router-dom";
 import { motion } from "framer-motion";
@@ -89,11 +91,14 @@ const Manage = () => {
     lon: "126.9228",
     type: "GENERAL",
     depthCm: "",
+    dummy: false,
+    fillPercent: "55",
   });
   const [moduleDeleteTarget, setModuleDeleteTarget] = useState(null);
   const [saving, setSaving] = useState(false);
   const [locationPickerOpen, setLocationPickerOpen] = useState(false);
   const [mqttFilter, setMqttFilter] = useState("ALL");
+  const [serialLocked, setSerialLocked] = useState(false);
 
   const loadOverview = useCallback(async () => {
     try {
@@ -143,7 +148,9 @@ const Manage = () => {
 
   const openModuleDialog = (m = null) => {
     if (m) {
+      const lock = !m.dummy && /^[mr]/i.test(String(m.serialNumber || ""));
       setEditingModule(m);
+      setSerialLocked(lock);
       setModuleForm({
         serialNumber: m.serialNumber ?? "",
         organization: m.organization ?? "CHOSUN_IT",
@@ -151,9 +158,12 @@ const Manage = () => {
         lon: String(m.lon ?? "126.9228"),
         type: m.type ?? "GENERAL",
         depthCm: m.depthCm == null ? "" : String(m.depthCm),
+        dummy: Boolean(m.dummy),
+        fillPercent: m.fillPercent == null ? "55" : String(m.fillPercent),
       });
     } else {
       setEditingModule(null);
+      setSerialLocked(false);
       setModuleForm({
         serialNumber: "",
         organization: "CHOSUN_IT",
@@ -161,6 +171,8 @@ const Manage = () => {
         lon: "126.9228",
         type: "GENERAL",
         depthCm: "",
+        dummy: false,
+        fillPercent: "55",
       });
     }
     setModuleDialogOpen(true);
@@ -178,7 +190,11 @@ const Manage = () => {
         lon: Number(moduleForm.lon),
         type: moduleForm.type.trim().toUpperCase(),
         depthCm: moduleForm.depthCm.trim() === "" ? null : Number(moduleForm.depthCm),
+        dummy: Boolean(moduleForm.dummy),
       };
+      if (moduleForm.dummy) {
+        body.fillPercent = moduleForm.fillPercent.trim() === "" ? 55 : Number(moduleForm.fillPercent);
+      }
       if (editingModule) {
         await apiFetch(`/modules/${editingModule.id}`, {
           method: "PUT",
@@ -187,7 +203,7 @@ const Manage = () => {
         setSuccess("모듈이 수정되었습니다.");
       } else {
         await apiFetch("/modules", { method: "POST", body: JSON.stringify(body) });
-        setSuccess("모듈이 추가되었습니다.");
+        setSuccess(moduleForm.dummy ? "더미 모듈이 추가되었습니다." : "모듈이 추가되었습니다.");
       }
       setModuleDialogOpen(false);
       setEditingModule(null);
@@ -563,9 +579,20 @@ const Manage = () => {
             <TableBody>
               {[...overview.modules].sort((a, b) => (a.id ?? 0) - (b.id ?? 0)).map((m) => (
                 <TableRow key={m.id} sx={{ "&:nth-of-type(odd)": { bgcolor: "rgba(255,255,255,0.03)" } }}>
-                  <TableCell sx={{ ...cellBody, fontWeight: 900, color: "#7cff72" }}>{m.id}</TableCell>
-                  <TableCell sx={cellBody}>{m.serialNumber}</TableCell>
-                  <TableCell sx={cellBody}>{m.deviceType === "VISION_CAM" ? "카메라" : "초음파"}</TableCell>
+                  <TableCell sx={{ ...cellBody, fontWeight: 900, color: m.dummy ? "rgba(255,255,255,0.45)" : "#7cff72" }}>
+                    {m.dummy ? (m.idDisplay || "-") : (m.idDisplay || m.id)}
+                  </TableCell>
+                  <TableCell sx={cellBody}>
+                    {m.serialNumber}
+                    {m.dummy && (
+                      <Box component="span" sx={{ ml: 0.6, fontSize: "0.62rem", color: "#ffb74d", fontWeight: 800 }}>
+                        DUMMY
+                      </Box>
+                    )}
+                  </TableCell>
+                  <TableCell sx={cellBody}>
+                    {m.dummy ? "더미" : m.deviceType === "VISION_CAM" ? "카메라" : "초음파"}
+                  </TableCell>
                   <TableCell sx={cellBody}>
                     <Box component="span" sx={{ fontWeight: 700 }}>{m.type}</Box>
                     <Box component="span" sx={{ display: "block", fontSize: "0.72rem", opacity: 0.78, mt: 0.25, lineHeight: 1.3 }}>
@@ -650,10 +677,42 @@ const Manage = () => {
         </DialogActions>
       </Dialog>
 
-      <Dialog open={moduleDialogOpen} onClose={() => !saving && setModuleDialogOpen(false)} fullWidth maxWidth="sm" PaperProps={{ sx: { bgcolor: "#121816", color: "#fff", border: "1px solid rgba(124,255,114,0.25)" } }}>
+      <Dialog open={moduleDialogOpen} onClose={() => !saving && setModuleDialogOpen(false)} fullWidth maxWidth="sm" PaperProps={{ sx: { bgcolor: "#121816", color: "#fff", border: "1px solid rgba(255,255,255,0.2)", borderRadius: 1 } }}>
         <DialogTitle sx={{ fontWeight: 800 }}>{editingModule ? "모듈 수정" : "모듈 추가"}</DialogTitle>
         <DialogContent sx={{ display: "flex", flexDirection: "column", gap: 2, pt: 1 }}>
-          <TextField label="serialNumber*" value={moduleForm.serialNumber} onChange={(e) => setModuleForm((f) => ({ ...f, serialNumber: e.target.value }))} fullWidth sx={{ input: { color: "#fff" } }} />
+          <Stack direction="row" spacing={1} alignItems="center">
+            {!editingModule && (
+              <FormControlLabel
+                control={
+                  <Checkbox
+                    checked={Boolean(moduleForm.dummy)}
+                    onChange={(e) => setModuleForm((f) => ({ ...f, dummy: e.target.checked }))}
+                    sx={{ color: "#ffb74d", "&.Mui-checked": { color: "#ffb74d" } }}
+                  />
+                }
+                label={<Typography sx={{ fontSize: "0.82rem", fontWeight: 800, color: moduleForm.dummy ? "#ffb74d" : "#fff", whiteSpace: "nowrap" }}>더미</Typography>}
+                sx={{ mr: 0.5, flexShrink: 0 }}
+              />
+            )}
+            <TextField
+              label={moduleForm.dummy ? "더미 시리얼*" : "serialNumber*"}
+              value={moduleForm.serialNumber}
+              onChange={(e) => setModuleForm((f) => ({ ...f, serialNumber: e.target.value }))}
+              disabled={serialLocked}
+              fullWidth
+              helperText={serialLocked ? "실기기 시리얼(m/r)은 수정할 수 없습니다" : moduleForm.dummy ? "예: dummy-park-1" : ""}
+              FormHelperTextProps={{ sx: { color: "rgba(255,255,255,0.5)" } }}
+              sx={{
+                input: { color: "#fff" },
+                "& .MuiOutlinedInput-root": {
+                  bgcolor: moduleForm.dummy ? "rgba(255,183,77,0.08)" : "transparent",
+                  "& fieldset": {
+                    borderColor: moduleForm.dummy ? "rgba(255,183,77,0.55)" : "rgba(255,255,255,0.25)",
+                  },
+                },
+              }}
+            />
+          </Stack>
           <TextField label="organization" value={moduleForm.organization} onChange={(e) => setModuleForm((f) => ({ ...f, organization: e.target.value }))} fullWidth sx={{ input: { color: "#fff" } }} />
           <Stack direction="row" spacing={1} alignItems="flex-start">
             <TextField label="lat" value={moduleForm.lat} onChange={(e) => setModuleForm((f) => ({ ...f, lat: e.target.value }))} fullWidth sx={{ input: { color: "#fff" } }} />
@@ -681,26 +740,39 @@ const Manage = () => {
               ))}
             </Select>
           </FormControl>
-          <TextField
-            label="depthCm (모듈1 용기 깊이)"
-            type="number"
-            value={moduleForm.depthCm}
-            onChange={(e) => setModuleForm((f) => ({ ...f, depthCm: e.target.value }))}
-            fullWidth
-            sx={{ input: { color: "#fff" } }}
-            inputProps={{ min: 1 }}
-            helperText="초음파 높이값을 적재율로 환산하는 기준. 비우면 서버 기본값(60cm)을 쓴다."
-            FormHelperTextProps={{ sx: { color: "rgba(255,255,255,0.55)" } }}
-          />
-          <Typography sx={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.55)" }}>
-            적재율과 신호 상태는 모듈이 직접 보고하므로 여기서 수정하지 않는다. 시리얼이 m 으로 시작하면 초음파, r 로 시작하면 영상 판정 계열로 자동 분류된다.
+          {!moduleForm.dummy && (
+            <TextField
+              label="depthCm (모듈1 용기 깊이)"
+              type="number"
+              value={moduleForm.depthCm}
+              onChange={(e) => setModuleForm((f) => ({ ...f, depthCm: e.target.value }))}
+              fullWidth
+              sx={{ input: { color: "#fff" } }}
+              inputProps={{ min: 1 }}
+              helperText="초음파 높이 → 적재율 환산 기준. 비우면 60cm"
+              FormHelperTextProps={{ sx: { color: "rgba(255,255,255,0.55)" } }}
+            />
+          )}
+          {moduleForm.dummy && (
+            <TextField
+              label="fillPercent (더미 적재율)"
+              type="number"
+              value={moduleForm.fillPercent}
+              onChange={(e) => setModuleForm((f) => ({ ...f, fillPercent: e.target.value }))}
+              fullWidth
+              sx={{ input: { color: "#fff" } }}
+              inputProps={{ min: 0, max: 100 }}
+            />
+          )}
+          <Typography sx={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.55)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+            {moduleForm.dummy ? "더미는 무신호 자동정리 대상에서 제외됩니다." : "실기기 시리얼(m/r)은 자동등록되며 웹에서 바꿀 수 없습니다."}
           </Typography>
         </DialogContent>
         <DialogActions sx={{ px: 3, pb: 2 }}>
           <Button onClick={() => setModuleDialogOpen(false)} disabled={saving}>
             취소
           </Button>
-          <Button onClick={saveModule} disabled={saving || !moduleForm.serialNumber.trim()} variant="contained" sx={{ bgcolor: "#ffffff", color: "#000", fontWeight: 800 }}>
+          <Button onClick={saveModule} disabled={saving || !moduleForm.serialNumber.trim()} variant="contained" sx={{ bgcolor: "#ffffff", color: "#000", fontWeight: 800, borderRadius: 1 }}>
             {saving ? "저장 중…" : "저장"}
           </Button>
         </DialogActions>

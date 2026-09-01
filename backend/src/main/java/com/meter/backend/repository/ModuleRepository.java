@@ -21,8 +21,11 @@ public interface ModuleRepository extends JpaRepository<Module, Long> {
      */
     @Query("""
             SELECT m FROM Module m
-            WHERE (m.lastSignalAt IS NOT NULL AND m.lastSignalAt < :threshold)
-               OR (m.lastSignalAt IS NULL AND m.createdAt IS NOT NULL AND m.createdAt < :threshold)
+            WHERE m.dummy = false
+              AND (
+                   (m.lastSignalAt IS NOT NULL AND m.lastSignalAt < :threshold)
+                OR (m.lastSignalAt IS NULL AND m.createdAt IS NOT NULL AND m.createdAt < :threshold)
+              )
             """)
     List<Module> findStale(@Param("threshold") LocalDateTime threshold);
 }

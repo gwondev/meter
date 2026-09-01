@@ -35,7 +35,7 @@ static const char *const MODULE_SERIAL = "m1";
  * 펌웨어 배포 확인 태그 — 수정할 때마다 이 문자열을 갱신한다.
  * setup() 에서 한 번만 출력됨. (위 파일 헤더 VERIFY MARKER 규칙 참고)
  */
-static const char *const BUILD_VERIFY_TAG = "METER-FW m1 2026-09-01c LED=R/Y/B mqtt-ws";
+static const char *const BUILD_VERIFY_TAG = "METER-FW m1 2026-09-02a PUB=30s LED=R/Y/B";
 
 static const char *MQTT_WS_URI = "ws://mqtt-meter.gwon.run:80";
 
@@ -74,7 +74,7 @@ static unsigned long s_ledFlashUntilMs = 0;
 static float s_lastDistCm = -1.0f;
 
 /* 발행 주기 — 높이값 1건을 이 간격으로 계속 보낸다. 서버는 수신 시각을 생존 신호로 쓴다. */
-static const unsigned long PUBLISH_INTERVAL_MS = 5UL * 1000UL;
+static const unsigned long PUBLISH_INTERVAL_MS = 30UL * 1000UL;
 static const unsigned long ULTRA_PING_INTERVAL_MS = 15;
 static const unsigned long ULTRA_LOG_INTERVAL_MS = 10000UL;
 

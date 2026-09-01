@@ -36,6 +36,21 @@ public class ModuleSchemaMigration {
 
         backfillLastSignalAt();
         LEGACY_COLUMNS.forEach(this::dropColumnIfPresent);
+        ensureDummyColumn();
+    }
+
+    /** 더미 모듈 플래그 — 없으면 추가하고 기존 행은 false. */
+    private void ensureDummyColumn() {
+        if (hasColumn("dummy")) {
+            return;
+        }
+        try {
+            jdbcTemplate.execute(
+                    "ALTER TABLE " + TABLE + " ADD COLUMN dummy TINYINT(1) NOT NULL DEFAULT 0");
+            log.info("modules.dummy 컬럼 추가");
+        } catch (Exception e) {
+            log.warn("modules.dummy 컬럼 추가 실패: {}", e.getMessage());
+        }
     }
 
     /** 기존 last_heartbeat 값을 새 컬럼으로 옮긴다. 이미 값이 있으면 건드리지 않는다. */

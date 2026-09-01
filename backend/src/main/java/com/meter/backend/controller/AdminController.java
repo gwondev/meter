@@ -35,7 +35,10 @@ public class AdminController {
 
         return Map.of(
                 "users", users.stream().map(this::toUserDto).toList(),
-                "modules", modules.stream().map(this::toModuleDto).toList(),
+                "modules", modules.stream()
+                        .sorted(ModuleController.moduleListOrder())
+                        .map(this::toModuleDto)
+                        .toList(),
                 "disposalRecords", records.stream().map(this::toRecordDto).toList(),
                 "rewardHistories", rewards.stream().map(this::toRewardDto).toList()
         );

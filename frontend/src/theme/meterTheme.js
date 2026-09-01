@@ -72,17 +72,38 @@ export const WAITING_COLOR = "#6b6b6b";
 /** 서버가 내려주는 signalState 를 신뢰하되, 값이 없으면 lastSignalAt 으로 보정한다. */
 export function isSignalActive(module) {
   if (!module) return false;
+  if (module.dummy) return true;
   if (module.signalState) return module.signalState === "ACTIVE";
   if (!module.lastSignalAt) return false;
-  const allowedMs = module.deviceType === "VISION_CAM" ? 12 * 60 * 1000 : 60 * 1000;
-  const diffMs = Date.now() - new Date(module.lastSignalAt).getTime();
+  const allowedMs = module.deviceType === "VISION_CAM" ? 12 * 60 * 1000 : 90 * 1000;
+  const at = parseServerDateTime(module.lastSignalAt);
+  if (!at) return false;
+  const diffMs = Date.now() - at.getTime();
   return !Number.isNaN(diffMs) && diffMs >= 0 && diffMs < allowedMs;
 }
 
+/** 서버 LocalDateTime(Asia/Seoul, zone 없음) 을 올바르게 파싱한다. */
+export function parseServerDateTime(value) {
+  if (!value) return null;
+  const raw = String(value).trim();
+  if (!raw) return null;
+  if (/[zZ]$|[+-]\d{2}:?\d{2}$/.test(raw)) {
+    const d = new Date(raw);
+    return Number.isNaN(d.getTime()) ? null : d;
+  }
+  /* zone 없는 ISO → KST(+09:00). 컨테이너 UTC LocalDateTime 이어도
+   * Dockerfile 의 user.timezone=Asia/Seoul 로 맞춤. */
+  const normalized = raw.includes("T") ? raw : raw.replace(" ", "T");
+  const d = new Date(normalized.endsWith("Z") ? normalized : `${normalized}+09:00`);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
 export function formatSignalAge(lastSignalAt) {
-  if (!lastSignalAt) return "신호 없음";
-  const diffMs = Date.now() - new Date(lastSignalAt).getTime();
-  if (Number.isNaN(diffMs) || diffMs < 0) return "신호 없음";
+  const at = parseServerDateTime(lastSignalAt);
+  if (!at) return "신호 없음";
+  const diffMs = Date.now() - at.getTime();
+  if (Number.isNaN(diffMs)) return "신호 없음";
+  if (diffMs < 0) return "방금";
   const diffSec = Math.floor(diffMs / 1000);
   if (diffSec < 60) return `${diffSec}초 전`;
   const diffMin = Math.floor(diffSec / 60);
