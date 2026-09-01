@@ -11,7 +11,6 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.nio.file.StandardCopyOption;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Locale;
@@ -50,8 +49,26 @@ public class SnapshotStorageService {
             throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "image file is required");
         }
 
+        try {
+            return storeBytes(serialNumber, file.getBytes(), resolveExtension(file.getOriginalFilename()));
+        } catch (IOException e) {
+            log.error("스냅샷 읽기 실패 serial={}", serialNumber, e);
+            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "failed to store snapshot");
+        }
+    }
+
+    /**
+     * MQTT 등에서 받은 바이트 배열 저장.
+     *
+     * @return 공개 URL (예: {@code /api/uploads/r1/1738400000000.jpg})
+     */
+    public String storeBytes(String serialNumber, byte[] bytes, String extensionHint) {
+        if (bytes == null || bytes.length == 0) {
+            throw new ResponseStatusException(HttpStatus.BAD_REQUEST, "image bytes empty");
+        }
+
         String serial = safeSerial(serialNumber);
-        String extension = resolveExtension(file.getOriginalFilename());
+        String extension = normalizeExtension(extensionHint);
 
         try {
             Path moduleDir = root.resolve(serial);
@@ -59,17 +76,29 @@ public class SnapshotStorageService {
 
             String filename = System.currentTimeMillis() + "." + extension;
             Path target = moduleDir.resolve(filename);
-            try (var in = file.getInputStream()) {
-                Files.copy(in, target, StandardCopyOption.REPLACE_EXISTING);
-            }
+            Files.write(target, bytes);
 
             pruneOldFiles(moduleDir);
-            log.info("스냅샷 저장 serial={} file={} bytes={}", serial, filename, file.getSize());
+            log.info("스냅샷 저장 serial={} file={} bytes={}", serial, filename, bytes.length);
             return PUBLIC_PREFIX + serial + "/" + filename;
         } catch (IOException e) {
             log.error("스냅샷 저장 실패 serial={}", serial, e);
             throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "failed to store snapshot");
         }
+    }
+
+    private static String normalizeExtension(String hint) {
+        if (hint == null || hint.isBlank()) {
+            return "jpg";
+        }
+        String ext = hint.trim().toLowerCase(Locale.ROOT);
+        if (ext.startsWith(".")) {
+            ext = ext.substring(1);
+        }
+        if ("jpeg".equals(ext)) {
+            ext = "jpg";
+        }
+        return ALLOWED_EXTENSIONS.contains(ext) ? ext : "jpg";
     }
 
     /** 디렉터리 traversal 과 예상 밖 문자를 막는다. 시리얼은 영숫자·하이픈·밑줄만 허용. */

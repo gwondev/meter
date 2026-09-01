@@ -47,6 +47,18 @@ public class ModuleSignalService {
                 serialNumber, module.getDeviceType(), module.getFillPercent());
     }
 
+    /** fillPercent 없이 사진·생존만 온 경우 — 기존 적재율은 유지. */
+    @Transactional
+    public void applyImageOrTouch(String serialNumber, String imageUrl) {
+        Module module = findOrCreate(serialNumber);
+        if (imageUrl != null && !imageUrl.isBlank()) {
+            module.setLastImageUrl(imageUrl);
+        }
+        module.setLastSignalAt(LocalDateTime.now());
+        moduleRepository.save(module);
+        log.info("signal IMAGE/TOUCH serial={} hasImage={}", serialNumber, imageUrl != null);
+    }
+
     /** 구형 펌웨어 heightCm 호환. */
     @Transactional
     public void applyHeightLegacy(String serialNumber, double heightCm) {

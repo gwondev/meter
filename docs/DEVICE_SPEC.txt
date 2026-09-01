@@ -16,18 +16,18 @@ METER 명세서
 
   지도
     카카오맵에 모듈 위치·적재율(0~100%)·신호 상태 표시.
-    M/D(높이)=모듈 아이콘, R(카메라)=카메라 아이콘.
+    M=모듈 아이콘, R=카메라 아이콘.
 
   최적 수거 경로
-    화면 안 모듈 전부 방문. 만재 우선 정렬 + 도로망 경로.
-    도로가 모듈 앞에서 끊기면 직선으로 잇고, 진행 방향 화살표 표시.
+    화면 안 모듈 전부 방문. 만재 우선 + 도로망.
+    도로가 모듈 앞에서 끊기면 직선 링크, 진행 방향 화살표.
 
   관리자
     모듈·더미·유저 관리, 무신호 정리, MQTT 진단.
 
   공통 지표
     fillPercent 0~100 (0=수거 불필요, 100=즉시 수거).
-    높이(cm) 원본은 웹에 안 보여 줌.
+    M·R 모두 MQTT meter/{serial}/status 로 통일.
 
 
 ────────────────────────────────────────
@@ -35,24 +35,21 @@ D모듈 — 높이 측정 (구현 완료)
 ────────────────────────────────────────
 
   상태
-    구현 완료. 펌웨어·서버·웹 연동까지 동작 중.
-
-  GitHub
-    https://github.com/gwondev/meter
+    구현 완료. GitHub: https://github.com/gwondev/meter
     소스: meter_iot/src/module1.cpp
 
   역할
-    초음파(HC-SR04P)로 빈 거리를 재고, 보드에서 0~100%로 환산해 전송.
+    초음파로 빈 거리 측정 → 보드에서 0~100% 환산 후 MQTT 발행.
 
   시리얼
     m1, m2, … (접두어 m)
 
-  전송 (MQTT)
+  MQTT
     URI      ws://mqtt-meter.gwon.run:80
     Topic    meter/{serial}/status   예: meter/m1/status
     주기     30초
     Payload  { "moduleSerial":"m1", "fillPercent":72.5 }
-    QoS 1 / retain false / 구독 없음(발행만)
+    QoS 1 / retain false / 구독 없음
 
 
 ────────────────────────────────────────
@@ -60,115 +57,130 @@ R모듈 — 카메라 영상 판정 (인수 예정)  ★핵심
 ────────────────────────────────────────
 
   상태
-    인수 예정. 아래 계약만 지키면 웹·서버와 붙는다.
-    판정 알고리즘(원본↔현재 비교)은 담당자 자유.
+    인수 예정. D모듈과 같은 MQTT 경로로 붙인다.
+    HTTP 토큰 업로드는 쓰지 않는다 (레거시만 서버에 남아 있음).
 
   보드
     Raspberry Pi 5 + CSI 카메라. 시리얼 r1, r2, …
 
-  해야 할 일 (3가지)
-    1) 설치/수거 직후 「빈 상태」원본 사진 1장 로컬 보관
-    2) 5분마다 현재 촬영 → 원본 비교 → fillPercent 0~100 산출
-    3) 서버에 HTTPS로 보고 (수치 + 가능하면 사진)
+  해야 할 일
+    1) 설치/수거 직후 「빈 상태」원본 사진 로컬 보관
+    2) 5분마다 현재 촬영 → 원본 비교 → fillPercent 0~100
+    3) 압축 JPEG(권장 200~500KB)를 base64 로 넣어 MQTT 발행
+       (수치만 보내도 됨. 사진 없으면 지도에 스냅샷만 안 뜸)
 
 
-  [필수] HTTP 사진·수치 업로드  ← 본선
-
-    URL
-      https://meter.gwon.run/api/device/modules/{serial}/report
-      예) https://meter.gwon.run/api/device/modules/r1/report
-
-    인증 헤더
-      X-METER-DEVICE-TOKEN: <토큰>
-      ※ 토큰 값은 노션에서 별도 확인 (이 문서에 적지 않음)
-
-    주기
-      5분 (300초)
-
-    방식 A — 사진 포함 (권장)
-      Content-Type: multipart/form-data
-      필드 fillPercent : 0~100 숫자 (필수)
-      필드 image       : jpg/jpeg/png/webp (선택, 최대 12MB)
-
-    방식 B — 수치만
-      Content-Type: application/json
-      { "fillPercent": 72.5 }
-
-    성공(200) 예
-      {
-        "ok": true,
-        "serialNumber": "r1",
-        "fillPercent": 72.5,
-        "imageUrl": "/api/uploads/r1/….jpg",
-        "lastSignalAt": "…"
-      }
-      사진 공개 URL: https://meter.gwon.run/api/uploads/r1/….jpg
-
-    오류
-      400  fillPercent 문제
-      401  토큰 불일치 (노션 토큰 재확인)
-      503  서버 토큰 미설정
-
-
-  [선택] MQTT 생존·수치만  ← 사진 불가, 필수는 아님
+  [필수] MQTT — D모듈과 동일 브로커·토픽 규약
 
     URI      ws://mqtt-meter.gwon.run:80
+             (내부 브로커: 1883 mqtt / 9001 websockets)
     Topic    meter/{serial}/status   예: meter/r1/status
-    Payload  { "moduleSerial":"r1", "fillPercent":72.5 }
-    QoS 1 / retain false
-    ※ 사진은 MQTT로 못 보냄. 지도 스냅샷이 필요하면 반드시 HTTP.
+    주기     5분 (300초)
+    QoS      1
+    retain   false
+    인증     없음 (브로커 allow_anonymous). 토큰·HTTP 불필요.
+    패킷 한도 브로커 max_packet_size 2MB (압축 JPEG + base64 여유)
 
 
-  스모크 테스트
+  페이로드 A — 수치만
 
-    curl -X POST "https://meter.gwon.run/api/device/modules/r1/report" \
-      -H "X-METER-DEVICE-TOKEN: (노션의 토큰)" \
-      -F "fillPercent=50" \
-      -F "image=@./sample.jpg"
+    {
+      "moduleSerial": "r1",
+      "fillPercent": 72.5
+    }
 
-    → 200 + ok:true, 지도에 카메라 마커·적재율 보이면 성공.
-    → 12분 이상 미보고 시 「신호 대기중」.
+
+  페이로드 B — 수치 + 압축 사진 (권장)
+
+    {
+      "moduleSerial": "r1",
+      "fillPercent": 72.5,
+      "imageBase64": "<JPEG를 base64 인코딩한 문자열>",
+      "imageFormat": "jpg"
+    }
+
+    필드
+      moduleSerial   시리얼 (토픽의 serial 과 맞출 것)
+      fillPercent    0~100 실수/정수
+      imageBase64    선택. JPEG/PNG/WEBP 바이트의 base64
+                     data:image/jpeg;base64,... 형태도 허용
+      imageFormat    선택. jpg | png | webp (기본 jpg)
+                     별칭: imageExt / 필드명 image 도 imageBase64 대신 가능
+
+    사진 권장
+      해상도 축소 + JPEG 품질 낮춰 200~500KB 목표
+      디코드 후 서버 상한 약 900KB (초과 시 사진만 버리고 fill 은 반영)
+
+
+  서버 동작
+    수신 → fillPercent DB 반영 → imageBase64 있으면
+    /api/uploads/{serial}/{timestamp}.jpg 저장 → lastImageUrl 갱신
+    첫 신호 시 modules 자동 생성 (위치는 관리자 화면에서 지정)
+    12분 이상 미수신 → 지도 「신호 대기중」
+
+
+  최소 Python 골격 (paho-mqtt)
+
+    import os, time, base64, json
+    import paho.mqtt.client as mqtt
+
+    SERIAL = "r1"
+    BROKER = "mqtt-meter.gwon.run"
+    PORT = 80          # WebSocket. TCP면 보통 1883 + 터널 정책 확인
+    TOPIC = f"meter/{SERIAL}/status"
+
+    def capture_jpeg_bytes() -> bytes: ...
+    def estimate_fill(jpeg: bytes) -> float: ...
+
+    def publish(client):
+        jpeg = capture_jpeg_bytes()       # 압축된 JPEG
+        fill = estimate_fill(jpeg)
+        payload = {
+            "moduleSerial": SERIAL,
+            "fillPercent": round(fill, 1),
+            "imageBase64": base64.b64encode(jpeg).decode("ascii"),
+            "imageFormat": "jpg",
+        }
+        client.publish(TOPIC, json.dumps(payload), qos=1)
+
+    # WebSocket 예 (환경에 맞게 transport 설정)
+    client = mqtt.Client(client_id=f"{SERIAL}-rpi", transport="websockets")
+    client.ws_set_options(path="/")
+    client.connect(BROKER, PORT, keepalive=60)
+    client.loop_start()
+    while True:
+        try:
+            publish(client)
+        except Exception as e:
+            print("publish failed:", e)
+        time.sleep(300)
+
+
+  수치만 테스트 (mosquitto_pub, 브로커 접근 가능한 환경)
+
+    mosquitto_pub -h mqtt-meter.gwon.run -p 80 \
+      -t "meter/r1/status" -q 1 \
+      -m '{"moduleSerial":"r1","fillPercent":50}'
 
 
   하지 않아도 되는 것
-    지도 UI / 경로 / 로그인 / DB 스키마
-    모듈 사전 등록 (첫 보고 시 서버 자동 생성)
-    위치 전송 (관리자 화면에서 지정)
-
-
-  최소 Python 골격
-
-    import os, time, requests
-    SERIAL = "r1"
-    URL = f"https://meter.gwon.run/api/device/modules/{SERIAL}/report"
-    TOKEN = os.environ["METER_DEVICE_TOKEN"]   # 노션 값
-
-    while True:
-        jpeg = capture()                 # 구현
-        fill = estimate_fill(jpeg)       # 0~100, 구현
-        requests.post(
-            URL,
-            headers={"X-METER-DEVICE-TOKEN": TOKEN},
-            data={"fillPercent": f"{fill:.1f}"},
-            files={"image": (f"{SERIAL}.jpg", jpeg, "image/jpeg")},
-            timeout=30,
-        ).raise_for_status()
-        time.sleep(300)
+    HTTP / X-METER-DEVICE-TOKEN / 노션 토큰
+    지도 UI·경로·로그인·DB
+    모듈 사전 등록·위치 전송
 
 
 ────────────────────────────────────────
 POWER TANK
 ────────────────────────────────────────
 
-  보조배터리로 D모듈·R모듈(및 관련 보드)을 충전·상시 전원 공급.
-  권장: 20000mAh / 100W급 이상. (뚜껑 태양광은 보조 충전용)
-  서버·웹과 직접 통신하지 않음.
+  보조배터리로 D·R 모듈 충전·상시 전원.
+  권장 20000mAh / 100W급. 서버 통신 없음.
 
 
 ────────────────────────────────────────
-흐름 (요약)
+흐름
 ────────────────────────────────────────
 
-  D모듈  --MQTT fill%--------→  mqtt-meter.gwon.run  ─┐
-                                                       ├→ 서버 → DB → 웹 지도
-  R모듈  --HTTPS fill%+사진--→  meter.gwon.run/api/… ─┘
+  D모듈  --MQTT meter/m1/status (fill%)------------┐
+                                                    ├→ mosquitto → backend → DB → 웹
+  R모듈  --MQTT meter/r1/status (fill% + 사진?)----┘

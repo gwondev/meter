@@ -19,11 +19,27 @@ public class MqttTrafficLogService {
                 "time", LocalDateTime.now().toString(),
                 "direction", direction,
                 "topic", topic == null ? "" : topic,
-                "payload", payload == null ? "" : payload
+                "payload", summarizePayload(payload)
         ));
         while (logs.size() > MAX_LOGS) {
             logs.removeLast();
         }
+    }
+
+    /** base64 이미지 등 큰 필드는 로그에 원문을 넣지 않는다. */
+    static String summarizePayload(String payload) {
+        if (payload == null) {
+            return "";
+        }
+        String p = payload;
+        boolean hasImage = p.contains("imageBase64") || p.contains("\"image\"");
+        if (hasImage && p.length() > 400) {
+            return "[image payload omitted, bytes=" + p.length() + "]";
+        }
+        if (p.length() > 800) {
+            return p.substring(0, 800) + "…(truncated," + p.length() + ")";
+        }
+        return p;
     }
 
     public synchronized List<Map<String, Object>> latest(int limit) {

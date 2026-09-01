@@ -15,13 +15,11 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * 모듈2(r*) 전용 보고 API — 라즈베리파이가 5분 주기로 호출한다.
+ * 모듈2(r*) HTTP 보고 API — <b>레거시/비상용</b>.
  *
- * <p>{@code /api/device/**} 는 {@code DeviceTokenFilter} 가 지키므로
- * 요청에 {@code X-METER-DEVICE-TOKEN} 헤더가 반드시 있어야 한다.
- *
- * <p>사진은 MQTT 가 아니라 이 HTTP 경로로 보낸다 — 브라우저가 이미지를 표시하려면
- * 어차피 서버에 저장된 URL 이 필요하고, MQTT 는 대용량 재전송에 불리하기 때문.
+ * <p>정식 경로는 MQTT {@code meter/{serial}/status} (fillPercent + 선택 imageBase64).
+ * 이 엔드포인트는 하위 호환·수동 테스트용으로만 남긴다.
+ * {@code X-METER-DEVICE-TOKEN} 헤더 필요.
  */
 @RestController
 @RequestMapping("/api/device/modules")

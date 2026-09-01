@@ -78,35 +78,22 @@ meter/
 
 | 계열 | 시리얼 | deviceType | 측정 | 전송 |
 |------|--------|-----------|------|------|
-| 모듈1 (ESP32) | `m1`, `m2` … | `HEIGHT_SENSOR` | 초음파 높이(cm) | MQTT / 5초 |
-| 모듈2 (RPi5) | `r1`, `r2` … | `VISION_CAM` | 영상 변화 %(0~100) | HTTPS / 5분 |
+| 모듈1 (ESP32) | `m1`, `m2` … | `HEIGHT_SENSOR` | 초음파 → fill% | MQTT / 30초 |
+| 모듈2 (RPi5) | `r1`, `r2` … | `VISION_CAM` | 영상 → fill% (+사진) | MQTT / 5분 |
 
-### MQTT (모듈1)
+### MQTT (M·R 공통)
 
 | 항목 | 값 |
 |------|-----|
-| URI | `ws://mqtt-meter.gwon.run:80` (MQTT over WebSocket) |
+| URI | `ws://mqtt-meter.gwon.run:80` |
 | 토픽 | `meter/{serial}/status` (QoS 1, retain false) |
-| 페이로드 | `{"moduleSerial":"m1","heightCm":25.3}` |
-| 주기 | 5초 — `HEARTBEAT` / `HEIGHT` 구분 없는 단일 형태 |
+| M 페이로드 | `{"moduleSerial":"m1","fillPercent":72.5}` |
+| R 페이로드 | 위 + 선택 `"imageBase64":"...","imageFormat":"jpg"` |
+| 주기 | M 30초 · R 5분 |
 
-하향 명령(`cmd`)과 `events` 토픽은 사용하지 않는다. 발행 전용 단방향이다.
+하향 명령(`cmd`)은 사용하지 않는다. 발행 전용.
 
-### 적재율 정규화
-
-두 계열의 측정 단위가 달라서 `fillPercent` (0~100) 로 통일한 뒤 최적 경로에 함께 넣는다.
-
-- 모듈1: `clamp((depthCm - heightCm) / depthCm × 100, 0, 100)` — `depthCm` 미지정 시 기본 60cm
-- 모듈2: 보고값 그대로
-
-### 신호 상태
-
-| 계열 | 허용 지연 | 초과 시 |
-|------|----------|--------|
-| 모듈1 | 60초 | `WAITING` (지도에서 회색 «신호 대기중») |
-| 모듈2 | 12분 | `WAITING` |
-
-신호가 10일 이상 끊긴 모듈은 매시 스케줄러가 자동 삭제한다.
+HTTP `POST /api/device/modules/{serial}/report` 는 **레거시/비상용**. R 인수 시 MQTT만 쓰면 된다.
 
 ---
 
@@ -116,7 +103,7 @@ meter/
 |--------|------|------|
 | GET | `/api/modules` | 거점 목록 (fillPercent, signalState, lastSignalAt 포함) |
 | POST | `/api/modules/cleanup` | 무신호 모듈 즉시 정리 |
-| POST | `/api/device/modules/{serial}/report` | 모듈2 백분위 + 사진 업로드 (토큰 필요) |
+| POST | `/api/device/modules/{serial}/report` | (레거시) R HTTP 보고 — 정식은 MQTT |
 | GET | `/api/uploads/{serial}/{file}` | 모듈2 스냅샷 정적 서빙 |
 | POST | `/api/ai/analyze` | AI Vision 분류·안내 |
 | POST | `/api/ai/chat` | AI 챗봇 (마크다운 제거된 평문 응답) |
@@ -124,41 +111,15 @@ meter/
 
 ---
 
-## 디바이스 인증 (`/api/device/**`)
+## 디바이스 인증 (`/api/device/**`) — 레거시
 
-브라우저 세션이 없는 IoT 디바이스(모듈2 라즈베리파이 등)는 Google OAuth 대신 **사전 공유 토큰**으로 인증한다.
+R 모듈 정식 경로는 **MQTT** 이다. 아래 HTTP 토큰 API 는 비상·수동 테스트용으로만 남아 있다.
 
 | 항목 | 값 |
 |------|-----|
 | 보호 경로 | `/api/device/**` |
-| 헤더 | `X-METER-DEVICE-TOKEN: <token>` (또는 `Authorization: Bearer <token>`) |
-| 설정 키 | `METER_DEVICE_TOKEN` → `meter.device.token` |
-
-토큰 생성:
-
-```bash
-openssl rand -hex 32
-```
-
-생성한 값을 서버 `.env.production`에 `METER_DEVICE_TOKEN=...` 으로 넣고 `./scripts/prepare-env.sh` 를 다시 실행한다.
-
-호출 예시:
-
-```bash
-curl -X POST https://meter.gwon.run/api/device/... \
-  -H "X-METER-DEVICE-TOKEN: $METER_DEVICE_TOKEN" \
-  -F "image=@current.jpg"
-```
-
-응답 규약:
-
-| 상태 | 의미 |
-|------|------|
-| `401` | 토큰 불일치 또는 헤더 누락 |
-| `503` | 서버에 `METER_DEVICE_TOKEN` 미설정 (fail-closed) |
-
-토큰이 설정되지 않으면 해당 경로는 **열리지 않고 전부 차단된다.** 설정 누락이 무인증 개방으로 이어지지 않게 하기 위함이며,
-기동 로그의 `meter.device.token present=` 로 설정 여부를 확인할 수 있다.
+| 헤더 | `X-METER-DEVICE-TOKEN` |
+| 설정 | `METER_DEVICE_TOKEN` (미설정 시 해당 경로 503) |
 
 ---
 
