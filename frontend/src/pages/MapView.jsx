@@ -171,7 +171,6 @@ export default function MapView({ userPos, modules, route = null, centerTrigger 
       const serial = (m.serialNumber && String(m.serialNumber).trim()) || "—";
       const typeKey = String(m.type || "GENERAL").toUpperCase();
       const typeTitle = moduleTypeLabel(m.type);
-      const wasteSymbol = TYPE_SYMBOLS[typeKey] || "📍";
       const series = seriesMeta(m);
       const state = moduleDisplayState(m);
       const waiting = !state.active;
