@@ -16,4 +16,8 @@ meter:
   upload:
     # 로컬은 컨테이너 볼륨이 없으므로 프로젝트 하위에 저장한다
     dir: ${METER_UPLOAD_DIR:./build/uploads}
-    keep-per-module: ${METER_UPLOAD_KEEP_PER_MODULE:20}
+    keep-per-module: ${METER_UPLOAD_KEEP_PER_MODULE:10}
+    trash-keep-per-module: ${METER_UPLOAD_TRASH_KEEP:20}
+  vision:
+    enabled: ${METER_VISION_ENABLED:false}
+    url: ${METER_VISION_URL:http://127.0.0.1:8090}

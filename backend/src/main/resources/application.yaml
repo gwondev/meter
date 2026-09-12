@@ -67,7 +67,12 @@ meter:
   upload:
     # R모듈 스냅샷 저장 디렉터리 (컨테이너 볼륨)
     dir: ${METER_UPLOAD_DIR:/backend/uploads}
-    keep-per-module: ${METER_UPLOAD_KEEP_PER_MODULE:20}
+    # 일반 샘플 최근 N장 (원본 baseline.jpg 는 별도 유지)
+    keep-per-module: ${METER_UPLOAD_KEEP_PER_MODULE:10}
+    trash-keep-per-module: ${METER_UPLOAD_TRASH_KEEP:20}
+  vision:
+    enabled: ${METER_VISION_ENABLED:true}
+    url: ${METER_VISION_URL:http://meter-vision:8090}
 
 server:
   port: 8080

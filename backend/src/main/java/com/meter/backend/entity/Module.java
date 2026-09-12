@@ -9,7 +9,7 @@ import java.time.LocalDateTime;
  *
  * <ul>
  *   <li>{@code m*} — D모듈 (초음파). 보드가 {@code fillPercent} 0~100 을 MQTT로 보낸다.</li>
- *   <li>{@code r*} — R모듈 (카메라). 동일하게 {@code fillPercent} + 선택 {@code imageBase64} (MQTT만).</li>
+ *   <li>{@code r*} — R모듈 (카메라). 이미지만 MQTT. 서버 vision이 baseline+최근10장으로 fillPercent 산출.</li>
  * </ul>
  *
  * <p>더미는 {@code dummy_modules} — 계열만 M(높이형)/R(카메라형). 제품명 D모듈과 혼동 주의.

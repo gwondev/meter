@@ -18,12 +18,12 @@ export default function IotIntegration() {
       }
       title="사각지대 IoT 감시"
       subtitle="D모듈 · R모듈 · MQTT"
-      description="보드가 fillPercent(0~100)를 계산해 MQTT로만 전송합니다."
-      highlights={["fillPercent", "MQTT", "HTTP 없음"]}
+      description="R모듈은 이미지만 보내고, 서버가 원본과 최근 사진을 비교해 적재율을 냅니다."
+      highlights={["MQTT 이미지", "원본+10장", "서버 fill%"]}
       bullets={[
         "D모듈: 초음파로 빈 거리를 재고 보드에서 적재율을 산출합니다 (30초).",
-        "R모듈: 원본 사진과 비교해 적재율을 산출하고 5분마다 이미지와 함께 보냅니다.",
-        "서버·웹은 meter/{serial}/status 구독만 합니다. 디바이스 HTTP API는 없습니다.",
+        "R모듈: JPEG만 MQTT 전송(간격은 보드 결정). imageRole=original 이면 원본 덮어쓰기.",
+        "서버 vision이 원본과 최근 10장 샘플을 비교해 fillPercent 0~100을 산출합니다.",
       ]}
     />
   );

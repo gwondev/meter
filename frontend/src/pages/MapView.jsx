@@ -206,53 +206,130 @@ export default function MapView({ userPos, modules, route = null, centerTrigger 
           popupOverlayRef.current = null;
         }
 
+        const accent = waiting ? "rgba(140,140,140,0.7)" : series.isR ? "#64b5f6" : "#7cff72";
+        const fillText =
+          state.fillPercent != null ? `${Math.round(state.fillPercent)}%` : "—";
+        const typeTitle = moduleTypeLabel(m.type);
+
         const info = document.createElement("div");
         info.style.cssText = [
-          "min-width:180px",
-          "max-width:240px",
-          "padding:10px 12px",
-          "background:" + (waiting ? "#1a1a1a" : "#0d0d0d"),
-          "border:1px solid " + (waiting ? "rgba(120,120,120,0.45)" : "rgba(255,255,255,0.22)"),
-          "border-radius:4px",
-          "color:" + meterColors.primaryMuted,
+          "min-width:220px",
+          "max-width:280px",
+          "padding:0",
+          "overflow:hidden",
+          "background:#000000",
+          "border:1px solid " + (waiting ? "rgba(120,120,120,0.45)" : "rgba(255,255,255,0.2)"),
+          "border-radius:10px",
+          "color:#fff",
           "font-size:12px",
-          "line-height:1.55",
-          "box-shadow:0 10px 28px rgba(0,0,0,0.5)",
+          "line-height:1.45",
+          "box-shadow:0 14px 36px rgba(0,0,0,0.55)",
           "pointer-events:auto",
         ].join(";");
 
-        const title = document.createElement("div");
-        title.style.cssText = `font-weight:800;color:${state.color};font-size:14px;margin-bottom:4px;`;
-        title.textContent = state.label;
-        info.appendChild(title);
+        const head = document.createElement("div");
+        head.style.cssText =
+          "display:flex;align-items:center;gap:10px;padding:12px 12px 10px;border-bottom:1px solid rgba(255,255,255,0.08);";
 
-        const meta = document.createElement("div");
-        meta.style.opacity = "0.75";
-        meta.style.marginBottom = "2px";
-        meta.textContent = `${series.key} · ${serial}`;
-        info.appendChild(meta);
+        const iconBox = document.createElement("div");
+        iconBox.style.cssText = [
+          "width:42px",
+          "height:42px",
+          "border-radius:10px",
+          "display:flex",
+          "align-items:center",
+          "justify-content:center",
+          "font-size:22px",
+          "background:rgba(255,255,255,0.06)",
+          "border:1px solid " + accent,
+          "flex-shrink:0",
+        ].join(";");
+        iconBox.textContent = series.icon;
+        head.appendChild(iconBox);
+
+        const headText = document.createElement("div");
+        headText.style.cssText = "min-width:0;flex:1;";
+        const serialEl = document.createElement("div");
+        serialEl.style.cssText = "font-weight:900;font-size:15px;letter-spacing:0.02em;";
+        serialEl.textContent = String(serial).toUpperCase();
+        const typeEl = document.createElement("div");
+        typeEl.style.cssText = "opacity:0.7;font-size:11px;margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;";
+        typeEl.textContent = typeTitle;
+        headText.appendChild(serialEl);
+        headText.appendChild(typeEl);
+        head.appendChild(headText);
+
+        const badge = document.createElement("div");
+        badge.style.cssText = [
+          "font-size:10px",
+          "font-weight:800",
+          "padding:4px 8px",
+          "border-radius:6px",
+          "border:1px solid " + accent,
+          "color:" + accent,
+          "background:rgba(255,255,255,0.04)",
+          "flex-shrink:0",
+        ].join(";");
+        badge.textContent = series.isR ? "R · 카메라" : "D · 초음파";
+        head.appendChild(badge);
+        info.appendChild(head);
+
+        const body = document.createElement("div");
+        body.style.cssText = "padding:12px;";
+
+        const statusRow = document.createElement("div");
+        statusRow.style.cssText = "display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:8px;";
+        const statusLabel = document.createElement("div");
+        statusLabel.style.cssText = `font-weight:800;font-size:13px;color:${state.color};`;
+        statusLabel.textContent = state.label;
+        const fillBig = document.createElement("div");
+        fillBig.style.cssText = `font-weight:900;font-size:22px;color:${state.color};letter-spacing:-0.02em;`;
+        fillBig.textContent = fillText;
+        statusRow.appendChild(statusLabel);
+        statusRow.appendChild(fillBig);
+        body.appendChild(statusRow);
+
+        if (state.fillPercent != null && !waiting) {
+          const barWrap = document.createElement("div");
+          barWrap.style.cssText =
+            "height:6px;border-radius:99px;background:rgba(255,255,255,0.08);overflow:hidden;margin-bottom:10px;";
+          const bar = document.createElement("div");
+          const pct = Math.max(0, Math.min(100, Number(state.fillPercent)));
+          bar.style.cssText = `height:100%;width:${pct}%;background:${state.color};border-radius:99px;`;
+          barWrap.appendChild(bar);
+          body.appendChild(barWrap);
+        }
 
         const age = document.createElement("div");
-        age.style.opacity = "0.65";
-        age.textContent = `마지막 신호 ${formatSignalAge(m.lastSignalAt)}`;
-        info.appendChild(age);
+        age.style.cssText = "opacity:0.55;font-size:11px;";
+        age.textContent = `마지막 신호 · ${formatSignalAge(m.lastSignalAt)}`;
+        body.appendChild(age);
 
-        if (m.lastImageUrl) {
+        if (series.isR && m.lastImageUrl) {
+          const imgWrap = document.createElement("div");
+          imgWrap.style.cssText = "margin-top:10px;";
+          const cap = document.createElement("div");
+          cap.style.cssText = "opacity:0.5;font-size:10px;margin-bottom:4px;font-weight:700;letter-spacing:0.04em;";
+          cap.textContent = "LATEST SNAPSHOT";
           const img = document.createElement("img");
           img.src = m.lastImageUrl;
           img.alt = `${serial} 스냅샷`;
           img.style.cssText =
-            "margin-top:8px;width:100%;border-radius:4px;border:1px solid rgba(255,255,255,0.15);" +
+            "width:100%;max-height:150px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,255,255,0.12);display:block;" +
             (waiting ? "filter:grayscale(1);" : "");
-          info.appendChild(img);
+          imgWrap.appendChild(cap);
+          imgWrap.appendChild(img);
+          body.appendChild(imgWrap);
         }
+
+        info.appendChild(body);
 
         const wrap = document.createElement("div");
         wrap.style.cssText = "position:relative;transform:translateY(-6px);";
         wrap.appendChild(info);
         const tip = document.createElement("div");
         tip.style.cssText =
-          "width:0;height:0;margin:0 auto;border-left:7px solid transparent;border-right:7px solid transparent;border-top:8px solid #0d0d0d;";
+          "width:0;height:0;margin:0 auto;border-left:7px solid transparent;border-right:7px solid transparent;border-top:8px solid #000000;";
         wrap.appendChild(tip);
 
         const popup = new window.kakao.maps.CustomOverlay({
@@ -296,8 +373,8 @@ export default function MapView({ userPos, modules, route = null, centerTrigger 
         "pointer-events:none",
       ].join(";");
       badge.textContent = waiting
-        ? `${series.icon} 신호 대기중`
-        : `${series.icon} ${wasteSymbol} ${state.label}`;
+        ? `${String(serial).toUpperCase()} · 대기`
+        : `${String(serial).toUpperCase()} · ${state.fillPercent != null ? Math.round(state.fillPercent) + "%" : state.label}`;
 
       const labelOverlay = new window.kakao.maps.CustomOverlay({
         position,

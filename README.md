@@ -17,7 +17,7 @@
 | **API** | Spring Boot 4 (Java 21) + JPA | 인증 · AI · MQTT 구독 · 모듈 API |
 | **DB** | MySQL `meter` / H2(로컬) | User · Module · DummyModule … |
 | **AI** | Gemini 2.5 Flash | 품목 분류 · 챗봇 |
-| **IoT** | D모듈(ESP32) · R모듈(RPi5) | 보드가 `fillPercent` 0~100 계산 후 MQTT만 전송 |
+| **IoT** | D모듈(ESP32) · R모듈(카메라) | D: MQTT fill% · R: MQTT 이미지만 → 서버 vision fill% |
 | **MQTT** | Eclipse Mosquitto | `meter/{serial}/status` (HTTP 디바이스 API 없음) |
 | **INFRA** | Docker Compose + Cloudflare Tunnel | backend · frontend · mosquitto |
 
@@ -56,7 +56,8 @@ R모듈 (r*) ──MQTT fill%+사진───┘                                
 meter/
 ├── backend/           # Spring Boot API
 ├── frontend/          # React + Vite
-├── meter_iot/         # D모듈 펌웨어 (PlatformIO, module1.cpp)
+├── vision_service/    # R 이미지 비교 (OpenCV FastAPI)
+├── meter_iot/         # D모듈 + module2(R 예시)
 ├── meter_HW/          # 하드웨어 CAD
 ├── mosquitto/         # MQTT 브로커 (패킷 한도 2MB)
 ├── scripts/           # prepare-env.sh
@@ -73,12 +74,12 @@ meter/
 | 모듈 | 시리얼 | 역할 | 전송 |
 |------|--------|------|------|
 | **D** | `m1`, `m2`… | 초음파 → 보드에서 fill% | MQTT 30초 |
-| **R** | `r1`, `r2`… | 1분 촬영·원본비교 → 5분마다 fill%+압축 JPEG | MQTT 5분 |
+| **R** | `r1`, `r2`… | 이미지만 MQTT (간격=보드 결정). 서버가 원본+최근 10장 비교 → fill% | MQTT |
 | POWER TANK | — | 전원만 (통신 없음) | — |
 
 - URI: `ws://mqtt-meter.gwon.run:80` · Topic: `meter/{serial}/status` · QoS 1
-- R 클릭 시 웹은 최신 이미지(`lastImageUrl`) 표시 · 서버는 모듈당 최근 **20장** 보관
-- 디바이스 → 서버 **HTTP/토큰 없음** (MQTT만)
+- R: `imageRole=original` → baseline 덮어쓰기 · `sample` → 최근 10장 · `meter-vision`이 fill%
+- 웹 R 클릭 시 최신 이미지. 디바이스 **HTTP/토큰 없음**
 
 ---
 
@@ -114,7 +115,9 @@ docker compose up -d --build
 | `METER_MODULE_DEFAULT_DEPTH_CM` | 구형 heightCm 환산용 깊이 (기본 60) |
 | `METER_MODULE_STALE_RETENTION_DAYS` | 무신호 자동 삭제 일수 (기본 10) |
 | `METER_UPLOAD_DIR` | R 스냅샷 경로 |
-| `METER_UPLOAD_KEEP_PER_MODULE` | 모듈당 보관 장수 (기본 20) |
+| `METER_UPLOAD_KEEP_PER_MODULE` | R 샘플 보관 장수 (기본 10) |
+| `METER_VISION_URL` | vision 서비스 URL (기본 `http://meter-vision:8090`) |
+| `METER_VISION_ENABLED` | vision 호출 on/off |
 
 ---
 
@@ -127,6 +130,15 @@ iot.cmd run -t upload
 ```
 
 - HC-SR04P (TRIG=GPIO32, ECHO=GPIO33) · 보드에서 `fillPercent` 산출 후 MQTT 발행
+
+### R모듈 예시 (ESP32-CAM)
+
+```bash
+cd meter_iot/module2
+pio run -t upload
+```
+
+- `imageRole=original|sample` 만 전송. fill%는 서버 `meter-vision`이 산출.
 
 ---
 

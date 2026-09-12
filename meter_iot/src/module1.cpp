@@ -5,7 +5,7 @@
  * 발행 토픽: meter/m1/status   {"moduleSerial":"m1","fillPercent":72.5}
  * 구독: 없음 (발행 전용 단방향)
  *
- * 모듈2(R 계열)도 동일하게 fillPercent(0~100) 를 보낸다. 서버는 M/R 구분만 한다.
+ * 모듈2(R 계열)는 이미지만 보내고, 서버 vision 이 fillPercent 를 산출한다.
  *
  * === FIRMWARE VERIFY MARKER (유지보수 규칙 — 에이전트/개발자 공통) ===
  * 목적: `pio run -t clean` 후 `pio run -t upload` 했을 때 시리얼 모니터에

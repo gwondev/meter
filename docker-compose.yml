@@ -5,15 +5,28 @@ services:
     build: ./backend
     env_file:
       - ./backend/.env.production
+    environment:
+      METER_VISION_URL: http://meter-vision:8090
+      METER_VISION_ENABLED: "true"
+      METER_UPLOAD_KEEP_PER_MODULE: "10"
     depends_on:
       - mosquitto
+      - vision
     volumes:
-      # 모듈2 스냅샷 — 재배포에도 유지되어야 하므로 명명 볼륨 사용
       - backend_uploads:/backend/uploads
     networks:
-      # MQTT 는 meter_internal 만 사용 — global_network 의 다른 mosquitto 와 혼동 방지
       - meter_internal
       - global_network
+
+  vision:
+    restart: always
+    container_name: meter-vision
+    build: ./vision_service
+    volumes:
+      # 백엔드와 동일 경로로 마운트 — Java가 넘긴 absolute path 그대로 읽음
+      - backend_uploads:/backend/uploads
+    networks:
+      - meter_internal
 
   mosquitto:
     image: eclipse-mosquitto:2

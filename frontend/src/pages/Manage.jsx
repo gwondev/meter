@@ -100,6 +100,54 @@ const Manage = () => {
   const [locationPickerOpen, setLocationPickerOpen] = useState(false);
   const [mqttFilter, setMqttFilter] = useState("ALL");
   const [serialLocked, setSerialLocked] = useState(false);
+  const [snapSerial, setSnapSerial] = useState("");
+  const [snapData, setSnapData] = useState(null);
+  const [snapLoading, setSnapLoading] = useState(false);
+
+  const loadSnapshots = useCallback(async (serial) => {
+    if (!serial) {
+      setSnapData(null);
+      return;
+    }
+    try {
+      setSnapLoading(true);
+      const data = await apiFetch(`/modules/${encodeURIComponent(serial)}/snapshots`);
+      setSnapData(data);
+    } catch (e) {
+      setError(e.message || "스냅샷을 불러오지 못했습니다.");
+      setSnapData(null);
+    } finally {
+      setSnapLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    const rModules = (overview.modules || []).filter(
+      (m) => !m.dummy && (m.deviceType === "VISION_CAM" || String(m.serialNumber || "").toLowerCase().startsWith("r"))
+    );
+    if (!snapSerial && rModules.length > 0) {
+      setSnapSerial(rModules[0].serialNumber);
+    }
+  }, [overview.modules, snapSerial]);
+
+  useEffect(() => {
+    if (snapSerial) loadSnapshots(snapSerial);
+  }, [snapSerial, loadSnapshots]);
+
+  const snapAction = async (fn) => {
+    try {
+      setSaving(true);
+      setError("");
+      await fn();
+      setSuccess("사진 관리 반영됨");
+      await loadSnapshots(snapSerial);
+      await loadOverview();
+    } catch (e) {
+      setError(e.message || "사진 관리 실패");
+    } finally {
+      setSaving(false);
+    }
+  };
 
   const loadOverview = useCallback(async () => {
     try {
@@ -701,6 +749,159 @@ const Manage = () => {
               })()}
             </TableBody>
           </Table>
+        </Paper>
+
+        <Divider sx={{ borderColor: "rgba(255,255,255,0.15)", my: 2 }} />
+
+        <Paper sx={{ p: { xs: 1.25, sm: 2 }, bgcolor: "rgba(255,255,255,0.04)" }}>
+          <Stack direction={{ xs: "column", sm: "row" }} justifyContent="space-between" alignItems={{ sm: "center" }} gap={1} sx={{ mb: 1.5 }}>
+            <Typography sx={{ color: "#ffffff", fontWeight: 800, fontSize: { xs: "0.9rem", sm: "1rem" } }}>
+              R모듈 사진 관리
+              <Box component="span" sx={{ color: "rgba(255,255,255,0.45)", fontWeight: 600, ml: 1, fontSize: "0.8rem" }}>
+                원본 · 비교큐 10 · 휴지통 20
+              </Box>
+            </Typography>
+            <Stack direction="row" spacing={1} alignItems="center" flexWrap="wrap">
+              <FormControl size="small" sx={{ minWidth: 120 }}>
+                <InputLabel sx={{ color: "rgba(255,255,255,0.7)" }}>시리얼</InputLabel>
+                <Select
+                  label="시리얼"
+                  value={snapSerial}
+                  onChange={(e) => setSnapSerial(e.target.value)}
+                  sx={{ color: "#fff" }}
+                >
+                  {(overview.modules || [])
+                    .filter((m) => !m.dummy && (m.deviceType === "VISION_CAM" || String(m.serialNumber || "").toLowerCase().startsWith("r")))
+                    .map((m) => (
+                      <MenuItem key={m.serialNumber} value={m.serialNumber}>
+                        {m.serialNumber}
+                      </MenuItem>
+                    ))}
+                </Select>
+              </FormControl>
+              <Button
+                size="small"
+                disabled={!snapSerial || saving}
+                onClick={() => snapAction(() => apiFetch(`/modules/${encodeURIComponent(snapSerial)}/snapshots/recompute`, { method: "POST", body: "{}" }))}
+                sx={{ color: "#000", bgcolor: "#7cff72", fontWeight: 800 }}
+              >
+                fill% 재계산
+              </Button>
+              <Button size="small" disabled={!snapSerial || snapLoading} onClick={() => loadSnapshots(snapSerial)} sx={{ color: "#fff", border: "1px solid rgba(255,255,255,0.25)" }}>
+                새로고침
+              </Button>
+            </Stack>
+          </Stack>
+
+          {!snapSerial ? (
+            <Typography sx={{ color: "rgba(255,255,255,0.45)" }}>등록된 R모듈(r*)이 없습니다.</Typography>
+          ) : snapLoading && !snapData ? (
+            <Typography sx={{ color: "rgba(255,255,255,0.45)" }}>불러오는 중…</Typography>
+          ) : (
+            <Stack spacing={2}>
+              <Box>
+                <Typography sx={{ fontWeight: 800, mb: 1, color: "#7cff72", fontSize: "0.82rem" }}>원본 (baseline)</Typography>
+                {snapData?.baseline ? (
+                  <Stack direction="row" spacing={1.5} alignItems="flex-start">
+                    <Box component="img" src={snapData.baseline.url} alt="baseline" sx={{ width: 140, height: 100, objectFit: "cover", borderRadius: 1, border: "1px solid rgba(255,255,255,0.2)" }} />
+                    <Typography sx={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.55)" }}>치운 직후 기준으로 덮어씁니다. MQTT imageRole=original</Typography>
+                  </Stack>
+                ) : (
+                  <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.8rem" }}>원본 없음 — 보드에서 original 전송 또는 아래에서 승격</Typography>
+                )}
+              </Box>
+
+              <Box>
+                <Typography sx={{ fontWeight: 800, mb: 1, color: "#64b5f6", fontSize: "0.82rem" }}>
+                  비교 큐 ({snapData?.samples?.length ?? 0}/{snapData?.sampleKeep ?? 10})
+                </Typography>
+                <Stack direction="row" spacing={1} sx={{ overflowX: "auto", pb: 1 }}>
+                  {(snapData?.samples || []).map((s) => (
+                    <Box key={s.path} sx={{ minWidth: 120, border: "1px solid rgba(255,255,255,0.12)", borderRadius: 1, p: 0.75, bgcolor: "rgba(0,0,0,0.35)" }}>
+                      <Box component="img" src={s.url} alt={s.name} sx={{ width: "100%", height: 80, objectFit: "cover", borderRadius: 0.5, display: "block", mb: 0.75 }} />
+                      <Button
+                        fullWidth
+                        size="small"
+                        disabled={saving}
+                        onClick={() =>
+                          snapAction(() =>
+                            apiFetch(`/modules/${encodeURIComponent(snapSerial)}/snapshots/promote-baseline`, {
+                              method: "POST",
+                              body: JSON.stringify({ path: s.path }),
+                            })
+                          )
+                        }
+                        sx={{ color: "#000", bgcolor: "#fff", fontWeight: 700, fontSize: "0.65rem", mb: 0.5 }}
+                      >
+                        원본으로
+                      </Button>
+                      <Button
+                        fullWidth
+                        size="small"
+                        disabled={saving}
+                        onClick={() =>
+                          snapAction(() =>
+                            apiFetch(`/modules/${encodeURIComponent(snapSerial)}/snapshots?path=${encodeURIComponent(s.path)}`, { method: "DELETE" })
+                          )
+                        }
+                        sx={{ color: "#ff8a80", fontSize: "0.65rem" }}
+                      >
+                        삭제
+                      </Button>
+                    </Box>
+                  ))}
+                  {(snapData?.samples || []).length === 0 && (
+                    <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.8rem" }}>샘플 없음</Typography>
+                  )}
+                </Stack>
+              </Box>
+
+              <Box>
+                <Typography sx={{ fontWeight: 800, mb: 1, color: "rgba(255,255,255,0.55)", fontSize: "0.82rem" }}>
+                  휴지통 ({snapData?.trash?.length ?? 0}/{snapData?.trashKeep ?? 20})
+                </Typography>
+                <Stack direction="row" spacing={1} sx={{ overflowX: "auto", pb: 1 }}>
+                  {(snapData?.trash || []).map((s) => (
+                    <Box key={s.path} sx={{ minWidth: 110, border: "1px dashed rgba(255,255,255,0.15)", borderRadius: 1, p: 0.75, opacity: 0.85 }}>
+                      <Box component="img" src={s.url} alt={s.name} sx={{ width: "100%", height: 72, objectFit: "cover", borderRadius: 0.5, display: "block", mb: 0.75, filter: "grayscale(0.4)" }} />
+                      <Button
+                        fullWidth
+                        size="small"
+                        disabled={saving}
+                        onClick={() =>
+                          snapAction(() =>
+                            apiFetch(`/modules/${encodeURIComponent(snapSerial)}/snapshots/restore`, {
+                              method: "POST",
+                              body: JSON.stringify({ name: s.name }),
+                            })
+                          )
+                        }
+                        sx={{ color: "#fff", border: "1px solid rgba(255,255,255,0.25)", fontSize: "0.62rem", mb: 0.4 }}
+                      >
+                        큐로 복원
+                      </Button>
+                      <Button
+                        fullWidth
+                        size="small"
+                        disabled={saving}
+                        onClick={() =>
+                          snapAction(() =>
+                            apiFetch(`/modules/${encodeURIComponent(snapSerial)}/snapshots?path=${encodeURIComponent(s.path)}`, { method: "DELETE" })
+                          )
+                        }
+                        sx={{ color: "#ff8a80", fontSize: "0.62rem" }}
+                      >
+                        영구삭제
+                      </Button>
+                    </Box>
+                  ))}
+                  {(snapData?.trash || []).length === 0 && (
+                    <Typography sx={{ color: "rgba(255,255,255,0.35)", fontSize: "0.8rem" }}>휴지통 비어 있음</Typography>
+                  )}
+                </Stack>
+              </Box>
+            </Stack>
+          )}
         </Paper>
 
         <Divider sx={{ borderColor: "rgba(255,255,255,0.15)", my: 2 }} />

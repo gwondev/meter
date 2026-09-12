@@ -2,21 +2,23 @@ package com.meter.backend.service;
 
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.meter.backend.entity.Module;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 
+import java.nio.file.Path;
 import java.util.Base64;
+import java.util.List;
 import java.util.Locale;
 
 /**
  * MQTT {@code meter/{serial}/status} 수신 처리.
  *
- * <p>M·R 모두 동일 토픽. 페이로드는 JSON:
  * <ul>
- *   <li>{@code fillPercent} (0~100) — 필수에 가깝게 권장</li>
- *   <li>{@code imageBase64} + 선택 {@code imageFormat} — R 계열 압축 JPEG 등 (선택)</li>
- *   <li>구형 {@code heightCm} — D모듈 레거시 환산</li>
+ *   <li>D({@code m*}) — {@code fillPercent} (보드 산출). 선택적 레거시 {@code heightCm}.</li>
+ *   <li>R({@code r*}) — 이미지만. {@code imageRole=original|sample}.
+ *       원본은 baseline 덮어쓰기. 샘플은 최근 10장 보관 후 vision 서비스가 fillPercent 산출.</li>
  * </ul>
  */
 @Service
@@ -24,50 +26,97 @@ import java.util.Locale;
 @Slf4j
 public class ModuleIotMqttHandler {
 
-    /** base64 디코드 후 상한 — 압축 JPEG 기준 (원본 고해상도 금지). */
     private static final int MAX_IMAGE_BYTES = 900_000;
 
     private final ModuleSignalService moduleSignalService;
     private final SnapshotStorageService snapshotStorageService;
+    private final VisionCompareClient visionCompareClient;
     private final ObjectMapper objectMapper;
 
     public void handleStatusPayload(String serialNumber, String payload) {
         try {
             JsonNode root = objectMapper.readTree(payload);
-            String imageUrl = storeOptionalImage(serialNumber, root);
+            boolean isR = Module.DEVICE_VISION_CAM.equals(Module.deviceTypeFromSerial(serialNumber));
 
-            Double fill = readFillPercent(root);
-            if (fill != null) {
-                moduleSignalService.applyFillPercent(serialNumber, fill, imageUrl);
+            if (isR) {
+                handleRModule(serialNumber, root);
                 return;
             }
 
-            /* 이미지만 오고 fill 이 없으면 생존 + 사진만 (적재율 유지) */
-            if (imageUrl != null) {
-                moduleSignalService.applyImageOrTouch(serialNumber, imageUrl);
-                return;
-            }
-
-            /* 구형 m* 펌웨어: heightCm → 서버에서 환산 */
-            double heightCm = readHeightCm(root);
-            if (heightCm >= 0) {
-                moduleSignalService.applyHeightLegacy(serialNumber, heightCm);
-                return;
-            }
-
-            moduleSignalService.touch(serialNumber);
-            log.debug("MQTT 생존 신호 serial={}", serialNumber);
+            handleDModule(serialNumber, root);
         } catch (Exception e) {
             log.error("MQTT payload 처리 실패 serial={} bytes={}",
                     serialNumber, payload == null ? 0 : payload.length(), e);
         }
     }
 
-    /**
-     * {@code imageBase64} / {@code image} 필드가 있으면 디스크에 저장하고 공개 URL 반환.
-     * data URI({@code data:image/jpeg;base64,...}) 도 허용.
-     */
-    private String storeOptionalImage(String serialNumber, JsonNode root) {
+    private void handleDModule(String serialNumber, JsonNode root) {
+        Double fill = readFillPercent(root);
+        if (fill != null) {
+            moduleSignalService.applyFillPercent(serialNumber, fill, null);
+            return;
+        }
+        double heightCm = readHeightCm(root);
+        if (heightCm >= 0) {
+            moduleSignalService.applyHeightLegacy(serialNumber, heightCm);
+            return;
+        }
+        moduleSignalService.touch(serialNumber);
+        log.debug("MQTT 생존 신호 serial={}", serialNumber);
+    }
+
+    private void handleRModule(String serialNumber, JsonNode root) {
+        DecodedImage image = decodeImage(serialNumber, root);
+        if (image == null) {
+            moduleSignalService.touch(serialNumber);
+            log.warn("R MQTT 이미지 없음 — touch only serial={}", serialNumber);
+            return;
+        }
+
+        if (isOriginalRole(root)) {
+            String url = snapshotStorageService.storeBaseline(serialNumber, image.bytes(), image.format());
+            /* 원본 = 치운 상태 → 적재율 0 */
+            moduleSignalService.applyFillPercent(serialNumber, 0.0, url);
+            log.info("R 원본(baseline) 갱신 serial={}", serialNumber);
+            return;
+        }
+
+        String url = snapshotStorageService.storeSample(serialNumber, image.bytes(), image.format());
+        Double fill = null;
+        if (snapshotStorageService.hasBaseline(serialNumber)) {
+            Path baseline = snapshotStorageService.baselineAbsolutePath(serialNumber);
+            List<Path> samples = snapshotStorageService.listSampleAbsolutePaths(serialNumber);
+            fill = visionCompareClient.compare(baseline, samples);
+        } else {
+            log.warn("R baseline 없음 — 샘플만 저장 serial={}", serialNumber);
+        }
+
+        if (fill != null) {
+            moduleSignalService.applyFillPercent(serialNumber, fill, url);
+        } else {
+            moduleSignalService.applyImageOrTouch(serialNumber, url);
+        }
+    }
+
+    private static boolean isOriginalRole(JsonNode root) {
+        if (root.has("isOriginal") && root.get("isOriginal").asBoolean(false)) {
+            return true;
+        }
+        if (root.has("original") && root.get("original").asBoolean(false)) {
+            return true;
+        }
+        if (root.hasNonNull("imageRole")) {
+            String role = root.path("imageRole").asText("").trim().toLowerCase(Locale.ROOT);
+            return "original".equals(role) || "baseline".equals(role) || "origin".equals(role);
+        }
+        if (root.hasNonNull("role")) {
+            String role = root.path("role").asText("").trim().toLowerCase(Locale.ROOT);
+            return "original".equals(role) || "baseline".equals(role);
+        }
+        return false;
+    }
+
+    private DecodedImage decodeImage(String serialNumber, JsonNode root) {
         String raw = null;
         if (root.hasNonNull("imageBase64")) {
             raw = root.path("imageBase64").asText();
@@ -113,13 +162,7 @@ public class ModuleIotMqttHandler {
             log.warn("MQTT image 너무 큼 serial={} bytes={} limit={}", serialNumber, bytes.length, MAX_IMAGE_BYTES);
             return null;
         }
-
-        try {
-            return snapshotStorageService.storeBytes(serialNumber, bytes, format);
-        } catch (Exception e) {
-            log.error("MQTT image 저장 실패 serial={}", serialNumber, e);
-            return null;
-        }
+        return new DecodedImage(bytes, format);
     }
 
     private static Double readFillPercent(JsonNode root) {
@@ -141,4 +184,6 @@ public class ModuleIotMqttHandler {
         }
         return -1;
     }
+
+    private record DecodedImage(byte[] bytes, String format) {}
 }
