@@ -84,20 +84,26 @@ METER 기술 명세서
 
   보드
     JPEG만 MQTT 전송. 주기 자유. fillPercent 미전송.
-    original = 치운/설치 직후 원본. sample = 일반.
+    imageRole=original → 무조건 원본. sample → 무조건 샘플.
+    (웹에서 샘플→원본 승격 없음. MQTT role만 진실.)
 
   서버
     original → baseline.jpg 덮어쓰기, fill%=0
     sample   → samples/ 큐(최대 10) → vision 비교 → fill%
     큐에서 밀림 → trash/ (최대 20) → 초과분 영구삭제
-    관리자 웹에서 원본 승격·복원·삭제·fill% 재계산
+    관리자 웹: 복원·삭제·fill% 재계산만 (원본 승격 UI/API 없음)
 
   저장
     /backend/uploads/{serial}/baseline.jpg
     /backend/uploads/{serial}/samples/*.jpg   (10)
     /backend/uploads/{serial}/trash/*.jpg     (20)
 
-  테스트 (이미지 없이)
+  보드 테스트 이미지 (r1)
+    meter_iot/module2/data/images/*.jpg 넣기 (수십~100장, 장당 ~200KB 이하)
+    pio run -t uploadfs && pio run -t upload
+    10초마다 순환 전송, 10번마다 1회 original
+
+  테스트 (PC에서 MQTT)
     python scripts/r1_mqtt_test.py --original
     python scripts/r1_mqtt_test.py --count 10
 

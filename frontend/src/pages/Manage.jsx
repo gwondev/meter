@@ -804,10 +804,14 @@ const Manage = () => {
                 {snapData?.baseline ? (
                   <Stack direction="row" spacing={1.5} alignItems="flex-start">
                     <Box component="img" src={snapData.baseline.url} alt="baseline" sx={{ width: 140, height: 100, objectFit: "cover", borderRadius: 1, border: "1px solid rgba(255,255,255,0.2)" }} />
-                    <Typography sx={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.55)" }}>치운 직후 기준으로 덮어씁니다. MQTT imageRole=original</Typography>
+                    <Typography sx={{ fontSize: "0.75rem", color: "rgba(255,255,255,0.55)" }}>
+                      MQTT imageRole=original 이 오면 자동 덮어쓰기. 웹에서 승격하지 않음.
+                    </Typography>
                   </Stack>
                 ) : (
-                  <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.8rem" }}>원본 없음 — 보드에서 original 전송 또는 아래에서 승격</Typography>
+                  <Typography sx={{ color: "rgba(255,255,255,0.4)", fontSize: "0.8rem" }}>
+                    원본 없음 — 보드가 imageRole=original 로 보내면 여기에 저장됨
+                  </Typography>
                 )}
               </Box>
 
@@ -819,22 +823,7 @@ const Manage = () => {
                   {(snapData?.samples || []).map((s) => (
                     <Box key={s.path} sx={{ minWidth: 120, border: "1px solid rgba(255,255,255,0.12)", borderRadius: 1, p: 0.75, bgcolor: "rgba(0,0,0,0.35)" }}>
                       <Box component="img" src={s.url} alt={s.name} sx={{ width: "100%", height: 80, objectFit: "cover", borderRadius: 0.5, display: "block", mb: 0.75 }} />
-                      <Button
-                        fullWidth
-                        size="small"
-                        disabled={saving}
-                        onClick={() =>
-                          snapAction(() =>
-                            apiFetch(`/modules/${encodeURIComponent(snapSerial)}/snapshots/promote-baseline`, {
-                              method: "POST",
-                              body: JSON.stringify({ path: s.path }),
-                            })
-                          )
-                        }
-                        sx={{ color: "#000", bgcolor: "#fff", fontWeight: 700, fontSize: "0.65rem", mb: 0.5 }}
-                      >
-                        원본으로
-                      </Button>
+                      <Typography sx={{ fontSize: "0.6rem", color: "rgba(255,255,255,0.45)", mb: 0.5, overflow: "hidden", textOverflow: "ellipsis" }}>{s.name}</Typography>
                       <Button
                         fullWidth
                         size="small"

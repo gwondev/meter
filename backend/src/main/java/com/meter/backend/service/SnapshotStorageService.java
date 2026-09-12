@@ -134,23 +134,6 @@ public class SnapshotStorageService {
         return out;
     }
 
-    /** 샘플/휴지통 파일을 원본으로 승격. */
-    public String promoteToBaseline(String serialNumber, String relativePath) {
-        String serial = safeSerial(serialNumber);
-        Path src = resolveSafe(serial, relativePath);
-        if (!Files.isRegularFile(src)) {
-            throw new ResponseStatusException(HttpStatus.NOT_FOUND, "file not found");
-        }
-        try {
-            Path baseline = baselineAbsolutePath(serial);
-            Files.createDirectories(baseline.getParent());
-            Files.copy(src, baseline, StandardCopyOption.REPLACE_EXISTING);
-            return publicUrl(serial, BASELINE_NAME);
-        } catch (IOException e) {
-            throw new ResponseStatusException(HttpStatus.INTERNAL_SERVER_ERROR, "promote failed");
-        }
-    }
-
     /** 휴지통 → 샘플 큐로 복원 (큐가 가득하면 가장 오래된 샘플이 다시 trash로). */
     public String restoreFromTrash(String serialNumber, String trashFileName) {
         String serial = safeSerial(serialNumber);

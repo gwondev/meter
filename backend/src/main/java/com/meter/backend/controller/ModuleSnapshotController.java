@@ -35,26 +35,6 @@ public class ModuleSnapshotController {
         return snapshotStorageService.describe(serial);
     }
 
-    @PostMapping("/promote-baseline")
-    public Map<String, Object> promoteBaseline(
-            @PathVariable String serial,
-            @RequestBody Map<String, Object> body
-    ) {
-        requireRModule(serial);
-        String path = string(body.get("path"));
-        String url = snapshotStorageService.promoteToBaseline(serial, path);
-        Double fill = recomputeFill(serial);
-        if (fill != null) {
-            moduleSignalService.applyFillPercent(serial, fill, url);
-        } else {
-            moduleSignalService.applyFillPercent(serial, 0.0, url);
-        }
-        Map<String, Object> out = new LinkedHashMap<>(snapshotStorageService.describe(serial));
-        out.put("baselineUrl", url);
-        out.put("fillPercent", fill != null ? fill : 0.0);
-        return out;
-    }
-
     @PostMapping("/restore")
     public Map<String, Object> restore(
             @PathVariable String serial,
