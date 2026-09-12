@@ -25,8 +25,9 @@
 #endif
 
 static const char *const MODULE_SERIAL = "r1";
-static const char *const BUILD_VERIFY_TAG = "METER-FW r1 2026-09-12b image-only";
+static const char *const BUILD_VERIFY_TAG = "METER-FW r1 2026-09-12c mqtt-meter";
 static const char *MQTT_WS_URI = "ws://mqtt-meter.gwon.run:80";
+/* GreenEye 구호스트 금지: mqtt.greeneye.gwon.run */
 
 static const char *WIFI_SSIDS[] = {"gwon", "iptime", "devsign"};
 static const char *WIFI_PASSWORDS[] = {"00000000", "Gwondev0323", ""};
@@ -116,14 +117,23 @@ static void startMqtt() {
   snprintf(s_mqtt_client_id, sizeof(s_mqtt_client_id), "%s-%04X", MODULE_SERIAL, (unsigned)(ESP.getEfuseMac() & 0xffff));
   snprintf(s_topicStatus, sizeof(s_topicStatus), "meter/%s/status", MODULE_SERIAL);
 
+  /* Arduino-ESP32 2.x 스타일 필드 (module1 과 동일). GreenEye 호스트 쓰지 말 것. */
   esp_mqtt_client_config_t cfg = {};
-  cfg.broker.address.uri = MQTT_WS_URI;
-  cfg.credentials.client_id = s_mqtt_client_id;
-  cfg.session.keepalive = 60;
-  cfg.network.disable_auto_reconnect = false;
+  cfg.uri = MQTT_WS_URI;
+  cfg.client_id = s_mqtt_client_id;
+  cfg.keepalive = 60;
+  cfg.disable_auto_reconnect = false;
+  cfg.reconnect_timeout_ms = 5000;
+  cfg.network_timeout_ms = 15000;
+  cfg.buffer_size = 49152; /* JPEG base64 JSON 여유 */
+
   s_mqtt = esp_mqtt_client_init(&cfg);
-  esp_mqtt_client_register_event(s_mqtt, (esp_mqtt_event_id_t)ESP_EVENT_ANY_ID, mqttEvent, nullptr);
-  esp_mqtt_client_start(s_mqtt);
+  esp_mqtt_client_register_event(s_mqtt, MQTT_EVENT_ANY, mqttEvent, nullptr);
+  esp_err_t err = esp_mqtt_client_start(s_mqtt);
+  if (err != ESP_OK) {
+    Serial.printf("esp_mqtt_client_start err=%d\n", (int)err);
+  }
+  Serial.printf("MQTT start uri=%s client=%s\n", MQTT_WS_URI, s_mqtt_client_id);
 }
 
 #if METER_HAS_CAMERA
@@ -222,7 +232,7 @@ void setup() {
   Serial.begin(115200);
   delay(300);
   Serial.println(BUILD_VERIFY_TAG);
-  Serial.printf("serial=%s intervalMs=%lu\n", MODULE_SERIAL, PUBLISH_INTERVAL_MS);
+  Serial.printf("serial=%s mqtt=%s intervalMs=%lu\n", MODULE_SERIAL, MQTT_WS_URI, PUBLISH_INTERVAL_MS);
 
 #if METER_HAS_CAMERA
   if (!initCamera()) {
