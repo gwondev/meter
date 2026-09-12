@@ -1,10 +1,8 @@
 /*
- * METER 모듈2 — r1 테스트
- * data/images/*.jpg 를 LittleFS에서 읽어 10초마다 MQTT 전송.
- * 10번마다 1회 imageRole=original, 나머지는 sample.
+ * METER 모듈2 — r1 비전 검증
+ * data/images/001.jpg … 100.jpg 를 10초마다 순서대로 MQTT 전송.
+ * 001(흰 화면)만 imageRole=original, 002–100은 sample. 끝나면 다시 001부터 루프.
  *
- * 이미지 넣기:
- *   meter_iot/module2/data/images/ 에 jpg 두기 (수십~100장 OK, 장당 200KB 이하 권장)
  *   pio run -t uploadfs
  *   pio run -t upload
  */
@@ -14,6 +12,7 @@
 #include <memory>
 #include <vector>
 #include <string>
+#include <algorithm>
 #include <WiFi.h>
 #include <LittleFS.h>
 #include <ArduinoJson.h>
@@ -21,7 +20,7 @@
 #include <mbedtls/base64.h>
 
 static const char *const MODULE_SERIAL = "r1";
-static const char *const BUILD_VERIFY_TAG = "METER-FW r1 2026-09-12e littlefs-imgs";
+static const char *const BUILD_VERIFY_TAG = "METER-FW r1 2026-09-12f fill-100";
 static const char *MQTT_WS_URI = "ws://mqtt-meter.gwon.run:80";
 static const char *IMAGES_DIR = "/images";
 
@@ -32,8 +31,7 @@ static const int WIFI_PASSWORD_COUNT = sizeof(WIFI_PASSWORDS) / sizeof(WIFI_PASS
 static const unsigned long WIFI_ATTEMPT_TIMEOUT_MS = 8000UL;
 
 static const unsigned long PUBLISH_INTERVAL_MS = 10UL * 1000UL;
-static const int ORIGINAL_EVERY_N = 10;
-static const size_t MAX_IMAGE_BYTES = 350000; /* base64 전 JPEG 상한 */
+static const size_t MAX_IMAGE_BYTES = 350000;
 
 static esp_mqtt_client_handle_t s_mqtt = nullptr;
 static volatile bool s_mqtt_connected = false;
@@ -103,7 +101,7 @@ static void startMqtt() {
   cfg.disable_auto_reconnect = false;
   cfg.reconnect_timeout_ms = 5000;
   cfg.network_timeout_ms = 20000;
-  cfg.buffer_size = 65536; /* JPEG base64 JSON */
+  cfg.buffer_size = 65536;
 
   s_mqtt = esp_mqtt_client_init(&cfg);
   esp_mqtt_client_register_event(s_mqtt, MQTT_EVENT_ANY, mqttEvent, nullptr);
@@ -143,7 +141,6 @@ static void loadImageList() {
   while (f) {
     String name = f.name();
     if (!f.isDirectory() && (endsWithIgnoreCase(name, ".jpg") || endsWithIgnoreCase(name, ".jpeg"))) {
-      /* LittleFS name may be full path or basename depending on core */
       String path = name;
       if (!path.startsWith("/")) {
         path = String(IMAGES_DIR) + "/" + path;
@@ -154,7 +151,8 @@ static void loadImageList() {
     }
     f = root.openNextFile();
   }
-  Serial.printf("loaded %u images from LittleFS\n", (unsigned)s_imagePaths.size());
+  std::sort(s_imagePaths.begin(), s_imagePaths.end());
+  Serial.printf("loaded %u images from LittleFS (sorted 001..N)\n", (unsigned)s_imagePaths.size());
 }
 
 static bool encodeBase64(const uint8_t *data, size_t len, String &out) {
@@ -173,16 +171,20 @@ static bool encodeBase64(const uint8_t *data, size_t len, String &out) {
   return true;
 }
 
-static bool readNextImage(std::unique_ptr<uint8_t[]> &buf, size_t &len, String &label) {
+/** 다음 파일 읽고 index 전진. isFirstFrame=true 이면 001(=original). */
+static bool readNextImage(std::unique_ptr<uint8_t[]> &buf, size_t &len, String &label, bool &isFirstFrame) {
   if (s_imagePaths.empty()) {
     buf.reset(new uint8_t[sizeof(kTinyJpeg)]);
     memcpy(buf.get(), kTinyJpeg, sizeof(kTinyJpeg));
     len = sizeof(kTinyJpeg);
     label = "fallback-tiny";
+    isFirstFrame = true;
     return true;
   }
-  const std::string &path = s_imagePaths[s_imageIndex % s_imagePaths.size()];
-  s_imageIndex = (s_imageIndex + 1) % s_imagePaths.size();
+  size_t idx = s_imageIndex % s_imagePaths.size();
+  isFirstFrame = (idx == 0);
+  const std::string &path = s_imagePaths[idx];
+  s_imageIndex = (idx + 1) % s_imagePaths.size();
   label = path.c_str();
 
   File f = LittleFS.open(path.c_str(), "r");
@@ -208,7 +210,7 @@ static bool readNextImage(std::unique_ptr<uint8_t[]> &buf, size_t &len, String &
   return true;
 }
 
-static void publishImage(bool asOriginal) {
+static void publishNext() {
   if (!s_mqtt_connected || !s_mqtt) {
     Serial.println("skip publish: mqtt down");
     return;
@@ -217,11 +219,13 @@ static void publishImage(bool asOriginal) {
   std::unique_ptr<uint8_t[]> jpeg;
   size_t jpegLen = 0;
   String label;
-  if (!readNextImage(jpeg, jpegLen, label)) {
+  bool isFirstFrame = false;
+  if (!readNextImage(jpeg, jpegLen, label, isFirstFrame)) {
     Serial.println("read image fail");
     return;
   }
 
+  const bool asOriginal = isFirstFrame;
   String b64;
   if (!encodeBase64(jpeg.get(), jpegLen, b64)) {
     Serial.println("base64 fail");
@@ -246,8 +250,8 @@ void setup() {
   Serial.begin(115200);
   delay(300);
   Serial.println(BUILD_VERIFY_TAG);
-  Serial.printf("serial=%s every=%lums originalEvery=%d\n",
-                MODULE_SERIAL, PUBLISH_INTERVAL_MS, ORIGINAL_EVERY_N);
+  Serial.printf("serial=%s every=%lums loop=001..N original=001-only\n",
+                MODULE_SERIAL, PUBLISH_INTERVAL_MS);
 
   if (!LittleFS.begin(true)) {
     Serial.println("LittleFS mount fail");
@@ -269,8 +273,7 @@ void loop() {
   unsigned long now = millis();
   if (s_lastPublishMs == 0 || now - s_lastPublishMs >= PUBLISH_INTERVAL_MS) {
     s_publishCount++;
-    bool asOriginal = (s_publishCount % (unsigned long)ORIGINAL_EVERY_N) == 1UL;
-    publishImage(asOriginal);
+    publishNext();
     s_lastPublishMs = now;
   }
   delay(50);
