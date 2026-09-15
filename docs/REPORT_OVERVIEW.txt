@@ -155,5 +155,6 @@ METER 보고서용 통합 요약
 
 1) docs/REPORT_OVERVIEW.txt: 지금 이 파일 (보고서·발표·팀 공유 요약)
 2) docs/DEVICE_SPEC.txt: 개발 기술명세 (API, MQTT, Docker, 스택, 경로)
-3) METER.PDF: 초안 참고 (R·최신 내용은 위 txt 우선)
-4) README.md: 저장소 빠른 소개
+3) docs/UI_GUIDE_EUNSEO.txt: 은서용 프론트 6페이지 UI 수정 가이드
+4) METER.PDF: 초안 참고 (R·최신 내용은 위 txt 우선)
+5) README.md: 저장소 빠른 소개
