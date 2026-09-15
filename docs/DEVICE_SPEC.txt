@@ -1,5 +1,5 @@
 METER 기술 명세서 (개발용)
-주제: AIoT 센서 및 비전 융합 기반 적재량 및 사각지대 통합 수거 관제 플랫폼
+주제: 사각지대 감시와 최적 수거를 잇는 자원순환 AIoT 플랫폼 (METER)
 갱신: 2026-09-15
 보고서·배경·팀·기대효과 → docs/REPORT_OVERVIEW.txt
 서비스: https://meter.gwon.run
@@ -188,18 +188,24 @@ METER 기술 명세서 (개발용)
   방향         디바이스 → 서버 발행만 (보드 subscribe 없음)
   HTTP 디바이스 API · METER_DEVICE_TOKEN 없음
 
-  ── D모듈 (m*) ──
+  ── D모듈 (시리얼 접두어 m*) ──
   소스     meter_iot/src/module1.cpp
   보드     ESP32 + HC-SR04P (TRIG 32, ECHO 33), RGB 25/26/27
   주기     30초
   Payload  { "moduleSerial":"m1", "fillPercent":72.5 }
   레거시   heightCm → 서버가 depth(cm)로 fill% 환산
+  시리얼 담당
+    m1 (팀칭 d1)  성권 집 테스트 D
+    m2 (팀칭 d2)  성권 제작 실 D
+  ※ 백엔드 isDeviceSerial은 m*, r* 만 잠금. 팀 문서 d1/d2 = m1/m2.
 
-  ── R모듈 (r*) ──
+  ── R모듈 (시리얼 접두어 r*) ──
   소스(테스트) meter_iot/module2/  (PlatformIO, LittleFS data/images)
-  시리얼
-    r1     성권 테스트
-    r2,r3  수혁 실기기 (시리얼 충돌 금지)
+  시리얼 담당
+    r1  성권 집 테스트 R (프로토콜·서버·vision 검증)
+    r2  수혁 제작, 소형 ESP 기반 카메라
+    r3  수혁 제작, Raspberry Pi 5 고성능 카메라 (넓은 화각·고해상도)
+  ※ 시리얼 충돌 금지.
   보드     JPEG만 전송. fillPercent 미전송. 주기=보드 결정.
   Role
     imageRole=original → baseline.jpg 덮어쓰기, fill%=0

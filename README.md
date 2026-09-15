@@ -1,7 +1,7 @@
 # METER — 사각지대 감시와 최적 수거를 잇는 자원순환 AIoT 플랫폼
 
 > **Multi-resource Environment Tracking & Efficiency Reporter**  
-> ICT 빌드업캠프(2026) · 호남권 ICT 이노베이션스퀘어
+> ICT 빌드업캠프(2026), 호남권 ICT 이노베이션스퀘어
 
 **서비스**: [https://meter.gwon.run](https://meter.gwon.run)  
 **저장소**: [https://github.com/gwondev/meter](https://github.com/gwondev/meter)  
