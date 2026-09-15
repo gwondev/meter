@@ -2,16 +2,17 @@ METER — 프론트 UI 수정 가이드 (최은서)
 갱신: 2026-09-15
 대상: / , /features/* 4개, /map/overview 총 6페이지 UI만
 금지: 로그인, 회원가입, 인증, API 호출 로직 변경
-제출: 작업 파일 ZIP → 팀장 카톡 (본 저장소 직접 머지 아님, 이후 UI만 이식)
+제출: 수정한 파일을 ZIP으로 묶어 팀장에게 카톡
 
 
 ============================================================
 0. 한 줄 요약
 ============================================================
 
-GitHub에서 meter 프로젝트를 받은 뒤, Cursor(또는 Copilot)로
-아래 6개 화면의 디자인(색, 여백, 글씨, 레이아웃, 문구 배치)만 고친다.
-로그인·구글 인증·세션·API 연동 코드는 건드리지 않는다.
+프로젝트를 PC에 받은 뒤, Cursor(또는 Copilot)로 아래 6개 화면의
+디자인(색, 여백, 글씨, 레이아웃, 문구 배치)만 고친다.
+로그인, 구글 인증, 세션, API 연동 코드는 건드리지 않는다.
+끝나면 수정 파일만 ZIP으로 팀장(성권)에게 카톡으로 보낸다.
 
 
 ============================================================
@@ -20,14 +21,14 @@ GitHub에서 meter 프로젝트를 받은 뒤, Cursor(또는 Copilot)로
 
 1) 색상
    기존 사이트와 비슷한 톤을 유지한다. (다크 블랙 계열, meterTheme 참고)
-   갑자기 밝고 화려한 팔레트로 갈아엎지 말 것. “같은 제품인데 페이지마다
-   다른 앱”처럼 보이면 안 된다. 여백·타이포·배치를 다듬는 쪽에 힘을 준다.
+   갑자기 밝고 화려한 팔레트로 갈아엎지 말 것. 같은 제품인데 페이지마다
+   다른 앱처럼 보이면 안 된다. 여백, 타이포, 배치를 다듬는 쪽에 힘을 준다.
 
-2) 문구·내용의 출처 우선순위
-   (1순위) docs/REPORT_OVERVIEW.txt , docs/DEVICE_SPEC.txt
-          → 팀·모듈·목표·최신 기능이 여기 반영되어 있어 가장 정확하다.
-   (2순위) METER 신청서 / METER.PDF 등 예전 자료
-          → 필요할 때 참고만. R모듈 등이 빠졌거나 예전이면 1순위를 따른다.
+2) 문구, 내용의 출처 우선순위
+   1순위: docs/REPORT_OVERVIEW.txt , docs/DEVICE_SPEC.txt
+          팀, 모듈, 목표, 최신 기능이 여기 반영되어 있어 가장 정확하다.
+   2순위: METER 신청서, METER.PDF 등 예전 자료
+          필요할 때 참고만. R모듈 등이 빠졌거나 예전이면 1순위를 따른다.
    화면에 쓰는 설명 문구를 고칠 때도 위 순서로 맞춘다.
 
 3) 응원 한 줄
@@ -35,27 +36,24 @@ GitHub에서 meter 프로젝트를 받은 뒤, Cursor(또는 Copilot)로
 
 
 ============================================================
-1. 프로젝트 받아오기 (Git)
+1. 프로젝트 PC에 받기
 ============================================================
 
-1) GitHub 저장소
+1) 주소
    https://github.com/gwondev/meter
 
-2) PC에 받기 (터미널에서)
-   git clone https://github.com/gwondev/meter.git
-   cd meter
+2) 받는 방법 (둘 중 하나)
+   - 초록 Code 버튼 → Download ZIP → 압축 풀기
+   - 또는 터미널: git clone https://github.com/gwondev/meter.git
 
-   ※ GitHub에 push, 브랜치 생성, PR 만들지 않는다.
-     제출은 나중에 ZIP + 카톡만 한다.
-
-3) 프론트만 실행해 보기
-   cd frontend
+3) 프론트 실행
+   cd meter/frontend
    npm install
    npm run dev
 
-4) 브라우저에서 보통 http://localhost:5173 이 열린다.
-   로그인 없이도 볼 수 있는 페이지와, 로그인이 필요한 페이지가 있다.
-   (아래 4번 목록 참고)
+4) 브라우저
+   보통 http://localhost:5173
+   (아래 4번 URL로 6페이지 확인)
 
 
 ============================================================
@@ -64,12 +62,12 @@ GitHub에서 meter 프로젝트를 받은 뒤, Cursor(또는 Copilot)로
 
 1) Cursor로 meter 폴더를 연다. (File → Open Folder)
 
-2) 채팅(Agent/Chat)에 이렇게 시킨다. 복붙해서 써도 된다.
+2) 채팅에 아래를 그대로 붙여넣어도 된다.
 
    --- 프롬프트 예시 ---
    frontend에서 아래 6개 페이지의 UI(레이아웃, 색, 타이포, 간격, 카드/버튼 모양)만
    개선해줘. 로그인, Google OAuth, ProtectedRoute, API 호출, axios, auth 관련
-   로직은 절대 수정하지 마. sx·스타일·문구·배치·컴포넌트 구조(시각적)만 바꿔.
+   로직은 절대 수정하지 마. sx, 스타일, 문구, 배치, 시각적 구조만 바꿔.
 
    대상 파일:
    - frontend/src/pages/Root.jsx                    (/)
@@ -80,15 +78,14 @@ GitHub에서 meter 프로젝트를 받은 뒤, Cursor(또는 Copilot)로
    - frontend/src/pages/OverviewPage.jsx            (/map/overview)
 
    테마 참고: frontend/src/theme/meterTheme.js (기존과 비슷한 다크 톤 유지)
-   내용·카피 참고: docs/REPORT_OVERVIEW.txt, docs/DEVICE_SPEC.txt 우선
-                   (METER 신청서/PDF는 보조. 최신은 위 두 txt)
+   내용 참고: docs/REPORT_OVERVIEW.txt, docs/DEVICE_SPEC.txt 우선
+              (METER 신청서/PDF는 보조. 최신은 위 두 txt)
    --- 여기까지 ---
 
-3) GitHub Copilot을 쓸 때도 같다.
-   해당 jsx 파일을 연 뒤, 주석이나 채팅으로
+3) Copilot을 쓸 때도 해당 jsx를 연 뒤
    “인증 로직은 건드리지 말고 UI만”이라고 명시한다.
 
-4) 한 번에 6개를 다 시키기보다, 페이지 1개씩 시키고 npm run dev로 확인하는 편이 안전하다.
+4) 한 번에 6개보다, 페이지 1개씩 시키고 npm run dev로 확인하는 편이 안전하다.
 
 
 ============================================================
@@ -100,9 +97,9 @@ GitHub에서 meter 프로젝트를 받은 뒤, Cursor(또는 Copilot)로
 2) 카드, 버튼, 아이콘 배치, 섹션 나누기
 3) 화면에 보이는 설명 문구(카피) 다듬기
 4) MUI sx={...} 스타일, 레이아웃용 Box/Stack 구조
-5) meterTheme.js의 색 변수 참고·소폭 조정 (전체 앱이 깨지지 않게)
+5) meterTheme.js의 색 변수 참고, 소폭 조정 (전체 앱이 깨지지 않게)
 
---- 하지 말 것 (로직·인증) ---
+--- 하지 말 것 (로직, 인증) ---
 1) Google 로그인, oauthId, 세션, nickname 관련 코드
 2) ProtectedRoute, App.jsx의 라우트 가드, navigate로 로그인 강제하는 흐름
 3) axios, apiFetch, /api/auth/* 호출
@@ -112,14 +109,14 @@ GitHub에서 meter 프로젝트를 받은 뒤, Cursor(또는 Copilot)로
 
 
 ============================================================
-4. 대상 6페이지 ↔ 파일 ↔ URL
+4. 대상 6페이지, 파일, URL
 ============================================================
 
 1) 메인 화면
    URL:  /
    파일: frontend/src/pages/Root.jsx
-   비고: 로그인 버튼이 있어도, “누르는 동작/인증 API”는 건드리지 말고
-        버튼·히어로·카드 모양만 손본다.
+   비고: 로그인 버튼이 있어도, 누르는 동작/인증 API는 건드리지 말고
+        버튼, 히어로, 카드 모양만 손본다.
 
 2) 스마트 폐기/자원순환 소개
    URL:  /features/smart-disposal
@@ -144,71 +141,56 @@ GitHub에서 meter 프로젝트를 받은 뒤, Cursor(또는 Copilot)로
 
 
 ============================================================
-5. 작업 순서 추천
+5. 작업 순서
 ============================================================
 
-1) git clone → npm install → npm run dev
-2) 브라우저로 6개 URL을 각각 열어 현황 캡처(선택)
+1) 프로젝트 받기 → npm install → npm run dev
+2) 브라우저로 6개 URL 확인
 3) Cursor에 페이지 1개씩 UI 수정 요청
-4) 저장 후 화면 새로고침으로 확인
+4) Ctrl+S 저장 후 화면 새로고침으로 확인
 5) 문제없으면 다음 페이지
-6) 끝나면 ZIP 만들어 팀장 카톡 (아래 6번). push 하지 말 것.
+6) 끝나면 ZIP 만들어 팀장 카톡 (아래 6번)
 
 
 ============================================================
-6. 저장하고 제출하기 (ZIP → 팀장 카톡) ★중요
+6. ZIP → 팀장 카톡 제출
 ============================================================
 
-GitHub에 push / 브랜치 / PR 하지 않는다.
-은서가 작업한 UI 파일만 ZIP으로 묶어 팀장(성권)에게 카톡으로 보낸다.
-팀장이 나중에 AI로 “UI만” 본 프로젝트에 이식한다. (2중 안전장치)
+로컬에서 수정만 한다. 본인 GitHub에 올리거나, 팀 저장소에 올리지 않는다.
 
---- A. 로컬에서 파일만 저장 ---
+수정한 UI 파일만 ZIP으로 묶어 팀장(이성권)에게 카톡으로 보낸다.
+팀장이 나중에 AI로 UI만 본 프로젝트에 이식한다. (2중 안전장치)
 
-Cursor/에디터에서 저장(Ctrl+S)만 하면 된다.
-git commit, git push는 하지 않는다.
+--- ZIP에 넣을 파일 ---
 
---- B. ZIP으로 묶기 (이게 제출본) ---
+  frontend/src/pages/Root.jsx
+  frontend/src/pages/OverviewPage.jsx
+  frontend/src/pages/features/SmartDisposal.jsx
+  frontend/src/pages/features/IotIntegration.jsx
+  frontend/src/pages/features/Reward.jsx
+  frontend/src/pages/features/OperationsHub.jsx
+  theme을 수정했을 때만: frontend/src/theme/meterTheme.js
 
-바꾼 파일만 넣거나, 아래 폴더/파일만 골라 ZIP한다.
-(node_modules, .pio, dist, .git 등은 넣지 말 것)
+넣지 말 것: node_modules, dist, .git, backend, meter_iot 등
 
-  최소 포함:
-    frontend/src/pages/Root.jsx
-    frontend/src/pages/OverviewPage.jsx
-    frontend/src/pages/features/SmartDisposal.jsx
-    frontend/src/pages/features/IotIntegration.jsx
-    frontend/src/pages/features/Reward.jsx
-    frontend/src/pages/features/OperationsHub.jsx
-    (수정했다면) frontend/src/theme/meterTheme.js
+ZIP 이름 예: meter-ui-eunseo-YYYYMMDD.zip
 
-  ZIP 이름 예:
-    meter-ui-eunseo-YYYYMMDD.zip
-
-Windows 예:
-  1) 위 파일들을 한 폴더(예: meter-ui-eunseo)에 같은 경로 구조로 모아 두거나
-  2) frontend/src/pages 와 features, (필요시) theme 만 골라 압축
-
-가능하면 폴더 구조를 유지한다.
+폴더 구조를 유지해서 압축한다.
   pages/Root.jsx
   pages/OverviewPage.jsx
   pages/features/...
-  theme/meterTheme.js  (해당 시)
+  theme/meterTheme.js  (해당할 때)
 
---- C. 카톡 제출 ---
+--- 카톡 ---
 
 받는 사람: 팀장 이성권
 보낼 것:
   1) ZIP 파일
-  2) 짧은 메모 (예: “6페이지 UI만 수정했습니다. 인증/API는 안 건드렸습니다.”)
-  3) (선택) 화면 캡처 몇 장
+  2) 짧은 메모 (예: 6페이지 UI만 수정했습니다. 인증/API는 안 건드렸습니다.)
+  3) 화면 캡처가 있으면 함께
 
-팀장 쪽 이후 절차 (은서가 할 일 아님):
-  ZIP을 받아 AI에게 “본 meter 저장소에 UI적인 부분만 이식” 시키고
-  인증·로직은 원본을 유지한다. → 그래서 ZIP이 2중 안전장치다.
-
-실수로 인증 관련 파일까지 바뀌었으면 ZIP에 넣지 말고,
-App.jsx, auth, api 쪽은 제외한 뒤 6개 페이지만 다시 묶는다.
+인증 관련 파일(App.jsx, auth, api)이 바뀌었으면 ZIP에 넣지 말고
+6개 페이지만 다시 묶는다.
 
 
 ============================================================
@@ -218,10 +200,10 @@ App.jsx, auth, api 쪽은 제외한 뒤 6개 페이지만 다시 묶는다.
 1) npm install 실패 → Node.js LTS 설치 후 다시
    https://nodejs.org
 
-2) 화면이 안 열림 → frontend에서 npm run dev 다시, 터미널 에러 읽기
+2) 화면이 안 열림 → frontend에서 npm run dev 다시, 터미널 에러 확인
 
-3) /map/overview 가 로그인 요구 → 메인·features 4개부터 UI 작업,
-   overview는 로그인 가능한 환경에서 확인
+3) /map/overview 가 로그인 요구 → 메인, features 4개부터 UI 작업 후
+   overview는 로그인 되는 환경에서 확인
 
 4) Cursor가 인증 코드를 고치려 하면
    “그 변경 취소하고 UI(sx, 레이아웃)만 다시”라고 말린다.
@@ -233,10 +215,10 @@ App.jsx, auth, api 쪽은 제외한 뒤 6개 페이지만 다시 묶는다.
 8. 체크리스트 (제출 전)
 ============================================================
 
-[ ] 수정한 파일이 위 6개 jsx (+ 필요시 theme) 뿐인가
+[ ] 수정한 파일이 위 6개 jsx (theme 수정 시 theme 포함) 뿐인가
 [ ] App.jsx, auth, api 파일을 안 바꿨는가
 [ ] 색 톤이 기존 사이트와 크게 안 이질적인가
 [ ] 문구가 REPORT_OVERVIEW / DEVICE_SPEC과 안 어긋나는가
 [ ] npm run dev로 6페이지가 깨지지 않는가
 [ ] ZIP에 node_modules 등을 안 넣었는가
-[ ] 팀장에게 카톡으로 ZIP(+간단 메모) 보냈는가
+[ ] 팀장에게 카톡으로 ZIP과 메모를 보냈는가
