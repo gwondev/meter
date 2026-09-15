@@ -1,154 +1,285 @@
-METER 기술 명세서
+METER 기술 명세서 (개발용)
 주제: AIoT 센서 및 비전 융합 기반 적재량 및 사각지대 통합 수거 관제 플랫폼
-갱신: 2026-09-12
+갱신: 2026-09-15
+보고서·배경·팀·기대효과 → docs/REPORT_OVERVIEW.txt
 서비스: https://meter.gwon.run
 저장소: https://github.com/gwondev/meter
 
 
 ────────────────────────────────────────
-1. 한눈에
+1. 모노레포 · 스택
 ────────────────────────────────────────
 
-  D모듈 (모듈1, m*)
-    초음파로 빈 거리 측정 → 보드에서 fillPercent 산출 → MQTT 30초 전송.
-    구현 완료 (펌웨어·서버·웹).
+  meter/
+  ├── frontend/          React 19 + Vite 8 + MUI 7 + Emotion + Framer Motion
+  │                      React Router 7, Axios, @react-oauth/google
+  │                      지도: Kakao Maps JS + Leaflet/react-leaflet
+  ├── backend/           Spring Boot 4 · Java 21 · JPA · MQTT 구독
+  ├── vision_service/    FastAPI + OpenCV (R fill% 비교)
+  ├── meter_iot/         D: src/module1.cpp
+  │                      R: module2/ (PlatformIO · ESP32-CAM · LittleFS)
+  ├── meter_HW/          OpenSCAD (r_module_downward_mount.scad)
+  ├── mosquitto/         Eclipse Mosquitto 2 (패킷 한도 대형 JPEG용)
+  ├── scripts/           prepare-env.sh, deploy.sh, diagnose.sh,
+  │                      setup-meter-db.sh, r1_mqtt_test.py
+  ├── docs/              REPORT_OVERVIEW.txt · DEVICE_SPEC.txt
+  └── docker-compose.yml backend · vision · mosquitto · frontend
 
-  R모듈 (모듈2, r*)
-    MQTT로 사진만 전송. 주기는 보드가 자유 결정.
-    원본(imageRole=original)은 서버 baseline 덮어쓰기.
-    비교 큐 최근 10장 → 서버 vision이 fillPercent 산출.
-    큐에서 밀린 사진은 휴지통 약 20장 보관 후 삭제 (관리자 웹에서 관리).
-    보드는 판정·수치 계산 안 함 (전송만).
-
-  시리얼 담당
-    r1  성권 테스트 R모듈 (프로토콜·서버 검증용)
-    r2, r3  수혁 담당 실기기 (r1과 시리얼 겹치면 안 됨)
-    m*  D모듈 (높이)
-
-  AI 챗봇
-    모듈 DB(적재율·신호) 기반 자연어 질의응답.
-
-  AI 카메라 (웹)
-    사진으로 쓰레기 품목 분류(Gemini) → 투입 위치 안내.
-
-  지도
-    모듈 위치·적재율·신호. 마커 클릭 시 시리얼·유형·적재율 카드.
-    D=초음파 아이콘, R=카메라 아이콘 + 최신 스냅샷.
-
-  최적 수거 경로
-    화면 안 모듈 전부 방문. 만재 우선 + 도로망.
-    도로가 모듈 앞에서 끊기면 직선 연결, 진행 방향 화살표.
-
-  관리자
-    모듈·더미·유저, 무신호 정리, MQTT 진단,
-    R 사진 관리(원본 / 비교큐10 / 휴지통20).
-
-  ★공통 지표 fillPercent 0~100
-    0 = 수거 불필요, 100 = 즉시 수거.
-    D: 보드 계산. R: 서버 vision 계산.
+  DB        MySQL `meter` (prod: jdbc:mysql://gwon-db:3306/meter)
+            로컬 H2 가능
+  AI        Google Gemini 2.5 Flash (챗봇 · 품목 분류)
+  인증      Google OAuth
+  인프라    Docker Compose + Cloudflare Tunnel (global_network)
+  UI 테마   다크 `#000000` · 적재 상태 빨강/주황/초록
 
 
 ────────────────────────────────────────
-2. 통신 공통
+2. 배포 · URL · 컨테이너
 ────────────────────────────────────────
 
-  URI      ws://mqtt-meter.gwon.run:80
-  Topic    meter/{serial}/status
-  QoS      1 / retain false
-  인증     없음
-  방향     디바이스 → 서버 (발행만)
-  HTTP 디바이스 API 없음.
+  공개
+    https://meter.gwon.run              웹
+    https://meter.gwon.run/api/*        → meter-backend:8080
+    https://meter.gwon.run/*            → meter-frontend:5173
+    ws://mqtt-meter.gwon.run:80         → meter-mosquitto:9001 (WebSocket)
+
+  내부 (compose)
+    meter-backend   :8080
+    meter-vision    :8090
+    meter-mosquitto :1883 (MQTT TCP), :9001 (WS)
+    meter-frontend  :5173 (serve 정적 빌드)
+    backend → mqtt  tcp://meter-mosquitto:1883
+    backend → vision http://meter-vision:8090
+
+  volumes
+    backend_uploads  → /backend/uploads  (backend·vision 공유)
+
+  networks
+    meter_internal (bridge)
+    global_network (external, Cloudflare)
+
+  배포 예
+    ./scripts/prepare-env.sh ../.env.production
+    docker compose up -d --build
+
+  주요 env
+    GOOGLE_CLIENT_ID_METER / VITE_GOOGLE_CLIENT_ID
+    METER_GEMINI_API_KEY
+    KAKAO_API_METER / VITE_KAKAO_API
+    DB_PASSWORD
+    METER_MODULE_DEFAULT_DEPTH_CM      (구형 heightCm 환산, 기본 60)
+    METER_MODULE_STALE_RETENTION_DAYS  (무신호 삭제 일수, 기본 10)
+    METER_UPLOAD_DIR
+    METER_UPLOAD_KEEP_PER_MODULE=10
+    METER_UPLOAD_TRASH_KEEP=20
+    METER_VISION_URL=http://meter-vision:8090
+    METER_VISION_ENABLED=true
+    VITE_API_BASE_URL=/api  (또는 https://meter.gwon.run/api)
 
 
 ────────────────────────────────────────
-3. D모듈 — 높이 측정 (구현 완료)  = 모듈1
+3. 프론트엔드 라우트
 ────────────────────────────────────────
 
-  상태     구현 완료
+  /                 로그인(Root)
+  /nickname         닉네임
+  /map              지도 · 적재 · 최적 수거 경로 · R 스냅샷 팝업
+  /camera           AI 폐기물 카메라
+  /input            입력
+  /mypage           마이페이지 · 리워드
+  /db               관리자 Manage (모듈·더미·유저·R 사진)
+  /mosquitto        MQTT 진단·로그
+  /intro/team       팀 소개
+  /intro/project    프로젝트 소개
+  /features/*       기능 소개
+  /test             UI 테스트
+
+  로컬 프록시: Vite `/api` → http://127.0.0.1:8080
+
+
+────────────────────────────────────────
+4. Backend REST API
+────────────────────────────────────────
+
+  서버 포트 8080 · prefix `/api`
+
+  Health
+    GET    /api/health
+
+  Auth
+    POST   /api/auth/google
+    GET    /api/auth/session?oauthId=
+    PUT    /api/auth/nickname
+
+  Modules
+    GET    /api/modules
+    POST   /api/modules
+    PUT    /api/modules/{id}
+    DELETE /api/modules/{id}
+    POST   /api/modules/cleanup              무신호 정리
+
+  R Snapshots (serial = r*)
+    GET    /api/modules/{serial}/snapshots
+    POST   /api/modules/{serial}/snapshots/restore     body: { name|path }
+    DELETE /api/modules/{serial}/snapshots?path=
+    POST   /api/modules/{serial}/snapshots/recompute
+    ※ 웹에서 sample→baseline 승격 API 없음. MQTT imageRole=original만 원본.
+
+  Uploads (정적)
+    GET    /api/uploads/**                  R JPEG 서빙
+           예) /api/uploads/r1/baseline.jpg
+               /api/uploads/r1/samples/….jpg
+               /api/uploads/r1/trash/….jpg
+
+  Dummy
+    POST   /api/dummy-modules
+    PUT    /api/dummy-modules/{id}
+    DELETE /api/dummy-modules/{id}
+
+  AI
+    GET    /api/ai/status
+    POST   /api/ai/chat
+    POST   /api/ai/analyze                  multipart 또는 JSON
+
+  IoT / Admin / Geo / Users
+    GET    /api/iot/config                  공개 MQTT 호스트 안내
+    GET    /api/admin/overview
+    GET    /api/users
+    PUT    /api/users/{id}
+    DELETE /api/users/{id}
+    POST   /api/users/exchange
+    POST   /api/users/{id}/exchange
+    POST   /api/geo/anchor
+    GET    /api/geo/anchor
+    GET    /api/mosquitto/logs
+    GET    /api/mosquitto/diag
+
+  수거 유형 코드: CLOTHING · PLASTIC · CAN · MEDICINE
+
+
+────────────────────────────────────────
+5. Vision 서비스
+────────────────────────────────────────
+
+  경로     vision_service/app.py
+  포트     8090
+  컨테이너 meter-vision
+
+  GET  /health
+       → { "status": "ok" }
+
+  POST /v1/compare
+       body: { "baselinePath": "...", "samplePaths": ["...", ...] }
+       → { "fillPercent", "sampleCount", "method", "scores" }
+       method: median-absdiff-v1 (원본 vs 최대 10장 absdiff 중앙값)
+
+  호출: backend VisionCompareClient → METER_VISION_URL
+
+
+────────────────────────────────────────
+6. MQTT (디바이스 ↔ 서버)
+────────────────────────────────────────
+
+  URI (보드)   ws://mqtt-meter.gwon.run:80
+  Topic        meter/{serial}/status
+  Subscribe    meter/+/status  (backend)
+  QoS          1 · retain false
+  인증         없음 (현재)
+  방향         디바이스 → 서버 발행만 (보드 subscribe 없음)
+  HTTP 디바이스 API · METER_DEVICE_TOKEN 없음
+
+  ── D모듈 (m*) ──
   소스     meter_iot/src/module1.cpp
-  보드     ESP32 + HC-SR04P
-  시리얼   m1, m2, …
-  주기     MQTT 30초
+  보드     ESP32 + HC-SR04P (TRIG 32, ECHO 33), RGB 25/26/27
+  주기     30초
   Payload  { "moduleSerial":"m1", "fillPercent":72.5 }
+  레거시   heightCm → 서버가 depth(cm)로 fill% 환산
 
-
-────────────────────────────────────────
-4. R모듈 — 카메라 이미지 (서버 판정)  = 모듈2
-────────────────────────────────────────
-
-  상태     서버·관리자·vision 연동. 보드 프로토콜 확정.
-  보드     ESP32-CAM 또는 RPi + 카메라 (프로토콜 동일)
+  ── R모듈 (r*) ──
+  소스(테스트) meter_iot/module2/  (PlatformIO, LittleFS data/images)
   시리얼
-    r1     성권 테스트 (meter_iot/module2, scripts/r1_mqtt_test.py)
-    r2,r3  수혁 담당 실기기
-
-  보드
-    JPEG만 MQTT 전송. 주기 자유. fillPercent 미전송.
-    imageRole=original → 무조건 원본. sample → 무조건 샘플.
-    (웹에서 샘플→원본 승격 없음. MQTT role만 진실.)
-
-  서버
-    original → baseline.jpg 덮어쓰기, fill%=0
-    sample   → samples/ 큐(최대 10) → vision 비교 → fill%
-    큐에서 밀림 → trash/ (최대 20) → 초과분 영구삭제
-    관리자 웹: 복원·삭제·fill% 재계산만 (원본 승격 UI/API 없음)
-
+    r1     성권 테스트
+    r2,r3  수혁 실기기 (시리얼 충돌 금지)
+  보드     JPEG만 전송. fillPercent 미전송. 주기=보드 결정.
+  Role
+    imageRole=original → baseline.jpg 덮어쓰기, fill%=0
+    imageRole=sample   → samples/ 큐(최대 10) → vision → fill%
+                       → 밀림은 trash/(최대 20) → 초과 삭제
   저장
     /backend/uploads/{serial}/baseline.jpg
-    /backend/uploads/{serial}/samples/*.jpg   (10)
-    /backend/uploads/{serial}/trash/*.jpg     (20)
-
-  보드 테스트 이미지 (r1)
-    meter_iot/module2/data/images/*.jpg 넣기 (수십~100장, 장당 ~200KB 이하)
-    pio run -t uploadfs && pio run -t upload
-    10초마다 순환 전송, 10번마다 1회 original
-
-  테스트 (PC에서 MQTT)
-    python scripts/r1_mqtt_test.py --original
-    python scripts/r1_mqtt_test.py --count 10
+    /backend/uploads/{serial}/samples/*.jpg
+    /backend/uploads/{serial}/trash/*.jpg
 
   MQTT 원본
-    { "moduleSerial":"r1", "imageRole":"original", "imageBase64":"...", "imageFormat":"jpg" }
+    { "moduleSerial":"r1", "imageRole":"original",
+      "imageBase64":"...", "imageFormat":"jpg" }
 
   MQTT 샘플
-    { "moduleSerial":"r1", "imageRole":"sample", "imageBase64":"...", "imageFormat":"jpg" }
+    { "moduleSerial":"r1", "imageRole":"sample",
+      "imageBase64":"...", "imageFormat":"jpg" }
 
+  r1 보드 검증 (현재 펌웨어 태그 계열 fill-100)
+    data/images/001.jpg … 100.jpg
+    001만 original, 002–100 sample, 10초 간격 루프
+    pio run -t uploadfs && pio run -t upload
 
-────────────────────────────────────────
-5. 기구 (OpenSCAD) — 기능 출력
-────────────────────────────────────────
-
-  파일     meter_HW/r_module_downward_mount.scad
-  의도     카메라가 바닥(용기 안)을 내려다보게. D모듈식 림 클립 + 수직 암.
-  출력     IT융합대학 무료 출력 → 동방 픽업
-  데드라인 2026-10-10 까지 출력본 확보 (기능 기구). 외형 꾸미는 이후 검토.
-  참고     첨부 OpenSCAD·D거치 사진이 워크스페이스에 없으면 위 파일로 1차안.
-           보드 홀피치·림 두께는 파라미터로 조정.
-
-
-────────────────────────────────────────
-6. POWER TANK
-────────────────────────────────────────
-
-  D·R 상시 전원. 서버 통신 없음.
+  PC 테스트
+    python scripts/r1_mqtt_test.py --original
+    python scripts/r1_mqtt_test.py --count 10
 
 
 ────────────────────────────────────────
 7. 데이터 흐름
 ────────────────────────────────────────
 
-  D --MQTT fill%-------------------------------┐
-                                               ├→ mosquitto → backend → MySQL → 웹
-  R --MQTT image (original|sample)-------------┘
-        original → baseline
-        sample   → samples(10) → trash(20) → vision → fill%
+  D --MQTT fill%--------------------------------┐
+                                                ├→ mosquitto
+  R --MQTT image (original|sample)--------------┘
+        │
+        ▼
+     backend (ModuleIotMqttHandler)
+        │  D: fill% 반영
+        │  R original: baseline
+        │  R sample: 저장 → VisionCompareClient → fill%
+        ▼
+     MySQL  Module(fillPercent, lastImageUrl, signal…)
+        ▼
+     frontend (지도·관리자·챗봇)
 
 
 ────────────────────────────────────────
-8. 배포
+8. 기구 · POWER TANK
 ────────────────────────────────────────
 
-  services: backend, frontend, mosquitto, vision
-  METER_UPLOAD_KEEP_PER_MODULE=10
-  METER_UPLOAD_TRASH_KEEP=20
-  METER_VISION_URL=http://meter-vision:8090
+  R 거치   meter_HW/r_module_downward_mount.scad
+           하향 카메라 · 림 클립 · IT융합대학 출력 → 동방 픽업
+           데드라인 참고: 2026-10-10 (기능 기구)
+
+  POWER TANK
+           D·R 상시 전원. 서버 통신 없음.
+           야외 적재함 부착 시 내열·내충격 → PETG·카본 복합 등 케이스 시제품.
+
+
+────────────────────────────────────────
+9. 주요 백엔드 클래스 (참고)
+────────────────────────────────────────
+
+  controller/
+    AuthController, ModuleController, ModuleSnapshotController,
+    DummyModuleController, AiController, AdminController,
+    UserController, GeoController, MosquittoController, Health…
+  service/
+    ModuleIotMqttHandler, SnapshotStorageService, VisionCompareClient,
+    ModuleSignalService, MeterChatService, …
+  entity/
+    Module (deviceType: D=m* / R=r*), User, DummyModule, …
+
+
+────────────────────────────────────────
+10. 문서 역할
+────────────────────────────────────────
+
+  REPORT_OVERVIEW.txt  보고서·팀·배경·목표·기대효과
+  DEVICE_SPEC.txt      본 파일 — API · MQTT · Docker · 스택
+  README.md            저장소 빠른 소개 (상세는 docs 우선)
+

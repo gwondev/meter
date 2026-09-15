@@ -5,7 +5,8 @@
 
 **서비스**: [https://meter.gwon.run](https://meter.gwon.run)  
 **저장소**: [https://github.com/gwondev/meter](https://github.com/gwondev/meter)  
-**디바이스·기능 명세**: [`docs/DEVICE_SPEC.txt`](docs/DEVICE_SPEC.txt) ← D/R·MQTT·POWER TANK 상세는 여기만 본다
+**보고서 요약**: [`docs/REPORT_OVERVIEW.txt`](docs/REPORT_OVERVIEW.txt) ← 팀·배경·목표·모듈 한눈·기대효과  
+**기술 명세**: [`docs/DEVICE_SPEC.txt`](docs/DEVICE_SPEC.txt) ← MQTT·API·Docker·스택·경로
 
 ---
 
@@ -37,7 +38,7 @@
 ```
 D모듈 (m*) ──MQTT fill%────────┐
                                ├→ mqtt-meter.gwon.run → mosquitto → backend → MySQL
-R모듈 (r*) ──MQTT fill%+사진───┘                                      │
+R모듈 (r*) ──MQTT 이미지만─────┘              (+ vision)              │
                                                                       ▼
                                                             frontend (meter.gwon.run)
 ```
@@ -61,7 +62,9 @@ meter/
 ├── meter_HW/          # 하드웨어 CAD
 ├── mosquitto/         # MQTT 브로커 (패킷 한도 2MB)
 ├── scripts/           # prepare-env.sh
-├── docs/DEVICE_SPEC.txt
+├── docs/
+│   ├── REPORT_OVERVIEW.txt   # 보고서용 통합 요약
+│   └── DEVICE_SPEC.txt       # 개발 기술명세 (API·MQTT·Docker)
 └── docker-compose.yml
 ```
 
@@ -69,7 +72,7 @@ meter/
 
 ## 디바이스 (요약)
 
-상세·페이로드·주기는 **[`docs/DEVICE_SPEC.txt`](docs/DEVICE_SPEC.txt)**.
+상세는 **[`docs/DEVICE_SPEC.txt`](docs/DEVICE_SPEC.txt)**, 보고서용은 **[`docs/REPORT_OVERVIEW.txt`](docs/REPORT_OVERVIEW.txt)**.
 
 | 모듈 | 시리얼 | 역할 | 전송 |
 |------|--------|------|------|
