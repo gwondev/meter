@@ -2,6 +2,7 @@ METER — 프론트 UI 수정 가이드 (최은서)
 갱신: 2026-09-15
 대상: / , /features/* 4개, /map/overview 총 6페이지 UI만
 금지: 로그인, 회원가입, 인증, API 호출 로직 변경
+제출: 작업 파일 ZIP → 팀장 카톡 (본 저장소 직접 머지 아님, 이후 UI만 이식)
 
 
 ============================================================
@@ -155,23 +156,79 @@ GitHub에서 meter 프로젝트를 받은 뒤, Cursor(또는 Copilot)로
 
 
 ============================================================
-6. 저장하고 올리기 (Git)
+6. 저장하고 제출하기 (ZIP → 팀장 카톡) ★중요
 ============================================================
 
-frontend 폴더가 아니라 저장소 루트(meter)에서:
+이 프로젝트 main에 직접 합치지 않아도 된다.
+은서가 작업한 UI 파일을 ZIP으로 묶어 팀장(성권)에게 카톡으로 보낸다.
+팀장이 나중에 AI로 “UI만” 본 프로젝트에 이식한다. (2중 안전장치)
+
+--- A. 작업 내용 저장 (로컬 Git, 권장) ---
+
+저장소 루트(meter)에서:
 
   git status
   git add frontend/src/pages/Root.jsx
   git add frontend/src/pages/OverviewPage.jsx
   git add frontend/src/pages/features/
+  (theme을 손댔으면) git add frontend/src/theme/meterTheme.js
   git commit -m "ui: 소개·개요 6페이지 UI 개선"
+
+브랜치 push는 선택. 없어도 ZIP 제출이면 된다.
+
+--- B. ZIP으로 묶기 (이게 제출본) ---
+
+바꾼 파일만 넣거나, 아래 폴더/파일만 골라 ZIP한다.
+(node_modules, .pio, dist 등은 넣지 말 것)
+
+  최소 포함:
+    frontend/src/pages/Root.jsx
+    frontend/src/pages/OverviewPage.jsx
+    frontend/src/pages/features/SmartDisposal.jsx
+    frontend/src/pages/features/IotIntegration.jsx
+    frontend/src/pages/features/Reward.jsx
+    frontend/src/pages/features/OperationsHub.jsx
+    (수정했다면) frontend/src/theme/meterTheme.js
+
+  ZIP 이름 예:
+    meter-ui-eunseo-YYYYMMDD.zip
+
+Windows 예:
+  1) 위 파일들을 한 폴더(예: meter-ui-eunseo)에 같은 경로 구조로 모아 두거나
+  2) frontend/src/pages 와 features, (필요시) theme 만 골라 압축
+
+가능하면 폴더 구조를 유지한다.
+  pages/Root.jsx
+  pages/OverviewPage.jsx
+  pages/features/...
+  theme/meterTheme.js  (해당 시)
+
+--- C. 카톡 제출 ---
+
+받는 사람: 팀장 이성권
+보낼 것:
+  1) ZIP 파일
+  2) 짧은 메모 (예: “6페이지 UI만 수정했습니다. 인증/API는 안 건드렸습니다.”)
+  3) (선택) 화면 캡처 몇 장
+
+팀장 쪽 이후 절차 (은서가 할 일 아님):
+  ZIP을 받아 AI에게 “본 meter 저장소에 UI적인 부분만 이식” 시키고
+  인증·로직은 원본을 유지한다. → 그래서 ZIP이 2중 안전장치다.
+
+
+============================================================
+6-보류. (선택) GitHub 브랜치로도 올리는 경우
+============================================================
+
   git push -u origin ui/eunseo-pages
 
-그다음 GitHub에서 Pull Request를 만들거나, 팀장(성권)에게 브랜치 이름을 알려준다.
+그다음 PR을 만들거나 팀장에게 브랜치 이름을 알려도 된다.
+다만 기본 제출 방식은 위 ZIP + 카톡이다.
+
 
 실수로 인증 관련 파일까지 바뀌었으면:
   git diff
-  로 확인하고, App.jsx, auth, api 쪽이 바뀌었으면 되돌린 뒤 다시 올린다.
+  로 확인하고, App.jsx, auth, api 쪽이 바뀌었으면 되돌린 뒤 ZIP을 다시 만든다.
 
 
 ============================================================
@@ -198,7 +255,8 @@ frontend 폴더가 아니라 저장소 루트(meter)에서:
 
 [ ] 수정한 파일이 위 6개 jsx (+ 필요시 theme) 뿐인가
 [ ] App.jsx, auth, api 파일을 안 바꿨는가
-[ ] 색 톤이 기존 사이트와 크게 안 异질적인가
+[ ] 색 톤이 기존 사이트와 크게 안 이질적인가
 [ ] 문구가 REPORT_OVERVIEW / DEVICE_SPEC과 안 어긋나는가
 [ ] npm run dev로 6페이지가 깨지지 않는가
-[ ] 브랜치에 push 했는가
+[ ] ZIP에 node_modules 등을 안 넣었는가
+[ ] 팀장에게 카톡으로 ZIP(+간단 메모) 보냈는가
