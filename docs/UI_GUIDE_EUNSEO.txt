@@ -14,6 +14,26 @@ GitHub에서 meter 프로젝트를 받은 뒤, Cursor(또는 Copilot)로
 
 
 ============================================================
+0-1. 주의사항 (꼭 읽기)
+============================================================
+
+1) 색상
+   기존 사이트와 비슷한 톤을 유지한다. (다크 블랙 계열, meterTheme 참고)
+   갑자기 밝고 화려한 팔레트로 갈아엎지 말 것. “같은 제품인데 페이지마다
+   다른 앱”처럼 보이면 안 된다. 여백·타이포·배치를 다듬는 쪽에 힘을 준다.
+
+2) 문구·내용의 출처 우선순위
+   (1순위) docs/REPORT_OVERVIEW.txt , docs/DEVICE_SPEC.txt
+          → 팀·모듈·목표·최신 기능이 여기 반영되어 있어 가장 정확하다.
+   (2순위) METER 신청서 / METER.PDF 등 예전 자료
+          → 필요할 때 참고만. R모듈 등이 빠졌거나 예전이면 1순위를 따른다.
+   화면에 쓰는 설명 문구를 고칠 때도 위 순서로 맞춘다.
+
+3) 응원 한 줄
+   저번에 UI 잘 짜더라. 그 감각 그대로, 이번 6페이지만 톤 맞춰서 다듬어 주면 됨.
+
+
+============================================================
 1. 프로젝트 받아오기 (Git)
 ============================================================
 
@@ -58,7 +78,9 @@ GitHub에서 meter 프로젝트를 받은 뒤, Cursor(또는 Copilot)로
    - frontend/src/pages/features/OperationsHub.jsx  (/features/operations)
    - frontend/src/pages/OverviewPage.jsx            (/map/overview)
 
-   테마 참고: frontend/src/theme/meterTheme.js (기존 블랙 UI와 맞추되, 가독성·여백 개선)
+   테마 참고: frontend/src/theme/meterTheme.js (기존과 비슷한 다크 톤 유지)
+   내용·카피 참고: docs/REPORT_OVERVIEW.txt, docs/DEVICE_SPEC.txt 우선
+                   (METER 신청서/PDF는 보조. 최신은 위 두 txt)
    --- 여기까지 ---
 
 3) GitHub Copilot을 쓸 때도 같다.
@@ -176,5 +198,7 @@ frontend 폴더가 아니라 저장소 루트(meter)에서:
 
 [ ] 수정한 파일이 위 6개 jsx (+ 필요시 theme) 뿐인가
 [ ] App.jsx, auth, api 파일을 안 바꿨는가
+[ ] 색 톤이 기존 사이트와 크게 안 异질적인가
+[ ] 문구가 REPORT_OVERVIEW / DEVICE_SPEC과 안 어긋나는가
 [ ] npm run dev로 6페이지가 깨지지 않는가
 [ ] 브랜치에 push 했는가
