@@ -206,6 +206,31 @@ METER 기술 명세서 (개발용)
     r2  수혁 제작, 소형 ESP 기반 카메라
     r3  수혁 제작, Raspberry Pi 5 고성능 카메라 (넓은 화각·고해상도)
   ※ 시리얼 충돌 금지.
+
+  R 하드웨어 (구매품, 기구 모델링 기준)
+    ※ 아래 치수는 공식 규격 기준. 호환품은 캘리퍼로 실측 후 모델 확정.
+
+    r2  ESP32-CAM (AI-Thinker 규격, module2 펌웨어 board=esp32cam)
+        보드       약 40.5 x 27.0 x 4.5 mm (카메라·SD 제외)
+        카메라     OV2640, FPC로 보드 상면에 고정 (렌즈 돌출 약 5~6 mm)
+        기타       microSD 슬롯(짧은 변), 안테나(반대 짧은 변), 장착홀 없음
+                   → 홈/레일로 끼우는 방식 권장
+        업로드보드 ESP32-CAM-MB 결합 시 높이 약 +12 mm, 길이 약 +5 mm
+
+    r3  Raspberry Pi 5 8GB 베이직 키트 (본체, 5V 5A 어댑터, HDMI, 전용 케이스, SD)
+        보드       85 x 56 mm, PCB 약 1.6 mm, 최고 부품(USB·LAN) 약 16 mm
+        장착홀     M2.5 4개, 홀 지름 2.7 mm, 간격 58 x 49 mm, 모서리에서 3.5 mm
+        카메라커넥터 22핀 0.5 mm 피치 MIPI 2개 (CAM/DISP 겸용)
+        전원       USB-C 5V 5A 권장 (5V 3A PD면 USB 주변기기 전류 제한됨)
+        발열       액티브 쿨러/팬 사용 시 상부 약 10 mm 여유 + 통풍구 필요
+
+        카메라     호환 Raspberry Pi Camera Module 3 (IMX708, 12MP, 자동초점)
+                   판매 표기: "와이드 / 광각 75도" → 실측 화각 확인 필요
+                   (공식 표준 75도, 공식 Wide 120도)
+        카메라보드 25 x 24 mm, 두께 약 11.5 mm (Wide 약 12.4 mm)
+        장착홀     M2 4개, 홀 지름 2.2 mm, 간격 21 x 12.5 mm
+        케이블     카메라 15핀 1 mm ↔ Pi 5 22핀 0.5 mm 변환 FFC 필요
+                   (동봉 케이블 2종 중 22핀 쪽 사용)
   보드     JPEG만 전송. fillPercent 미전송. 주기=보드 결정.
   Role
     imageRole=original → baseline.jpg 덮어쓰기, fill%=0
