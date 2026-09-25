@@ -1,7 +1,7 @@
 METER 기술 명세서 (개발용)
 주제: 사각지대 감시와 최적 수거를 잇는 자원순환 AIoT 플랫폼 (METER)
-갱신: 2026-09-15
-보고서·배경·팀·기대효과 → docs/REPORT_OVERVIEW.txt
+갱신: 2026-09-25
+프로젝트 소개 일체(배경·BM·단가·기대효과) → docs/PROJECT_INTRO.txt
 서비스: https://meter.gwon.run
 저장소: https://github.com/gwondev/meter
 
@@ -22,7 +22,7 @@ METER 기술 명세서 (개발용)
   ├── mosquitto/         Eclipse Mosquitto 2 (패킷 한도 대형 JPEG용)
   ├── scripts/           prepare-env.sh, deploy.sh, diagnose.sh,
   │                      setup-meter-db.sh, r1_mqtt_test.py
-  ├── docs/              REPORT_OVERVIEW.txt · DEVICE_SPEC.txt
+  ├── docs/              PROJECT_INTRO.txt · DEVICE_SPEC.txt
   └── docker-compose.yml backend · vision · mosquitto · frontend
 
   DB        MySQL `meter` (prod: jdbc:mysql://gwon-db:3306/meter)
@@ -81,20 +81,39 @@ METER 기술 명세서 (개발용)
 3. 프론트엔드 라우트
 ────────────────────────────────────────
 
-  /                 로그인(Root)
-  /nickname         닉네임
-  /map              지도 · 적재 · 최적 수거 경로 · R 스냅샷 팝업
-  /camera           AI 폐기물 카메라
-  /input            입력
-  /mypage           마이페이지 · 리워드
-  /db               관리자 Manage (모듈·더미·유저·R 사진)
-  /mosquitto        MQTT 진단·로그
-  /intro/team       팀 소개
-  /intro/project    프로젝트 소개
-  /features/*       기능 소개
-  /test             UI 테스트
+  파일: frontend/src/App.jsx
+  로그인 필요: ProtectedRoute. 관리자만: adminOnly.
+
+  /                          로그인 Root.jsx · Google OAuth
+  /nickname                  닉네임 Nickname.jsx
+  /map                       지도 Map.jsx + MapView.jsx
+                             마커 · fillPercent · 신호 · R 사진 팝업
+                             최적 경로는 이 화면 위에 도로선으로 그림
+                             collectionRoute.js (TSP + OSRM)
+  /map/overview              OverviewPage.jsx 서비스 개요
+  /map/guide                 MapGuide.jsx
+  /map/recycling-guide       RecyclingGuide.jsx
+  /map/route                 → /map 리다이렉트 (경로 전용 페이지 없음)
+  /camera                    Camera.jsx 시민 AI 비전 (Gemini 4분류)
+  /input                     Input.jsx
+  /mypage                    MyPage.jsx 리워드
+  /db                        Manage.jsx 관리자 (유저·실모듈·더미·R 사진)
+  /manage                    → /db
+  /mosquitto                 Mosquitto.jsx MQTT 로그·진단
+  /intro/team                TeamIntro.jsx
+  /intro/project             ProjectIntro.jsx
+  /features/smart-disposal   SmartDisposal.jsx  (공개)
+  /features/iot              IotIntegration.jsx (공개)
+  /features/reward           Reward.jsx         (공개)
+  /features/operations       OperationsHub.jsx  (공개)
+  /features/recognition      → smart-disposal
+  /features/guide            → smart-disposal
+  /features/control          → operations
+  /test                      UITest.jsx
 
   로컬 프록시: Vite `/api` → http://127.0.0.1:8080
+  챗봇: components/MeterChatbot.jsx (플로팅, 전역)
+  위치 고르기: components/LocationPickerDialog.jsx
 
 
 ────────────────────────────────────────
@@ -200,17 +219,21 @@ METER 기술 명세서 (개발용)
   ※ 백엔드 isDeviceSerial은 m*, r* 만 잠금. 팀 문서 d1/d2 = m1/m2.
 
   ── R모듈 (시리얼 접두어 r*) ──
+  ※ R은 지정 구역을 반복 촬영하는 카메라다. 용기 내부를 내려다보는 장치가 아니다.
+     해안·무단투기 구역·함 주변 지면처럼 바닥·경관이 바뀌는 곳을 본다.
   소스(테스트) meter_iot/module2/  (PlatformIO, LittleFS data/images)
   시리얼 담당
     r1  성권 집 테스트 R (프로토콜·서버·vision 검증)
-    r2  수혁 제작, 소형 ESP 기반 카메라
-    r3  수혁 제작, Raspberry Pi 5 고성능 카메라 (넓은 화각·고해상도)
+    r2  수혁 제작, 좁은 구역용 소형 ESP 카메라
+    r3  수혁 제작, 넓은 구역용 Raspberry Pi 5 고성능 카메라
   ※ 시리얼 충돌 금지.
 
   R 하드웨어 (구매품, 기구 모델링 기준)
     ※ 아래 치수는 공식 규격 기준. 호환품은 캘리퍼로 실측 후 모델 확정.
 
-    r2  ESP32-CAM (AI-Thinker 규격, module2 펌웨어 board=esp32cam)
+    r2  ESP32-CAM1 + OV2640, 4MB PSRAM (module2 펌웨어 board=esp32cam)
+        구매       쿠팡 10,450원 (배송 3,000원)
+                   「아두이노 ESP32-CAM1 OV2640 카메라 4M PSRAM 장착 보드」
         보드       약 40.5 x 27.0 x 4.5 mm (카메라·SD 제외)
         카메라     OV2640, FPC로 보드 상면에 고정 (렌즈 돌출 약 5~6 mm)
         기타       microSD 슬롯(짧은 변), 안테나(반대 짧은 변), 장착홀 없음
@@ -283,12 +306,13 @@ METER 기술 명세서 (개발용)
 ────────────────────────────────────────
 
   R 거치   meter_HW/r_module_downward_mount.scad
-           하향 카메라 · 림 클립 · IT융합대학 출력 → 동방 픽업
+           구역을 향한 고정 마운트. 파일명이 downward여도 용기 림·함 속 하향이 아니다.
+           IT융합대학 출력 → 동방 픽업
            데드라인 참고: 2026-10-10 (기능 기구)
 
   POWER TANK
            D·R 상시 전원. 서버 통신 없음.
-           야외 적재함 부착 시 내열·내충격 → PETG·카본 복합 등 케이스 시제품.
+           야외 적재함 부착 시 케이스·마운트는 전부 저가 PETG 출력.
 
            보조배터리 (채택)
              제품: 모루이(Morui) 초고속충전 65W PD 보조배터리 30000mAh
@@ -318,7 +342,66 @@ METER 기술 명세서 (개발용)
 10. 문서 역할
 ────────────────────────────────────────
 
-  REPORT_OVERVIEW.txt  보고서·팀·배경·목표·기대효과
-  DEVICE_SPEC.txt      본 파일 — API · MQTT · Docker · 스택
+  PROJECT_INTRO.txt    소개 일체 (배경 기사, BM, 단가, 기대효과, 팀)
+  DEVICE_SPEC.txt      본 파일 — 라우트 · API · MQTT · Docker · 코드 구조
   README.md            저장소 빠른 소개 (상세는 docs 우선)
+
+
+────────────────────────────────────────
+11. 코드 구조 (HWPX·개발 인수)
+────────────────────────────────────────
+
+  frontend/src/
+    App.jsx                 라우트 정의
+    pages/Map.jsx           지도 데이터·경로 토글
+    pages/MapView.jsx       카카오 마커·팝업·경로 폴리라인
+    pages/Camera.jsx        시민 AI 촬영
+    pages/Manage.jsx        관리자 CRUD · R 사진 3단(원본/샘플/휴지통)
+    pages/Mosquitto.jsx     브로커 로그
+    utils/collectionRoute.js
+      화면 모듈 전부 방문. 거리×긴급도(만재 우선).
+      n≤8 완전탐색, n>8 NN+2-opt.
+      OSRM driving. ROAD_SNAP_GAP_M=18. 화살표 ARROW_EVERY_M=55.
+    theme/meterTheme.js     다크 테마 · fill 색
+    services/auth.js        Google 세션
+
+  backend/.../com/meter/backend/
+    controller/
+      ModuleController           실모듈 CRUD, cleanup
+      ModuleSnapshotController   R 스냅샷 목록·복원·삭제·recompute
+      DummyModuleController      더미 (계열 M/R, 별도 테이블)
+      AiController               /ai/chat · /ai/analyze
+      AuthController             Google
+      AdminController            overview
+      GeoController              경로 앵커
+      MosquittoController        logs · diag
+      IotConfigController        공개 MQTT 호스트
+    service/
+      ModuleIotMqttHandler       D fill% / R original|sample
+      SnapshotStorageService     uploads/{serial}/baseline|samples|trash
+      VisionCompareClient        meter-vision POST /v1/compare
+      MeterChatService           DB 스냅샷 → Gemini
+      GeminiVisionService        시민 품목 4분류
+      ModuleSignalService        신호·오프라인
+      MqttSubscriberService      meter/+/status
+      GeoAnchorService           경로 출발 앵커
+    entity/
+      Module       m*=HEIGHT_SENSOR, r*=VISION_CAM, fillPercent
+      DummyModule  시연용 별도 테이블
+      User, DisposalRecord, RewardHistory
+    mqtt/MeterMqttTopics     meter/{serial}/status
+
+  vision_service/app.py
+    FastAPI :8090
+    POST /v1/compare  baseline + samplePaths → fillPercent
+    method: median-absdiff-v1
+
+  meter_iot/
+    src/module1.cpp          D 펌웨어 (fillPercent MQTT)
+    module2/src/module2.cpp  R 예시 (ESP32-CAM, LittleFS 이미지)
+
+  meter_HW/
+    r_module_downward_mount.scad   R 구역 고정 마운트 (파일명 downward)
+
+  디바이스 HTTP API 없음. 보드→서버는 MQTT만.
 

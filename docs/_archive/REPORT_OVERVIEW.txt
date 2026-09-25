@@ -1,8 +1,8 @@
-METER 보고서용 통합 요약
-갱신: 2026-09-15
-용도: 중간·최종 보고서, 발표 개요, 팀 공유
-개발 상세(MQTT, API, Docker, 스택): docs/DEVICE_SPEC.txt
-참고: METER.PDF는 팀 공유 초안이며 R모듈 서술이 없을 수 있으니, 최신 내용은 본 문서와 DEVICE_SPEC을 우선한다.
+METER 보고서용 짧은 색인
+갱신: 2026-09-25
+소개 일체(배경 기사·동기·BM·단가·기대효과·일정): docs/PROJECT_INTRO.txt
+기술명세(라우트·API·MQTT·코드 구조): docs/DEVICE_SPEC.txt
+이 파일은 짧은 색인이다. HWPX 제작 시 PROJECT_INTRO + DEVICE_SPEC을 읽는다.
 
 
 ============================================================
@@ -156,8 +156,7 @@ METER 보고서용 통합 요약
 7. 문서 역할
 ============================================================
 
-1) docs/REPORT_OVERVIEW.txt: 지금 이 파일 (보고서·발표·팀 공유 요약)
-2) docs/DEVICE_SPEC.txt: 개발 기술명세 (API, MQTT, Docker, 스택, 경로)
-3) docs/UI_GUIDE_EUNSEO.txt: 은서용 프론트 6페이지 UI 수정 가이드
-4) METER.PDF: 초안 참고 (R·최신 내용은 위 txt 우선)
-5) README.md: 저장소 빠른 소개
+1) docs/PROJECT_INTRO.txt: 소개 일체 (1순위)
+2) docs/DEVICE_SPEC.txt: 기술명세 · 라우트 · 코드 구조
+3) docs/REPORT_OVERVIEW.txt: 지금 이 파일 (짧은 색인)
+4) README.md: 저장소 빠른 소개

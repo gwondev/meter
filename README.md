@@ -5,8 +5,8 @@
 
 **서비스**: [https://meter.gwon.run](https://meter.gwon.run)  
 **저장소**: [https://github.com/gwondev/meter](https://github.com/gwondev/meter)  
-**보고서 요약**: [`docs/REPORT_OVERVIEW.txt`](docs/REPORT_OVERVIEW.txt) ← 팀·배경·목표·모듈 한눈·기대효과  
-**기술 명세**: [`docs/DEVICE_SPEC.txt`](docs/DEVICE_SPEC.txt) ← MQTT·API·Docker·스택·경로
+**프로젝트 소개 일체**: [`docs/PROJECT_INTRO.txt`](docs/PROJECT_INTRO.txt) ← 배경 기사·BM·단가·기대효과  
+**기술 명세**: [`docs/DEVICE_SPEC.txt`](docs/DEVICE_SPEC.txt) ← 라우트·API·MQTT·코드 구조
 
 ---
 
@@ -18,7 +18,7 @@
 | **API** | Spring Boot 4 (Java 21) + JPA | 인증 · AI · MQTT 구독 · 모듈 API |
 | **DB** | MySQL `meter` / H2(로컬) | User · Module · DummyModule … |
 | **AI** | Gemini 2.5 Flash | 품목 분류 · 챗봇 |
-| **IoT** | D모듈(ESP32) · R모듈(카메라) | D: MQTT fill% · R: MQTT 이미지만 → 서버 vision fill% |
+| **IoT** | D모듈(함 속 초음파) · R모듈(구역 카메라) | D: MQTT fill% · R: MQTT 이미지만 → 서버 vision fill% |
 | **MQTT** | Eclipse Mosquitto | `meter/{serial}/status` (HTTP 디바이스 API 없음) |
 | **INFRA** | Docker Compose + Cloudflare Tunnel | backend · frontend · mosquitto |
 
@@ -29,7 +29,7 @@
 - **사각지대 감시**: D/R 모듈로 순회가 어려운 거점 상태를 상시 확인
 - **최적 수거**: 화면 내 모듈 전부 방문 · 만재 우선 · 도로망 경로
 - **자원순환 안내**: AI로 품목 판별·투입 거점 위치 안내
-- **공통 지표 `fillPercent`**: 0=수거 불필요 · 100=즉시 수거 (보드에서 산출)
+- **공통 지표 `fillPercent`**: 0=수거 불필요 · 100=즉시 수거 (D는 보드, R은 서버 vision)
 
 ---
 
@@ -63,8 +63,8 @@ meter/
 ├── mosquitto/         # MQTT 브로커 (패킷 한도 2MB)
 ├── scripts/           # prepare-env.sh
 ├── docs/
-│   ├── REPORT_OVERVIEW.txt   # 보고서용 통합 요약
-│   └── DEVICE_SPEC.txt       # 개발 기술명세 (API·MQTT·Docker)
+│   ├── PROJECT_INTRO.txt     # 소개 일체 (배경·BM·단가)
+│   └── DEVICE_SPEC.txt       # 라우트·API·MQTT·코드 구조
 └── docker-compose.yml
 ```
 
@@ -72,12 +72,12 @@ meter/
 
 ## 디바이스 (요약)
 
-상세는 **[`docs/DEVICE_SPEC.txt`](docs/DEVICE_SPEC.txt)**, 보고서용은 **[`docs/REPORT_OVERVIEW.txt`](docs/REPORT_OVERVIEW.txt)**.
+소개는 **[`docs/PROJECT_INTRO.txt`](docs/PROJECT_INTRO.txt)**, 기술은 **[`docs/DEVICE_SPEC.txt`](docs/DEVICE_SPEC.txt)**.
 
 | 모듈 | 시리얼 | 역할 | 전송 |
 |------|--------|------|------|
 | **D** | `m1`, `m2`… | 초음파 → 보드에서 fill% | MQTT 30초 |
-| **R** | `r1`, `r2`… | 이미지만 MQTT (간격=보드 결정). 서버가 원본+최근 10장 비교 → fill% | MQTT |
+| **R** | `r1`, `r2`… | 지정 구역 JPEG만 MQTT (용기 속이 아님). 서버가 원본+최근 10장 비교 → fill% | MQTT |
 | POWER TANK | — | 전원만 (통신 없음) | — |
 
 - URI: `ws://mqtt-meter.gwon.run:80` · Topic: `meter/{serial}/status` · QoS 1
