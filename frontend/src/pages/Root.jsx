@@ -436,7 +436,7 @@ const Root = () => {
             >
               <Typography
                 sx={{
-                  fontSize: "0.78rem",
+                  fontSize: { xs: "0.66rem", sm: "0.78rem" },
                   letterSpacing: "0.18em",
                   color: meterColors.secondary,
                   fontWeight: 800,
@@ -458,7 +458,7 @@ const Root = () => {
                       color: meterColors.primary,
                       textTransform: "none",
                       fontWeight: 800,
-                      fontSize: "0.98rem",
+                      fontSize: { xs: "0.88rem", sm: "0.98rem" },
                       border: "1px solid rgba(255,255,255,0.3)",
                       bgcolor: "rgba(255,255,255,0.06)",
                       "&:hover": { bgcolor: "rgba(255,255,255,0.12)", borderColor: "rgba(255,255,255,0.5)" },
@@ -492,7 +492,7 @@ const Root = () => {
                     color: "#000000",
                     textTransform: "none",
                     fontWeight: 900,
-                    fontSize: "1.05rem",
+                    fontSize: { xs: "0.9rem", sm: "1.05rem" },
                     bgcolor: "#FFFFFF",
                     boxShadow: "0 0 25px rgba(255,255,255,0.25)",
                     transition: "all 0.3s ease",
