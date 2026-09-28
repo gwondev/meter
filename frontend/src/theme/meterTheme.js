@@ -9,6 +9,10 @@ export const meterColors = {
   border: "rgba(255,255,255,0.18)",
   borderStrong: "rgba(255,255,255,0.35)",
   accent: "#f5f5f5",
+  /** 블랙&화이트 위에 소수만 쓰는 강조색 — 배지, 핵심 단어, 활성 표시에만 */
+  point: "#38bdf8",
+  pointSoft: "rgba(56,189,248,0.12)",
+  pointBorder: "rgba(56,189,248,0.35)",
   danger: "#ff4444",
   warning: "#ff9800",
   success: "#4caf50",

@@ -5,6 +5,8 @@ import PhotoCameraRoundedIcon from "@mui/icons-material/PhotoCameraRounded";
 import SensorsRoundedIcon from "@mui/icons-material/SensorsRounded";
 import InsightsRoundedIcon from "@mui/icons-material/InsightsRounded";
 import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
+import ArrowForwardRoundedIcon from "@mui/icons-material/ArrowForwardRounded";
+import AutoAwesomeIcon from "@mui/icons-material/AutoAwesome";
 import { useEffect, useRef, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import {
@@ -18,41 +20,47 @@ import {
 } from "../services/auth";
 import { GoogleLogin } from "@react-oauth/google";
 import meterLogo from "../assets/meter-logo.png";
+import { meterColors } from "../theme/meterTheme";
 
 const floatSlow = keyframes`
   0% { transform: translate3d(0, 0, 0); }
-  50% { transform: translate3d(0, -8px, 0); }
+  50% { transform: translate3d(0, -10px, 0); }
   100% { transform: translate3d(0, 0, 0); }
 `;
 
-const glowPulse = keyframes`
-  0% { opacity: 0.45; transform: scale(1); }
-  50% { opacity: 0.8; transform: scale(1.08); }
-  100% { opacity: 0.45; transform: scale(1); }
+const pulseGlow = keyframes`
+  0% { opacity: 0.35; transform: scale(1); }
+  50% { opacity: 0.7; transform: scale(1.12); }
+  100% { opacity: 0.35; transform: scale(1); }
+`;
+
+const textShimmer = keyframes`
+  0% { background-position: -200% 0; }
+  100% { background-position: 200% 0; }
 `;
 
 const featureItems = [
   {
     title: "AI 자원순환 안내",
-    subtitle: "분리배출 · 거점 위치",
+    subtitle: "품목 판별, 거점 안내",
     icon: <PhotoCameraRoundedIcon sx={{ fontSize: 26 }} />,
     path: "/features/smart-disposal",
   },
   {
     title: "사각지대 감시",
-    subtitle: "D모듈 · R모듈 데이터",
+    subtitle: "D모듈, R모듈 IoT",
     icon: <SensorsRoundedIcon sx={{ fontSize: 26 }} />,
     path: "/features/iot",
   },
   {
     title: "최적 수거 경로",
-    subtitle: "만재 우선 · 도로망",
+    subtitle: "만재 우선, 도로망",
     icon: <InsightsRoundedIcon sx={{ fontSize: 26 }} />,
     path: "/features/reward",
   },
   {
     title: "통합 관제",
-    subtitle: "지도 · AI · 모듈 점검",
+    subtitle: "지도, 챗봇, 진단",
     icon: <DashboardRoundedIcon sx={{ fontSize: 26 }} />,
     path: "/features/operations",
   },
@@ -62,6 +70,11 @@ const Root = () => {
   const navigate = useNavigate();
   const [user, setUser] = useState(() => getUser());
   const navigateRef = useRef(navigate);
+  const [mousePos, setMousePos] = useState({ x: -1000, y: -1000 });
+
+  const handleMouseMove = (e) => {
+    setMousePos({ x: e.clientX, y: e.clientY });
+  };
 
   useEffect(() => {
     navigateRef.current = navigate;
@@ -140,10 +153,11 @@ const Root = () => {
 
   return (
     <Box
+      onMouseMove={handleMouseMove}
       sx={{
         minHeight: "100dvh",
-        bgcolor: "#000000",
-        color: "#fff",
+        bgcolor: meterColors.bg,
+        color: meterColors.primary,
         position: "relative",
         overflow: "hidden",
         display: "flex",
@@ -152,32 +166,39 @@ const Root = () => {
     >
       <Box
         sx={{
-          position: "absolute",
-          top: "-8%",
-          left: "-10%",
-          width: { xs: 220, md: 420 },
-          height: { xs: 220, md: 420 },
-          borderRadius: "50%",
-          background:
-            "radial-gradient(circle, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 35%, rgba(255,255,255,0) 72%)",
-          filter: "blur(24px)",
-          animation: `${glowPulse} 6s ease-in-out infinite`,
+          position: "fixed",
+          inset: 0,
+          background: `radial-gradient(560px circle at ${mousePos.x}px ${mousePos.y}px, rgba(255,255,255,0.07), transparent 75%)`,
           pointerEvents: "none",
+          zIndex: 0,
         }}
       />
 
       <Box
         sx={{
           position: "absolute",
-          right: "-12%",
-          bottom: "-10%",
-          width: { xs: 260, md: 460 },
-          height: { xs: 260, md: 460 },
+          top: "-15%",
+          left: "-10%",
+          width: { xs: 340, md: 620 },
+          height: { xs: 340, md: 620 },
           borderRadius: "50%",
-          background:
-            "radial-gradient(circle, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 34%, rgba(255,255,255,0) 72%)",
-          filter: "blur(30px)",
-          animation: `${glowPulse} 7.5s ease-in-out infinite`,
+          background: "radial-gradient(circle, rgba(255,255,255,0.08) 0%, rgba(255,255,255,0.02) 45%, transparent 70%)",
+          filter: "blur(40px)",
+          animation: `${pulseGlow} 8s ease-in-out infinite`,
+          pointerEvents: "none",
+        }}
+      />
+      <Box
+        sx={{
+          position: "absolute",
+          right: "-10%",
+          bottom: "-15%",
+          width: { xs: 380, md: 660 },
+          height: { xs: 380, md: 660 },
+          borderRadius: "50%",
+          background: "radial-gradient(circle, rgba(56,189,248,0.07) 0%, rgba(255,255,255,0.02) 45%, transparent 70%)",
+          filter: "blur(50px)",
+          animation: `${pulseGlow} 10s ease-in-out infinite alternate`,
           pointerEvents: "none",
         }}
       />
@@ -187,54 +208,75 @@ const Root = () => {
           position: "absolute",
           inset: 0,
           backgroundImage: `
-            linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
-            linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px)
+            linear-gradient(rgba(255,255,255,0.035) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.035) 1px, transparent 1px)
           `,
-          backgroundSize: { xs: "28px 28px", md: "40px 40px" },
-          maskImage:
-            "radial-gradient(circle at center, rgba(0,0,0,1) 45%, rgba(0,0,0,0.45) 75%, rgba(0,0,0,0.1) 100%)",
-          opacity: 0.12,
+          backgroundSize: "44px 44px",
+          maskImage: "radial-gradient(circle at center, rgba(0,0,0,1) 40%, rgba(0,0,0,0.1) 85%, transparent 100%)",
+          opacity: 0.6,
           pointerEvents: "none",
         }}
       />
 
-      <Container maxWidth="lg" sx={{ position: "relative", zIndex: 1 }}>
+      <Container maxWidth="lg" sx={{ position: "relative", zIndex: 1, py: { xs: 4, md: 0 } }}>
         <Stack
-          spacing={{ xs: 4, md: 5 }}
-          alignItems="center"
-          textAlign="center"
-          sx={{ py: { xs: 6, md: 8 } }}
+          direction={{ xs: "column", md: "row" }}
+          spacing={{ xs: 5, md: 8 }}
+          alignItems={{ xs: "stretch", md: "center" }}
         >
           <Stack
-            spacing={1.5}
-            alignItems="center"
+            spacing={2.5}
             component={motion.div}
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.55, ease: [0.22, 1, 0.36, 1] }}
+            initial={{ opacity: 0, x: -30 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ duration: 0.7, ease: [0.22, 1, 0.36, 1] }}
+            sx={{ flex: 1.15, textAlign: { xs: "center", md: "left" }, alignItems: { xs: "center", md: "flex-start" } }}
           >
-            <Box
-              component="img"
-              src={meterLogo}
-              alt="METER"
-              sx={{
-                width: { xs: 56, md: 72 },
-                height: "auto",
-                display: "block",
-                mixBlendMode: "screen",
-                opacity: 0.95,
-              }}
-            />
+            <Stack direction="row" spacing={1.5} alignItems="center">
+              <Box
+                component="img"
+                src={meterLogo}
+                alt="METER"
+                sx={{
+                  width: { xs: 44, md: 54 },
+                  height: "auto",
+                  mixBlendMode: "screen",
+                  filter: "drop-shadow(0 0 14px rgba(255,255,255,0.35))",
+                }}
+              />
+              <Typography
+                sx={{
+                  fontSize: "0.75rem",
+                  letterSpacing: "0.22em",
+                  color: meterColors.point,
+                  fontWeight: 900,
+                  textTransform: "uppercase",
+                  bgcolor: meterColors.pointSoft,
+                  px: 1.8,
+                  py: 0.6,
+                  borderRadius: "20px",
+                  border: `1px solid ${meterColors.pointBorder}`,
+                  display: "flex",
+                  alignItems: "center",
+                  gap: 0.8,
+                }}
+              >
+                <AutoAwesomeIcon sx={{ fontSize: 14 }} /> ICT BUILDUP CAMP 2026
+              </Typography>
+            </Stack>
+
             <Typography
               sx={{
-                fontSize: { xs: "2.7rem", sm: "4.3rem", md: "5.5rem" },
+                fontSize: { xs: "3.5rem", sm: "5rem", md: "6.2rem" },
                 fontWeight: 900,
-                lineHeight: 0.95,
-                letterSpacing: "0.18em",
-                color: "#ffffff",
-                textTransform: "uppercase",
-                textShadow: "0 0 40px rgba(255,255,255,0.12)",
-                animation: `${floatSlow} 6s ease-in-out infinite`,
+                lineHeight: 0.9,
+                letterSpacing: "0.1em",
+                background: "linear-gradient(90deg, #FFFFFF 0%, rgba(255,255,255,0.45) 30%, #FFFFFF 50%, rgba(255,255,255,0.45) 70%, #FFFFFF 100%)",
+                backgroundSize: "200% auto",
+                WebkitBackgroundClip: "text",
+                WebkitTextFillColor: "transparent",
+                animation: `${textShimmer} 8s linear infinite, ${floatSlow} 6s ease-in-out infinite`,
+                filter: "drop-shadow(0 15px 30px rgba(0,0,0,0.7))",
               }}
             >
               METER
@@ -242,173 +284,227 @@ const Root = () => {
 
             <Typography
               sx={{
-                fontSize: { xs: "0.88rem", sm: "1.05rem", md: "1.15rem" },
-                color: "rgba(255,255,255,0.74)",
-                fontWeight: 400,
-                letterSpacing: "-0.01em",
-                maxWidth: 820,
-                whiteSpace: "nowrap",
-                overflow: "hidden",
-                textOverflow: "ellipsis",
+                fontSize: { xs: "0.82rem", md: "0.92rem" },
+                color: meterColors.secondary,
+                letterSpacing: "0.05em",
+                fontWeight: 800,
+                maxWidth: 460,
+                wordBreak: "keep-all",
               }}
             >
-              사각지대 감시와 최적 수거를 잇는 자원순환 AIoT 플랫폼
+              Multi-resource Environment Tracking &amp; Efficiency Reporter
+            </Typography>
+
+            <Typography
+              sx={{
+                fontSize: { xs: "1.05rem", md: "1.25rem" },
+                color: "rgba(255,255,255,0.75)",
+                fontWeight: 500,
+                letterSpacing: "-0.02em",
+                maxWidth: 520,
+                lineHeight: 1.65,
+                wordBreak: "keep-all",
+              }}
+            >
+              사각지대 감시와 최적 수거를 잇는{" "}
+              <Box component="span" sx={{ color: meterColors.point, fontWeight: 800 }}>
+                자원순환 AIoT 플랫폼
+              </Box>
             </Typography>
           </Stack>
 
-          <Box
-            component={motion.div}
-            initial="hidden"
-            animate="visible"
-            variants={{
-              hidden: {},
-              visible: { transition: { staggerChildren: 0.08, delayChildren: 0.2 } },
-            }}
-            sx={{
-              width: "100%",
-              maxWidth: 620,
-              display: "grid",
-              gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-              gap: { xs: 1.2, sm: 1.6 },
-            }}
-          >
-            {featureItems.map((item) => (
-              <motion.div
-                key={item.path}
-                variants={{
-                  hidden: { opacity: 0, y: 16 },
-                  visible: { opacity: 1, y: 0, transition: { duration: 0.4, ease: [0.22, 1, 0.36, 1] } },
+          <Stack spacing={2.5} sx={{ flex: 1, minWidth: 0 }}>
+            <Box
+              component={motion.div}
+              initial="hidden"
+              animate="visible"
+              variants={{
+                hidden: {},
+                visible: { transition: { staggerChildren: 0.08, delayChildren: 0.2 } },
+              }}
+              sx={{
+                width: "100%",
+                display: "grid",
+                gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
+                gap: 1.8,
+              }}
+            >
+              {featureItems.map((item) => (
+                <motion.div
+                  key={item.path}
+                  variants={{
+                    hidden: { opacity: 0, y: 20 },
+                    visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.22, 1, 0.36, 1] } },
+                  }}
+                  whileHover={{ y: -6, scale: 1.02 }}
+                  whileTap={{ scale: 0.97 }}
+                  style={{ width: "100%", minWidth: 0 }}
+                >
+                  <Button
+                    fullWidth
+                    onClick={() => navigate(item.path)}
+                    sx={{
+                      minHeight: { xs: 115, sm: 130 },
+                      p: 2.2,
+                      borderRadius: "18px",
+                      color: meterColors.primary,
+                      justifyContent: "flex-start",
+                      alignItems: "flex-start",
+                      textTransform: "none",
+                      border: "1px solid rgba(255,255,255,0.1)",
+                      background: "linear-gradient(135deg, rgba(255,255,255,0.07), rgba(255,255,255,0.015))",
+                      backdropFilter: "blur(14px)",
+                      position: "relative",
+                      overflow: "hidden",
+                      transition: "all 0.3s cubic-bezier(0.4, 0, 0.2, 1)",
+                      "&:hover": {
+                        borderColor: "rgba(255,255,255,0.45)",
+                        boxShadow: "0 10px 30px rgba(255,255,255,0.08), inset 0 0 15px rgba(255,255,255,0.05)",
+                      },
+                      "&:hover .feature-icon": {
+                        color: meterColors.point,
+                        borderColor: meterColors.pointBorder,
+                      },
+                    }}
+                  >
+                    <Stack spacing={1.5} sx={{ textAlign: "left", width: "100%" }}>
+                      <Box
+                        className="feature-icon"
+                        sx={{
+                          width: 44,
+                          height: 44,
+                          borderRadius: "14px",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          color: meterColors.primary,
+                          background: "rgba(255,255,255,0.06)",
+                          border: "1px solid rgba(255,255,255,0.16)",
+                          transition: "all 0.3s ease",
+                        }}
+                      >
+                        {item.icon}
+                      </Box>
+                      <Stack spacing={0.3} sx={{ minWidth: 0 }}>
+                        <Typography
+                          sx={{
+                            fontSize: { xs: "0.92rem", sm: "1.05rem" },
+                            fontWeight: 800,
+                            lineHeight: 1.3,
+                            wordBreak: "keep-all",
+                          }}
+                        >
+                          {item.title}
+                        </Typography>
+                        <Typography
+                          sx={{
+                            fontSize: "0.78rem",
+                            color: meterColors.secondary,
+                            lineHeight: 1.4,
+                            wordBreak: "keep-all",
+                          }}
+                        >
+                          {item.subtitle}
+                        </Typography>
+                      </Stack>
+                    </Stack>
+                  </Button>
+                </motion.div>
+              ))}
+            </Box>
+
+            <Box
+              component={motion.div}
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: 0.45 }}
+              sx={{
+                p: { xs: 2.2, sm: 2.8 },
+                borderRadius: "20px",
+                border: "1px solid rgba(255,255,255,0.12)",
+                background: "linear-gradient(180deg, rgba(24,24,24,0.9) 0%, rgba(8,8,8,0.95) 100%)",
+                backdropFilter: "blur(16px)",
+                display: "flex",
+                flexDirection: "column",
+                alignItems: "center",
+                gap: 1.8,
+                boxShadow: "0 20px 40px rgba(0,0,0,0.5)",
+              }}
+            >
+              <Typography
+                sx={{
+                  fontSize: "0.78rem",
+                  letterSpacing: "0.18em",
+                  color: meterColors.secondary,
+                  fontWeight: 800,
+                  textTransform: "uppercase",
                 }}
-                whileHover={{ y: -2 }}
-                whileTap={{ scale: 0.98 }}
-                transition={{ type: "spring", stiffness: 420, damping: 28 }}
-                style={{ width: "100%", minWidth: 0 }}
               >
+                {user ? "SYSTEM ACCESS GRANTED" : "GOOGLE ACCOUNT AUTHENTICATION"}
+              </Typography>
+
+              {!user ? (
+                isDevBypass() ? (
+                  <Button
+                    onClick={handleLocalDevLogin}
+                    endIcon={<ArrowForwardRoundedIcon />}
+                    sx={{
+                      minWidth: 250,
+                      height: 52,
+                      borderRadius: "14px",
+                      color: meterColors.primary,
+                      textTransform: "none",
+                      fontWeight: 800,
+                      fontSize: "0.98rem",
+                      border: "1px solid rgba(255,255,255,0.3)",
+                      bgcolor: "rgba(255,255,255,0.06)",
+                      "&:hover": { bgcolor: "rgba(255,255,255,0.12)", borderColor: "rgba(255,255,255,0.5)" },
+                    }}
+                  >
+                    개발용 로그인
+                  </Button>
+                ) : (
+                  <Box sx={{ mx: "auto", width: "100%", maxWidth: 280, display: "flex", justifyContent: "center" }}>
+                    <GoogleLogin
+                      onSuccess={handleGoogleSuccess}
+                      onError={handleGoogleError}
+                      theme="filled_black"
+                      size="large"
+                      shape="pill"
+                      text="signin_with"
+                      ux_mode="popup"
+                      width={280}
+                    />
+                  </Box>
+                )
+              ) : (
                 <Button
-                  fullWidth
-                  onClick={() => navigate(item.path)}
+                  onClick={() => navigate("/map")}
+                  endIcon={<ArrowForwardRoundedIcon />}
                   sx={{
-                    minHeight: { xs: 100, sm: 110, md: 118 },
-                    px: { xs: 1.2, sm: 1.8 },
-                    py: 1.8,
-                    borderRadius: 3,
-                    color: "#fff",
-                    justifyContent: "flex-start",
+                    minWidth: { xs: 250, sm: 280 },
+                    height: 52,
+                    px: 4,
+                    borderRadius: "14px",
+                    color: "#000000",
                     textTransform: "none",
-                    border: "1px solid rgba(255,255,255,0.10)",
-                    background: "linear-gradient(135deg, rgba(255,255,255,0.04), rgba(255,255,255,0.02))",
-                    backdropFilter: "blur(8px)",
-                    transition: "all 0.25s ease",
+                    fontWeight: 900,
+                    fontSize: "1.05rem",
+                    bgcolor: "#FFFFFF",
+                    boxShadow: "0 0 25px rgba(255,255,255,0.25)",
+                    transition: "all 0.3s ease",
                     "&:hover": {
-                      borderColor: "rgba(255,255,255,0.35)",
-                      boxShadow: "0 0 24px rgba(255,255,255,0.08)",
-                      transform: "translateY(-4px)",
-                      background: "linear-gradient(135deg, rgba(255,255,255,0.08), rgba(255,255,255,0.03))",
+                      bgcolor: "#FFFFFF",
+                      boxShadow: `0 0 30px ${meterColors.pointBorder}`,
+                      transform: "scale(1.02)",
                     },
                   }}
                 >
-                  <Stack direction="row" spacing={{ xs: 1, sm: 1.4 }} alignItems="center" sx={{ textAlign: "left" }}>
-                    <Box
-                      sx={{
-                        width: { xs: 38, sm: 44 },
-                        height: { xs: 38, sm: 44 },
-                        borderRadius: "12px",
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "center",
-                        color: "#ffffff",
-                        background: "rgba(255,255,255,0.06)",
-                        border: "1px solid rgba(255,255,255,0.14)",
-                        flexShrink: 0,
-                      }}
-                    >
-                      {item.icon}
-                    </Box>
-
-                    <Stack spacing={0.25} sx={{ minWidth: 0 }}>
-                      <Typography
-                        sx={{
-                          fontSize: { xs: "0.76rem", sm: "0.95rem", md: "1rem" },
-                          fontWeight: 700,
-                          color: "#fff",
-                          lineHeight: 1.3,
-                          wordBreak: "keep-all",
-                        }}
-                      >
-                        {item.title}
-                      </Typography>
-                      <Typography
-                        sx={{
-                          fontSize: { xs: "0.68rem", sm: "0.78rem" },
-                          color: "rgba(255,255,255,0.55)",
-                          lineHeight: 1.35,
-                          wordBreak: "keep-all",
-                        }}
-                      >
-                        {item.subtitle}
-                      </Typography>
-                    </Stack>
-                  </Stack>
+                  서비스 시작
                 </Button>
-              </motion.div>
-            ))}
-          </Box>
-
-          {!user ? (
-            isDevBypass() ? (
-              <Button
-                onClick={handleLocalDevLogin}
-                sx={{
-                  mt: 1,
-                  minWidth: 220,
-                  height: 52,
-                  borderRadius: 999,
-                  color: "#fff",
-                  textTransform: "none",
-                  fontWeight: 800,
-                  border: "1px solid rgba(255,255,255,0.22)",
-                }}
-              >
-                개발용 로그인
-              </Button>
-            ) : (
-              <Box sx={{ mt: 1, mx: "auto", width: "100%", maxWidth: 280, display: "flex", justifyContent: "center" }}>
-                <GoogleLogin
-                  onSuccess={handleGoogleSuccess}
-                  onError={handleGoogleError}
-                  theme="filled_black"
-                  size="large"
-                  shape="pill"
-                  text="signin_with"
-                  ux_mode="popup"
-                  width={280}
-                />
-              </Box>
-            )
-          ) : (
-            <Button
-              onClick={() => navigate("/map")}
-              sx={{
-                mt: 1,
-                minWidth: { xs: 220, sm: 250 },
-                height: 54,
-                px: 3.5,
-                borderRadius: 999,
-                color: "#fff",
-                textTransform: "none",
-                fontWeight: 800,
-                fontSize: "1rem",
-                border: "1px solid rgba(255,255,255,0.22)",
-                background: "linear-gradient(90deg, rgba(20,20,20,0.96), rgba(16,16,16,0.98), rgba(20,20,20,0.96))",
-                "&:hover": {
-                  boxShadow: "0 0 24px rgba(255,255,255,0.12)",
-                  background: "linear-gradient(90deg, rgba(28,28,28,1), rgba(22,22,22,1), rgba(28,28,28,1))",
-                },
-              }}
-            >
-              서비스 시작
-            </Button>
-          )}
+              )}
+            </Box>
+          </Stack>
         </Stack>
       </Container>
     </Box>
