@@ -13,15 +13,18 @@ import {
 import SmartToyRoundedIcon from "@mui/icons-material/SmartToyRounded";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
-import { AnimatePresence, motion } from "framer-motion";
+import { AnimatePresence, motion as Motion } from "framer-motion";
 import { apiFetch } from "../services/api";
 import { meterColors } from "../theme/meterTheme";
 
 const SUGGESTIONS = [
-  "집중 관리가 필요한 모듈은?",
-  "지금 수거 가면 어디부터?",
-  "신호 없는 모듈 있어?",
+  "지금 수거해야 할 곳 있어?",
+  "신호 끊긴 모듈 있어?",
+  "페트병은 어떻게 버려?",
+  "폐의약품은 어디에 버려?",
 ];
+
+const GREETING = "안녕하세요, METER AI입니다. 모듈 상태나 수거 우선순위, 분리배출 방법을 편하게 물어보세요.";
 
 const spring = { type: "spring", stiffness: 420, damping: 32, mass: 0.85 };
 
@@ -48,10 +51,7 @@ function stripMarkdown(text) {
 export default function MeterChatbot({ embed = false }) {
   const [open, setOpen] = useState(false);
   const [messages, setMessages] = useState([
-    {
-      role: "bot",
-      text: "METER AI입니다. 지금 지도에 보이는 모듈 상태를 바탕으로 질문해 주세요.",
-    },
+    { role: "bot", text: GREETING },
   ]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
@@ -67,12 +67,16 @@ export default function MeterChatbot({ embed = false }) {
     if (!msg || loading) return;
     if (!open) setOpen(true);
     setInput("");
+    const history = messages
+      .slice(1)
+      .slice(-6)
+      .map((m) => ({ role: m.role === "user" ? "user" : "model", text: m.text }));
     setMessages((prev) => [...prev, { role: "user", text: msg }]);
     setLoading(true);
     try {
       const res = await apiFetch("/ai/chat", {
         method: "POST",
-        body: JSON.stringify({ message: msg }),
+        body: JSON.stringify({ message: msg, history }),
       });
       setMessages((prev) => [...prev, { role: "bot", text: stripMarkdown(res?.reply) || "응답 없음" }]);
     } catch (e) {
@@ -83,7 +87,7 @@ export default function MeterChatbot({ embed = false }) {
   };
 
   const panel = open ? (
-    <motion.div
+    <Motion.div
       key="panel"
       initial={{ opacity: 0, scale: 0.45, y: 24 }}
       animate={{ opacity: 1, scale: 1, y: 0 }}
@@ -135,7 +139,7 @@ export default function MeterChatbot({ embed = false }) {
               METER AI
             </Typography>
             <Typography sx={{ fontSize: "0.75rem", color: meterColors.secondary, whiteSpace: "nowrap" }}>
-              모듈 데이터 기반 상담
+              모듈 현황, 분리배출 상담
             </Typography>
           </Box>
           <IconButton size="small" onClick={() => setOpen(false)} aria-label="챗봇 닫기">
@@ -146,7 +150,7 @@ export default function MeterChatbot({ embed = false }) {
         <Box ref={scrollRef} sx={{ flex: 1, overflowY: "auto", px: 1.5, py: 1 }}>
           <Stack spacing={1}>
             {messages.map((m, i) => (
-              <motion.div
+              <Motion.div
                 key={i}
                 initial={{ opacity: 0, y: 8, scale: 0.96 }}
                 animate={{ opacity: 1, y: 0, scale: 1 }}
@@ -167,7 +171,7 @@ export default function MeterChatbot({ embed = false }) {
                 >
                   <Typography sx={{ fontSize: "0.95rem", lineHeight: 1.65, whiteSpace: "pre-wrap" }}>{m.text}</Typography>
                 </Box>
-              </motion.div>
+              </Motion.div>
             ))}
             {loading && (
               <Box sx={{ display: "flex", alignItems: "center", gap: 1, py: 0.5 }}>
@@ -204,7 +208,7 @@ export default function MeterChatbot({ embed = false }) {
           <TextField
             fullWidth
             size="small"
-            placeholder="지금 상황을 물어보세요…"
+            placeholder="모듈 상태나 분리배출 방법을 물어보세요"
             value={input}
             onChange={(e) => setInput(e.target.value)}
             onKeyDown={(e) => e.key === "Enter" && send()}
@@ -223,11 +227,11 @@ export default function MeterChatbot({ embed = false }) {
           />
         </Stack>
       </Paper>
-    </motion.div>
+    </Motion.div>
   ) : null;
 
   const fab = !open ? (
-    <motion.div
+    <Motion.div
       key="fab"
       initial={{ scale: 0, opacity: 0 }}
       animate={{ scale: 1, opacity: 1 }}
@@ -252,7 +256,7 @@ export default function MeterChatbot({ embed = false }) {
       >
         <SmartToyRoundedIcon />
       </IconButton>
-    </motion.div>
+    </Motion.div>
   ) : null;
 
   if (embed) {

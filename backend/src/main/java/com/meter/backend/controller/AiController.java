@@ -41,8 +41,12 @@ public class AiController {
     }
 
     @PostMapping("/chat")
-    public Map<String, Object> chat(@RequestBody Map<String, String> body) {
-        return meterChatService.chat(body.get("message"));
+    public Map<String, Object> chat(@RequestBody Map<String, Object> body) {
+        Object message = body.get("message");
+        Object history = body.get("history");
+        return meterChatService.chat(
+                message == null ? null : String.valueOf(message),
+                history instanceof List<?> list ? list : List.of());
     }
 
     @PostMapping(value = "/analyze", consumes = MediaType.MULTIPART_FORM_DATA_VALUE)

@@ -34,7 +34,13 @@ public class MeterChatService {
     @Value("${gemini.api.models:gemini-2.5-flash,gemini-2.5-flash-lite}")
     private String modelsCsv;
 
+    private static final int HISTORY_LIMIT = 6;
+
     public Map<String, Object> chat(String userMessage) {
+        return chat(userMessage, List.of());
+    }
+
+    public Map<String, Object> chat(String userMessage, List<?> history) {
         if (geminiApiKey == null || geminiApiKey.isBlank()) {
             throw new ResponseStatusException(HttpStatus.SERVICE_UNAVAILABLE, "Gemini API 키가 설정되지 않았습니다.");
         }
@@ -45,30 +51,58 @@ public class MeterChatService {
 
         String context = buildModuleContext();
         String system = """
-                당신은 METER(사각지대 감시와 최적 수거를 잇는 자원순환 AIoT 플랫폼) 운영 도우미입니다.
-                아래 모듈 현황을 근거로 한국어로 답하세요. 현장 관리자·시민이 바로 이해할 말로 말하세요.
+                당신은 METER 앱의 AI 도우미입니다. METER는 사각지대 감시와 최적 수거를 잇는 자원순환 AIoT 플랫폼입니다.
+                사용자는 수거 관리자일 수도, 일반 시민일 수도 있습니다. 친절하고 자연스러운 한국어 존댓말로 답하세요.
 
-                답변 규칙:
-                - 마크다운 금지. 순수 텍스트만. 목록은 "- " 만 사용.
-                - 2~3문장으로 결론부터. 서론·되묻기 생략.
-                - 적재율은 정수% 로만 말하세요. 예: 71%. fillPercent 같은 영문 필드명은 쓰지 마세요.
-                - 시리얼은 m1, r1 처럼 짧게. 예: "m1(적재율 80%, 수거 필요)".
-                - 추측은 '추정'이라고 표시. 데이터 없으면 모른다고 하세요.
-                - 리워드·포인트·상품권은 없습니다.
+                답할 수 있는 주제:
+                1) 모듈 현황: 아래 [모듈 현황] 데이터만 근거로 답합니다. 데이터에 없는 모듈이나 수치는 지어내지 마세요.
+                2) 수거 판단: 각 모듈의 '상태' 값을 그대로 따릅니다.
+                   - 상태=수거필요 인 모듈만 "지금 수거가 필요하다"고 말합니다.
+                   - 수거필요 모듈이 하나도 없으면 "지금 당장 수거할 곳은 없다"고 먼저 말하고, 그다음 적재율이 높은 순으로 1~2개만 참고로 알려줍니다.
+                   - 상태=신호없음 인 모듈은 적재율을 판단에 쓰지 말고 "신호가 끊겨 확인이 필요하다"고 안내합니다.
+                3) 분리배출 방법: 페트병, 캔, 유리병, 종이, 비닐, 스티로폼, 의류, 폐의약품, 폐건전지, 음식물 등
+                   한국의 일반적인 분리배출 기준으로 답합니다. 지역마다 다를 수 있는 부분은 "지자체 기준을 확인하라"고 덧붙입니다.
+                   METER가 다루는 유형(의류, 플라스틱, 캔, 폐의약품)이면 앱의 AI 카메라나 지도에서 가까운 거점을 찾을 수 있다고 안내해도 좋습니다.
+                4) METER 서비스 사용법: 지도에서 모듈 확인, AI 카메라로 품목 판별, 최적 수거 경로 보기.
+                그 밖의 주제는 METER와 자원순환에 관한 질문을 도와드릴 수 있다고 짧게 안내합니다.
+
+                답변 형식:
+                - 마크다운 금지. 순수 텍스트. 여러 항목이면 줄마다 "- " 로 시작.
+                - 핵심을 먼저, 보통 2~4문장. 분리배출 방법처럼 단계가 있으면 짧은 목록으로.
+                - 문장을 끝까지 완성하세요. 중간에 끊지 마세요.
+                - 적재율은 정수%로. fillPercent 같은 영문 필드명은 쓰지 마세요.
+                - 모듈은 시리얼로 부르고, 기관명이 있으면 함께 씁니다. 예: "m2(조선대, 적재율 85%)".
+                - 리워드, 포인트, 상품권 기능은 없습니다.
 
                 용어:
-                - 적재율 0~100: 높을수록 수거 급함. 80 이상=수거 필요, 50 이상=주의.
-                - m*=D모듈(초음파), r*=R모듈(카메라).
-                - 신호 없음=현재 통신이 끊긴 상태.
+                - 적재율 0~100%. 80% 이상 수거필요, 50~79% 주의, 49% 이하 여유.
+                - m으로 시작=D모듈(함 속 초음파 측정), r로 시작=R모듈(카메라로 구역 감시).
 
                 [모듈 현황]
                 """ + context;
 
+        List<Map<String, Object>> contents = new java.util.ArrayList<>();
+        int from = Math.max(0, history.size() - HISTORY_LIMIT);
+        for (Object h : history.subList(from, history.size())) {
+            if (!(h instanceof Map<?, ?> turn)) continue;
+            Object text = turn.get("text");
+            if (text == null || String.valueOf(text).isBlank()) continue;
+            String role = "user".equals(turn.get("role")) ? "user" : "model";
+            contents.add(Map.of("role", role, "parts", List.of(Map.of("text", String.valueOf(text)))));
+        }
+        contents.add(Map.of("role", "user", "parts", List.of(Map.of("text", msg))));
+
         String model = modelsCsv.split(",")[0].trim();
+        Map<String, Object> generationConfig = new LinkedHashMap<>();
+        generationConfig.put("temperature", 0.4);
+        // 2.5 계열은 thinking 토큰도 출력 한도에 포함돼 답이 잘리므로 끄고 여유를 둔다
+        generationConfig.put("maxOutputTokens", 1024);
+        generationConfig.put("thinkingConfig", Map.of("thinkingBudget", 0));
+
         Map<String, Object> req = new LinkedHashMap<>();
         req.put("systemInstruction", Map.of("parts", List.of(Map.of("text", system))));
-        req.put("contents", List.of(Map.of("parts", List.of(Map.of("text", msg)))));
-        req.put("generationConfig", Map.of("temperature", 0.3, "maxOutputTokens", 512));
+        req.put("contents", contents);
+        req.put("generationConfig", generationConfig);
 
         String url = "https://generativelanguage.googleapis.com/v1beta/models/" + model + ":generateContent";
         try {
@@ -110,15 +144,22 @@ public class MeterChatService {
             boolean active = m.isSignalActive();
             if (!active) waiting++;
             Double fill = m.getFillPercent();
-            if (fill != null && fill >= 80) urgent++;
+            if (active && fill != null && fill >= 80) urgent++;
 
             String fillText = fill == null ? "측정없음" : ((int) Math.round(fill)) + "%";
             String series = Module.DEVICE_VISION_CAM.equals(m.getDeviceType()) ? "R" : "D";
+            String status;
+            if (!active) status = "신호없음";
+            else if (fill == null) status = "측정대기";
+            else if (fill >= 80) status = "수거필요";
+            else if (fill >= 50) status = "주의";
+            else status = "여유";
             sb.append("- ").append(m.getSerialNumber())
-                    .append(" (").append(series).append(")")
+                    .append(" (").append(series).append("모듈)")
+                    .append(" 기관=").append(m.getOrganization() == null || m.getOrganization().isBlank() ? "-" : m.getOrganization())
                     .append(" 유형=").append(type)
-                    .append(" 신호=").append(active ? "정상" : "없음")
                     .append(" 적재율=").append(fillText)
+                    .append(" 상태=").append(status)
                     .append("\n");
         }
         sb.insert(0, "요약: 전체 " + modules.size() + "개, 신호 없음 " + waiting
