@@ -222,14 +222,14 @@ const Root = () => {
         }}
       />
 
-      <Container maxWidth="lg" sx={{ position: "relative", zIndex: 1, py: { xs: 4, md: 0 } }}>
+      <Container maxWidth="lg" sx={{ position: "relative", zIndex: 1, py: { xs: 2.5, md: 0 } }}>
         <Stack
           direction={{ xs: "column", md: "row" }}
-          spacing={{ xs: 5, md: 8 }}
+          spacing={{ xs: 3, md: 8 }}
           alignItems={{ xs: "stretch", md: "center" }}
         >
           <Stack
-            spacing={2.5}
+            spacing={{ xs: 1.5, md: 2.5 }}
             component={motion.div}
             initial={{ opacity: 0, x: -30 }}
             animate={{ opacity: 1, x: 0 }}
@@ -270,7 +270,7 @@ const Root = () => {
 
             <Typography
               sx={{
-                fontSize: { xs: "3.5rem", sm: "5rem", md: "6.2rem" },
+                fontSize: { xs: "3rem", sm: "5rem", md: "6.2rem" },
                 fontWeight: 900,
                 lineHeight: 0.9,
                 letterSpacing: "0.1em",
@@ -299,23 +299,22 @@ const Root = () => {
 
             <Typography
               sx={{
-                fontSize: { xs: "1.05rem", md: "1.25rem" },
+                fontSize: { xs: "0.86rem", sm: "1.05rem", md: "1.25rem" },
                 color: "rgba(255,255,255,0.75)",
                 fontWeight: 500,
                 letterSpacing: "-0.02em",
-                maxWidth: 520,
                 lineHeight: 1.65,
-                wordBreak: "keep-all",
+                whiteSpace: "nowrap",
               }}
             >
               사각지대 감시와 최적 수거를 잇는{" "}
-              <Box component="span" sx={{ color: meterColors.point, fontWeight: 800 }}>
+              <Box component="span" sx={{ color: meterColors.primary, fontWeight: 800 }}>
                 자원순환 AIoT 플랫폼
               </Box>
             </Typography>
           </Stack>
 
-          <Stack spacing={2.5} sx={{ flex: 1, minWidth: 0 }}>
+          <Stack spacing={{ xs: 1.6, md: 2.5 }} sx={{ flex: 1, minWidth: 0 }}>
             <Box
               component={motion.div}
               initial="hidden"
@@ -328,7 +327,7 @@ const Root = () => {
                 width: "100%",
                 display: "grid",
                 gridTemplateColumns: "repeat(2, minmax(0, 1fr))",
-                gap: 1.8,
+                gap: { xs: 1.2, md: 1.8 },
               }}
             >
               {featureItems.map((item) => (
@@ -346,8 +345,9 @@ const Root = () => {
                     fullWidth
                     onClick={() => navigate(item.path)}
                     sx={{
-                      minHeight: { xs: 115, sm: 130 },
-                      p: 2.2,
+                      minHeight: { xs: 96, sm: 130 },
+                      px: 2.2,
+                      py: { xs: 1.5, sm: 2.2 },
                       borderRadius: "18px",
                       color: meterColors.primary,
                       justifyContent: "flex-start",
@@ -369,12 +369,12 @@ const Root = () => {
                       },
                     }}
                   >
-                    <Stack spacing={1.5} sx={{ textAlign: "left", width: "100%" }}>
+                    <Stack spacing={{ xs: 1, sm: 1.5 }} sx={{ textAlign: "left", width: "100%" }}>
                       <Box
                         className="feature-icon"
                         sx={{
-                          width: 44,
-                          height: 44,
+                          width: { xs: 38, sm: 44 },
+                          height: { xs: 38, sm: 44 },
                           borderRadius: "14px",
                           display: "flex",
                           alignItems: "center",
@@ -421,7 +421,8 @@ const Root = () => {
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.45 }}
               sx={{
-                p: { xs: 2.2, sm: 2.8 },
+                px: { xs: 2.2, sm: 2.8 },
+                py: { xs: 1.6, sm: 2.8 },
                 borderRadius: "20px",
                 border: "1px solid rgba(255,255,255,0.12)",
                 background: "linear-gradient(180deg, rgba(24,24,24,0.9) 0%, rgba(8,8,8,0.95) 100%)",
@@ -429,7 +430,7 @@ const Root = () => {
                 display: "flex",
                 flexDirection: "column",
                 alignItems: "center",
-                gap: 1.8,
+                gap: { xs: 1.2, sm: 1.8 },
                 boxShadow: "0 20px 40px rgba(0,0,0,0.5)",
               }}
             >
@@ -452,7 +453,7 @@ const Root = () => {
                     endIcon={<ArrowForwardRoundedIcon />}
                     sx={{
                       minWidth: 250,
-                      height: 52,
+                      height: { xs: 46, sm: 52 },
                       borderRadius: "14px",
                       color: meterColors.primary,
                       textTransform: "none",
@@ -485,7 +486,7 @@ const Root = () => {
                   endIcon={<ArrowForwardRoundedIcon />}
                   sx={{
                     minWidth: { xs: 250, sm: 280 },
-                    height: 52,
+                    height: { xs: 46, sm: 52 },
                     px: 4,
                     borderRadius: "14px",
                     color: "#000000",
