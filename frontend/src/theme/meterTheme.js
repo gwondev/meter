@@ -13,6 +13,12 @@ export const meterColors = {
   point: "#38bdf8",
   pointSoft: "rgba(56,189,248,0.12)",
   pointBorder: "rgba(56,189,248,0.35)",
+  /** 아이콘 전용 포인트색 — 배경, 테두리에는 쓰지 않는다 */
+  pointSky: "#38bdf8",
+  pointPurple: "#a855f7",
+  pointGreen: "#22c55e",
+  pointAmber: "#f59e0b",
+  pointPink: "#ec4899",
   danger: "#ff4444",
   warning: "#ff9800",
   success: "#4caf50",

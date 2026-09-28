@@ -12,7 +12,7 @@ const pulseGlow = keyframes`
 `;
 
 /** 메인 랜딩에서 열리는 기능 소개 페이지 공통 틀 (헤더, 배지, 히어로) */
-export default function FeaturePageShell({ badge, badgeIcon, icon, title, description, children }) {
+export default function FeaturePageShell({ badge, badgeIcon, icon, iconColor, title, description, children }) {
   const navigate = useNavigate();
 
   return (
@@ -127,7 +127,7 @@ export default function FeaturePageShell({ badge, badgeIcon, icon, title, descri
                   flexShrink: 0,
                   background: "linear-gradient(135deg, rgba(255,255,255,0.14), rgba(255,255,255,0.03))",
                   border: "1px solid rgba(255,255,255,0.25)",
-                  color: meterColors.primary,
+                  color: iconColor || meterColors.primary,
                   boxShadow: "0 0 24px rgba(255,255,255,0.08)",
                 }}
               >
@@ -178,7 +178,7 @@ export function SectionLabel({ children }) {
   );
 }
 
-export function IconTile({ children, size = 44, point = false }) {
+export function IconTile({ children, size = 44, point = false, color }) {
   return (
     <Box
       sx={{
@@ -189,7 +189,7 @@ export function IconTile({ children, size = 44, point = false }) {
         alignItems: "center",
         justifyContent: "center",
         flexShrink: 0,
-        color: point ? meterColors.point : meterColors.primary,
+        color: color || (point ? meterColors.point : meterColors.primary),
         bgcolor: point ? meterColors.pointSoft : "rgba(255,255,255,0.05)",
         border: `1px solid ${point ? meterColors.pointBorder : "rgba(255,255,255,0.16)"}`,
       }}

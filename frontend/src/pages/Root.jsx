@@ -45,24 +45,28 @@ const featureItems = [
     subtitle: "품목 판별, 거점 안내",
     icon: <PhotoCameraRoundedIcon sx={{ fontSize: 26 }} />,
     path: "/features/smart-disposal",
+    color: meterColors.pointSky,
   },
   {
     title: "사각지대 감시",
     subtitle: "D모듈, R모듈 IoT",
     icon: <SensorsRoundedIcon sx={{ fontSize: 26 }} />,
     path: "/features/iot",
+    color: meterColors.pointPurple,
   },
   {
     title: "최적 수거 경로",
     subtitle: "만재 우선, 도로망",
     icon: <InsightsRoundedIcon sx={{ fontSize: 26 }} />,
     path: "/features/reward",
+    color: meterColors.pointGreen,
   },
   {
     title: "통합 관제",
     subtitle: "지도, 챗봇, 진단",
     icon: <DashboardRoundedIcon sx={{ fontSize: 26 }} />,
     path: "/features/operations",
+    color: meterColors.pointAmber,
   },
 ];
 
@@ -241,21 +245,20 @@ const Root = () => {
                   width: { xs: 44, md: 54 },
                   height: "auto",
                   mixBlendMode: "screen",
-                  filter: "drop-shadow(0 0 14px rgba(255,255,255,0.35))",
                 }}
               />
               <Typography
                 sx={{
                   fontSize: "0.75rem",
                   letterSpacing: "0.22em",
-                  color: meterColors.point,
+                  color: meterColors.primaryMuted,
                   fontWeight: 900,
                   textTransform: "uppercase",
-                  bgcolor: meterColors.pointSoft,
+                  bgcolor: "rgba(255,255,255,0.06)",
                   px: 1.8,
                   py: 0.6,
                   borderRadius: "20px",
-                  border: `1px solid ${meterColors.pointBorder}`,
+                  border: `1px solid ${meterColors.border}`,
                   display: "flex",
                   alignItems: "center",
                   gap: 0.8,
@@ -284,12 +287,11 @@ const Root = () => {
 
             <Typography
               sx={{
-                fontSize: { xs: "0.82rem", md: "0.92rem" },
+                fontSize: { xs: "0.62rem", sm: "0.82rem", md: "0.92rem" },
                 color: meterColors.secondary,
-                letterSpacing: "0.05em",
+                letterSpacing: { xs: "0.02em", sm: "0.05em" },
                 fontWeight: 800,
-                maxWidth: 460,
-                wordBreak: "keep-all",
+                whiteSpace: "nowrap",
               }}
             >
               Multi-resource Environment Tracking &amp; Efficiency Reporter
@@ -362,8 +364,8 @@ const Root = () => {
                         boxShadow: "0 10px 30px rgba(255,255,255,0.08), inset 0 0 15px rgba(255,255,255,0.05)",
                       },
                       "&:hover .feature-icon": {
-                        color: meterColors.point,
-                        borderColor: meterColors.pointBorder,
+                        borderColor: `${item.color}66`,
+                        boxShadow: `0 0 12px ${item.color}33`,
                       },
                     }}
                   >
@@ -377,7 +379,7 @@ const Root = () => {
                           display: "flex",
                           alignItems: "center",
                           justifyContent: "center",
-                          color: meterColors.primary,
+                          color: item.color,
                           background: "rgba(255,255,255,0.06)",
                           border: "1px solid rgba(255,255,255,0.16)",
                           transition: "all 0.3s ease",

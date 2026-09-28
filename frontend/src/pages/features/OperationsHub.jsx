@@ -15,21 +15,25 @@ const PANELS = [
     title: "실시간 지도 관제",
     body: "모듈 위치, 적재율, 신호 상태, R모듈 최신 사진을 지도에서 한눈에 확인합니다.",
     icon: <MapRoundedIcon />,
+    color: meterColors.pointSky,
   },
   {
     title: "최적 수거 경로",
     body: "화면 안의 모듈 방문 순서를 계산하고, 만재 모듈을 우선하는 도로망 경로를 그립니다.",
     icon: <NavigationRoundedIcon />,
+    color: meterColors.pointGreen,
   },
   {
     title: "대화형 AI 챗봇",
     body: "모듈 DB의 적재율과 신호 상태를 바탕으로 자연어 질문에 답합니다.",
     icon: <SmartToyRoundedIcon />,
+    color: meterColors.pointPurple,
   },
   {
     title: "관리자, MQTT 진단",
     body: "모듈, 사용자, 더미 데이터, R모듈 사진, MQTT 수신 상태를 한곳에서 관리합니다.",
     icon: <AdminPanelSettingsRoundedIcon />,
+    color: meterColors.pointAmber,
   },
 ];
 
@@ -39,6 +43,7 @@ export default function OperationsHub() {
       badge="Web 통합 관제"
       badgeIcon={<DashboardRoundedIcon sx={{ fontSize: 16 }} />}
       icon={<DashboardRoundedIcon sx={{ fontSize: 30 }} />}
+      iconColor={meterColors.pointAmber}
       title="통합 관제 플랫폼"
       description="지도, 모듈 적재 현황, R모듈 사진, 관리자 설정, MQTT 진단을 웹 한곳에서 운영합니다."
     >
@@ -66,12 +71,12 @@ export default function OperationsHub() {
                   fontSize: "0.75rem",
                   letterSpacing: "0.14em",
                   fontWeight: 900,
-                  color: index === 0 ? meterColors.point : meterColors.secondary,
+                  color: meterColors.secondary,
                 }}
               >
                 PANEL 0{index + 1}
               </Typography>
-              <IconTile size={40} point={index === 0}>
+              <IconTile size={40} color={panel.color}>
                 {panel.icon}
               </IconTile>
             </Stack>

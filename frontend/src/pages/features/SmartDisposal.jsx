@@ -19,10 +19,10 @@ const scanLine = keyframes`
 `;
 
 const categories = [
-  { title: "의류", en: "CLOTHING", desc: "헌옷, 의류 수거함", icon: <CheckroomRoundedIcon sx={{ fontSize: 26 }} /> },
-  { title: "플라스틱", en: "PLASTIC", desc: "페트병, 플라스틱 용기", icon: <LocalDrinkRoundedIcon sx={{ fontSize: 26 }} /> },
-  { title: "캔", en: "CAN", desc: "음료캔, 통조림", icon: <DeleteSweepRoundedIcon sx={{ fontSize: 26 }} /> },
-  { title: "폐의약품", en: "MEDICINE", desc: "약국, 전용 수거함", icon: <MedicalServicesRoundedIcon sx={{ fontSize: 26 }} /> },
+  { title: "의류", en: "CLOTHING", desc: "헌옷, 의류 수거함", icon: <CheckroomRoundedIcon sx={{ fontSize: 26 }} />, color: meterColors.pointPink },
+  { title: "플라스틱", en: "PLASTIC", desc: "페트병, 플라스틱 용기", icon: <LocalDrinkRoundedIcon sx={{ fontSize: 26 }} />, color: meterColors.pointSky },
+  { title: "캔", en: "CAN", desc: "음료캔, 통조림", icon: <DeleteSweepRoundedIcon sx={{ fontSize: 26 }} />, color: meterColors.pointGreen },
+  { title: "폐의약품", en: "MEDICINE", desc: "약국, 전용 수거함", icon: <MedicalServicesRoundedIcon sx={{ fontSize: 26 }} />, color: meterColors.pointPurple },
 ];
 
 const steps = [
@@ -31,19 +31,21 @@ const steps = [
     title: "촬영",
     desc: "버릴 물건을 카메라로 촬영합니다.",
     icon: <PhotoCameraRoundedIcon sx={{ fontSize: 22 }} />,
+    color: meterColors.pointSky,
   },
   {
     step: "STEP 02",
     title: "AI 유형 판별",
     desc: "Gemini Vision이 4종 유형 중 하나로 분류합니다.",
     icon: <AutoAwesomeRoundedIcon sx={{ fontSize: 22 }} />,
-    point: true,
+    color: meterColors.pointPurple,
   },
   {
     step: "STEP 03",
     title: "거점 안내",
     desc: "지도에서 해당 유형의 모듈만 걸러 투입 거점을 보여줍니다.",
     icon: <LocationOnRoundedIcon sx={{ fontSize: 22 }} />,
+    color: meterColors.pointGreen,
   },
 ];
 
@@ -53,6 +55,7 @@ export default function SmartDisposal() {
       badge="AI 자원순환 안내"
       badgeIcon={<AutoAwesomeRoundedIcon sx={{ fontSize: 16 }} />}
       icon={<PhotoCameraRoundedIcon sx={{ fontSize: 28 }} />}
+      iconColor={meterColors.pointSky}
       title="AI 카메라 자원 분류"
       description="촬영한 품목의 유형을 판별하고, 지도와 연동해 맞는 투입 거점을 안내합니다."
     >
@@ -83,7 +86,7 @@ export default function SmartDisposal() {
               />
               <Stack spacing={1.8}>
                 <Stack direction="row" justifyContent="space-between" alignItems="center">
-                  <IconTile>{cat.icon}</IconTile>
+                  <IconTile color={cat.color}>{cat.icon}</IconTile>
                   <Typography sx={{ fontSize: "0.68rem", fontWeight: 900, color: meterColors.secondary, letterSpacing: "0.15em" }}>
                     {cat.en}
                   </Typography>
@@ -118,12 +121,12 @@ export default function SmartDisposal() {
                       fontSize: "0.75rem",
                       fontWeight: 900,
                       letterSpacing: "0.15em",
-                      color: s.point ? meterColors.point : meterColors.secondary,
+                      color: meterColors.secondary,
                     }}
                   >
                     {s.step}
                   </Typography>
-                  <IconTile size={36} point={s.point}>
+                  <IconTile size={36} color={s.color}>
                     {s.icon}
                   </IconTile>
                 </Stack>

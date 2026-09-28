@@ -23,6 +23,7 @@ const modules = [
     desc: "적재함 상부의 초음파 센서가 빈 거리를 재고, 보드가 fillPercent(0~100%)를 계산해 MQTT로 보냅니다.",
     icon: <SpeedRoundedIcon sx={{ fontSize: 30 }} />,
     badge: "ULTRASONIC",
+    color: meterColors.pointPurple,
     metrics: [
       { label: "센서", val: "HC-SR04P", sub: "초음파 거리" },
       { label: "전송 주기", val: "30s", sub: "MQTT status" },
@@ -36,6 +37,7 @@ const modules = [
     desc: "R모듈은 JPEG만 전송합니다. 서버 vision이 원본(기준) 사진과 최근 샘플을 비교해 구역의 적재율을 산출합니다.",
     icon: <VideocamRoundedIcon sx={{ fontSize: 30 }} />,
     badge: "VISION CAM",
+    color: meterColors.pointSky,
     metrics: [
       { label: "판정", val: "absdiff", sub: "원본 대비 변화" },
       { label: "샘플", val: "최대 10장", sub: "중앙값" },
@@ -50,6 +52,7 @@ export default function IotIntegration() {
       badge="SENSING HARDWARE"
       badgeIcon={<RadarRoundedIcon sx={{ fontSize: 16 }} />}
       icon={<SensorsRoundedIcon sx={{ fontSize: 30 }} />}
+      iconColor={meterColors.pointPurple}
       title="사각지대 IoT 감시"
       description={
         <>
@@ -107,7 +110,9 @@ export default function IotIntegration() {
             <Stack spacing={3}>
               <Stack direction="row" justifyContent="space-between" alignItems="center" spacing={1}>
                 <Stack direction="row" spacing={2} alignItems="center">
-                  <IconTile size={54}>{m.icon}</IconTile>
+                  <IconTile size={54} color={m.color}>
+                    {m.icon}
+                  </IconTile>
                   <Stack spacing={0.3}>
                     <Typography sx={{ fontSize: "0.78rem", fontWeight: 900, color: meterColors.secondary, letterSpacing: "0.18em" }}>
                       {m.tag}
@@ -179,7 +184,7 @@ export default function IotIntegration() {
         }}
       >
         <Stack direction={{ xs: "column", sm: "row" }} spacing={2.5} alignItems={{ xs: "flex-start", sm: "center" }}>
-          <IconTile size={48}>
+          <IconTile size={48} color={meterColors.pointAmber}>
             <PowerRoundedIcon sx={{ fontSize: 26 }} />
           </IconTile>
           <Stack spacing={0.5}>

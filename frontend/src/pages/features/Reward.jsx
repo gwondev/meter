@@ -19,17 +19,19 @@ const coreSystems = [
     title: "만재 우선 방문",
     desc: "fillPercent가 높은 모듈일수록 가중치를 높여 먼저 방문하도록 순서를 정합니다.",
     icon: <SpeedRoundedIcon sx={{ fontSize: 24 }} />,
-    point: true,
+    color: meterColors.pointSky,
   },
   {
     title: "도로망 기반 경로",
     desc: "화면 안의 모듈을 도로망(OSRM) 기준으로 연결해 불필요한 순회를 줄입니다.",
     icon: <AltRouteRoundedIcon sx={{ fontSize: 24 }} />,
+    color: meterColors.pointGreen,
   },
   {
     title: "자연어 운영 질의",
     desc: "적재율, 신호 상태, 모듈 현황을 AI 챗봇에 자연어로 물어볼 수 있습니다.",
     icon: <ChatRoundedIcon sx={{ fontSize: 24 }} />,
+    color: meterColors.pointPurple,
   },
 ];
 
@@ -39,6 +41,7 @@ export default function Reward() {
       badge="최적 수거 경로"
       badgeIcon={<RouteRoundedIcon sx={{ fontSize: 16 }} />}
       icon={<RouteRoundedIcon sx={{ fontSize: 28 }} />}
+      iconColor={meterColors.pointGreen}
       title="데이터 분석 & 수거 동선"
       description={
         <>
@@ -88,7 +91,7 @@ export default function Reward() {
               sx={{ ...glassCardSx, p: 2.5 }}
             >
               <Stack direction="row" spacing={2.5} alignItems="center">
-                <IconTile size={46} point={sys.point}>
+                <IconTile size={46} color={sys.color}>
                   {sys.icon}
                 </IconTile>
                 <Stack spacing={0.4}>
