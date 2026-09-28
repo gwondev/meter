@@ -1,81 +1,154 @@
-import { Box, Container, Paper, Stack, Typography } from "@mui/material";
-import * as Icons from "@mui/icons-material";
+import { Box, Container, Stack, Typography } from "@mui/material";
+import VisibilityRoundedIcon from "@mui/icons-material/VisibilityRounded";
+import RouteRoundedIcon from "@mui/icons-material/RouteRounded";
+import RecyclingRoundedIcon from "@mui/icons-material/RecyclingRounded";
+import DashboardRoundedIcon from "@mui/icons-material/DashboardRounded";
+import SpeedRoundedIcon from "@mui/icons-material/SpeedRounded";
+import VideocamRoundedIcon from "@mui/icons-material/VideocamRounded";
+import PowerRoundedIcon from "@mui/icons-material/PowerRounded";
+import { motion } from "framer-motion";
+import SectionHeading from "../components/SectionHeading";
+import { IconTile, SectionLabel } from "../components/FeaturePageShell";
+import { glassCardSx } from "../components/featureStyles";
 import { meterColors } from "../theme/meterTheme";
 
 const GOALS = [
   {
     title: "사각지대 감시",
-    desc: "해안·외곽 등 순회가 어려운 거점을 D모듈·R모듈 데이터로 상시 확인합니다.",
-    icon: <Icons.Visibility />,
+    desc: "해안, 외곽 등 순회가 어려운 거점을 D, R모듈로 상시 확인",
+    icon: <VisibilityRoundedIcon />,
+    color: meterColors.pointPurple,
   },
   {
     title: "최적 수거",
-    desc: "적재율이 높은 거점부터 도로망 경로로 이어 불필요한 순회를 줄입니다.",
-    icon: <Icons.Route />,
+    desc: "적재율 높은 거점부터 도로망 경로로 연결",
+    icon: <RouteRoundedIcon />,
+    color: meterColors.pointGreen,
   },
   {
     title: "자원순환 안내",
-    desc: "AI 카메라로 품목을 판별하고 가까운 투입 거점 위치를 안내합니다.",
-    icon: <Icons.Recycling />,
+    desc: "AI 카메라로 품목 판별, 가까운 투입 거점 안내",
+    icon: <RecyclingRoundedIcon />,
+    color: meterColors.pointSky,
   },
   {
     title: "통합 관제",
-    desc: "지도·챗봇·모듈 현황을 한곳에서 보고 운영 판단을 돕습니다.",
-    icon: <Icons.Dashboard />,
+    desc: "지도, 챗봇, 모듈 현황을 한곳에서",
+    icon: <DashboardRoundedIcon />,
+    color: meterColors.pointAmber,
   },
 ];
 
-const TECH = [
-  "IoT: C/C++ (PlatformIO), ESP32, MQTT · RPi 카메라",
-  "Backend: Spring Boot, MySQL",
-  "Frontend: React (Vite)",
-  "AI: Gemini API (Vision + Chat)",
-  "Infra: Docker, Cloudflare Tunnel",
+const KIT = [
+  { tag: "D", name: "초음파 적재 모듈", desc: "함 속 적재율 산출, 30초 전송", icon: <SpeedRoundedIcon />, color: meterColors.pointPurple },
+  { tag: "R", name: "카메라 구역 모듈", desc: "구역 사진 전송, 서버가 비교", icon: <VideocamRoundedIcon />, color: meterColors.pointSky },
+  { tag: "P", name: "POWER TANK", desc: "보조배터리 + 태양광 전원", icon: <PowerRoundedIcon />, color: meterColors.pointAmber },
 ];
+
+const TECH = [
+  { label: "IoT", items: ["ESP32", "PlatformIO", "MQTT", "Raspberry Pi 5"] },
+  { label: "Backend", items: ["Spring Boot", "MySQL", "FastAPI vision"] },
+  { label: "Frontend", items: ["React", "Vite", "MUI", "Kakao Map"] },
+  { label: "AI", items: ["Gemini Vision", "Gemini Chat"] },
+  { label: "Infra", items: ["Docker", "Cloudflare Tunnel"] },
+];
+
+const chipSx = {
+  fontSize: "0.72rem",
+  px: 1,
+  py: 0.3,
+  borderRadius: "8px",
+  border: "1px solid rgba(255,255,255,0.14)",
+  bgcolor: "rgba(255,255,255,0.04)",
+  color: meterColors.primaryMuted,
+  whiteSpace: "nowrap",
+};
 
 export default function ProjectIntro() {
   return (
-    <Box sx={{ bgcolor: meterColors.bg, color: meterColors.primary, py: { xs: 3, sm: 5 } }}>
-      <Container maxWidth="md">
-        <Stack spacing={4}>
-          <Stack spacing={1} textAlign="center" alignItems="center">
-            <Box component="img" src="/meter-logo.png" alt="METER" sx={{ width: 56, height: 56, mixBlendMode: "screen" }} />
-            <Typography variant="h4" sx={{ fontWeight: 900 }}>METER</Typography>
-            <Typography sx={{ color: meterColors.secondary, lineHeight: 1.7, maxWidth: 560 }}>
-              사각지대 감시와 최적 수거를 잇는 자원순환 AIoT 플랫폼
-            </Typography>
-            <Typography sx={{ color: meterColors.secondary, fontSize: "0.85rem" }}>
-              의류수거함 · 플라스틱·캔 쓰레기통 · 폐의약품 수거함 · 물탱크 등 확장 가능
-            </Typography>
+    <Box sx={{ bgcolor: meterColors.bg, color: meterColors.primary, py: { xs: 2.5, sm: 4 } }}>
+      <Container maxWidth="lg">
+        <Stack spacing={{ xs: 3, sm: 4 }}>
+          <SectionHeading
+            eyebrow="PROJECT"
+            title="METER"
+            description="사각지대 감시와 최적 수거를 잇는 자원순환 AIoT 플랫폼. 의류수거함, 쓰레기통, 폐의약품 수거함 등 다양한 거점으로 확장합니다."
+          />
+
+          <Stack spacing={1.5}>
+            <SectionLabel>개발 목표</SectionLabel>
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr 1fr", md: "repeat(4, 1fr)" }, gap: { xs: 1.2, sm: 2 } }}>
+              {GOALS.map((g, i) => (
+                <Box
+                  key={g.title}
+                  component={motion.div}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: i * 0.08 }}
+                  whileHover={{ y: -4 }}
+                  sx={{ ...glassCardSx, p: { xs: 1.8, sm: 2.4 } }}
+                >
+                  <Stack spacing={1.2}>
+                    <IconTile size={38} color={g.color}>
+                      {g.icon}
+                    </IconTile>
+                    <Typography sx={{ fontWeight: 800, fontSize: { xs: "0.95rem", sm: "1.05rem" } }}>{g.title}</Typography>
+                    <Typography sx={{ color: "rgba(255,255,255,0.6)", fontSize: { xs: "0.76rem", sm: "0.84rem" }, lineHeight: 1.5, wordBreak: "keep-all" }}>
+                      {g.desc}
+                    </Typography>
+                  </Stack>
+                </Box>
+              ))}
+            </Box>
           </Stack>
 
-          <Paper sx={{ p: 2.5, bgcolor: meterColors.bgElevated, border: `1px solid ${meterColors.border}` }}>
-            <Typography sx={{ fontWeight: 800, mb: 1 }}>서비스 소개</Typography>
-            <Typography sx={{ color: meterColors.primaryMuted, lineHeight: 1.75, fontSize: "0.92rem" }}>
-              다양한 거점에 D모듈(초음파)과 R모듈(카메라)을 두고 사각지대를 감시하며,
-              지도에서 상태를 확인한 뒤 최적 수거 경로로 이어 줍니다.
-              AI로 자원순환 안내(품목·거점)까지 하나의 플랫폼에서 제공합니다.
-            </Typography>
-          </Paper>
+          <Stack spacing={1.5}>
+            <SectionLabel>하드웨어 키트</SectionLabel>
+            <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "repeat(3, 1fr)" }, gap: { xs: 1.2, sm: 2 } }}>
+              {KIT.map((k, i) => (
+                <Box
+                  key={k.tag}
+                  component={motion.div}
+                  initial={{ opacity: 0, y: 16 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.3 + i * 0.08 }}
+                  sx={{ ...glassCardSx, p: { xs: 1.6, sm: 2.2 } }}
+                >
+                  <Stack direction="row" spacing={1.6} alignItems="center">
+                    <IconTile size={42} color={k.color}>
+                      {k.icon}
+                    </IconTile>
+                    <Box sx={{ minWidth: 0 }}>
+                      <Typography sx={{ fontWeight: 800, fontSize: "0.98rem" }}>{k.name}</Typography>
+                      <Typography sx={{ color: "rgba(255,255,255,0.6)", fontSize: "0.8rem", wordBreak: "keep-all" }}>{k.desc}</Typography>
+                    </Box>
+                  </Stack>
+                </Box>
+              ))}
+            </Box>
+          </Stack>
 
-          <Box sx={{ display: "grid", gridTemplateColumns: { xs: "1fr", sm: "1fr 1fr" }, gap: 1.5 }}>
-            {GOALS.map((g) => (
-              <Paper key={g.title} sx={{ p: 2, bgcolor: meterColors.bgElevated, border: `1px solid ${meterColors.border}` }}>
-                <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.8 }}>
-                  <Box sx={{ color: meterColors.primaryMuted }}>{g.icon}</Box>
-                  <Typography sx={{ fontWeight: 800 }}>{g.title}</Typography>
-                </Stack>
-                <Typography sx={{ color: meterColors.secondary, fontSize: "0.85rem", lineHeight: 1.6 }}>{g.desc}</Typography>
-              </Paper>
-            ))}
-          </Box>
-
-          <Paper sx={{ p: 2, bgcolor: meterColors.bgElevated, border: `1px solid ${meterColors.border}` }}>
-            <Typography sx={{ fontWeight: 800, mb: 1 }}>기술 스택</Typography>
-            {TECH.map((t) => (
-              <Typography key={t} sx={{ color: meterColors.primaryMuted, fontSize: "0.85rem", mb: 0.4 }}>· {t}</Typography>
-            ))}
-          </Paper>
+          <Stack spacing={1.5}>
+            <SectionLabel>기술 스택</SectionLabel>
+            <Box sx={{ ...glassCardSx, p: { xs: 1.8, sm: 2.4 }, "&:hover": {} }}>
+              <Stack spacing={1.2}>
+                {TECH.map((t) => (
+                  <Stack key={t.label} direction="row" spacing={1.5} alignItems="center">
+                    <Typography sx={{ width: 72, flexShrink: 0, fontSize: "0.78rem", fontWeight: 800, color: meterColors.secondary, letterSpacing: "0.04em" }}>
+                      {t.label}
+                    </Typography>
+                    <Stack direction="row" flexWrap="wrap" gap={0.7}>
+                      {t.items.map((it) => (
+                        <Box key={it} sx={chipSx}>
+                          {it}
+                        </Box>
+                      ))}
+                    </Stack>
+                  </Stack>
+                ))}
+              </Stack>
+            </Box>
+          </Stack>
         </Stack>
       </Container>
     </Box>
