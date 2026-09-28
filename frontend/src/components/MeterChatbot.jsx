@@ -13,6 +13,8 @@ import {
 import SmartToyRoundedIcon from "@mui/icons-material/SmartToyRounded";
 import SendRoundedIcon from "@mui/icons-material/SendRounded";
 import CloseRoundedIcon from "@mui/icons-material/CloseRounded";
+import OpenInFullRoundedIcon from "@mui/icons-material/OpenInFullRounded";
+import CloseFullscreenRoundedIcon from "@mui/icons-material/CloseFullscreenRounded";
 import { AnimatePresence, motion as Motion } from "framer-motion";
 import { apiFetch } from "../services/api";
 import { meterColors } from "../theme/meterTheme";
@@ -50,6 +52,7 @@ function stripMarkdown(text) {
  */
 export default function MeterChatbot({ embed = false }) {
   const [open, setOpen] = useState(false);
+  const [expanded, setExpanded] = useState(false);
   const [messages, setMessages] = useState([
     { role: "bot", text: GREETING },
   ]);
@@ -98,8 +101,11 @@ export default function MeterChatbot({ embed = false }) {
       <Paper
         elevation={8}
         sx={{
-          width: { xs: "min(92vw, 400px)", sm: 440 },
-          height: { xs: "min(68dvh, 560px)", sm: 580 },
+          width: expanded ? { xs: "94vw", sm: 620 } : { xs: "min(94vw, 460px)", sm: 480 },
+          height: expanded
+            ? { xs: "calc(100dvh - 110px)", sm: "calc(100dvh - 130px)" }
+            : { xs: "min(74dvh, 640px)", sm: "min(74dvh, 660px)" },
+          transition: "width 0.25s ease, height 0.25s ease",
           display: "flex",
           flexDirection: "column",
           bgcolor: meterColors.bgElevated,
@@ -142,6 +148,14 @@ export default function MeterChatbot({ embed = false }) {
               모듈 현황, 분리배출 상담
             </Typography>
           </Box>
+          <IconButton
+            size="small"
+            onClick={() => setExpanded((v) => !v)}
+            aria-label={expanded ? "챗봇 창 줄이기" : "챗봇 창 늘리기"}
+            title={expanded ? "줄이기" : "늘리기"}
+          >
+            {expanded ? <CloseFullscreenRoundedIcon fontSize="small" /> : <OpenInFullRoundedIcon fontSize="small" />}
+          </IconButton>
           <IconButton size="small" onClick={() => setOpen(false)} aria-label="챗봇 닫기">
             <CloseRoundedIcon fontSize="small" />
           </IconButton>
