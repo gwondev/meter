@@ -19,7 +19,7 @@ import { AnimatePresence, motion as Motion } from "framer-motion";
 import { apiFetch } from "../services/api";
 import { meterColors } from "../theme/meterTheme";
 
-const GREETING = "안녕하세요, METER AI입니다. 모듈 상태나 수거 우선순위, 분리배출 방법을 편하게 물어보세요.";
+const GREETING = "안녕하세요, METER AI입니다.";
 
 const spring = { type: "spring", stiffness: 420, damping: 32, mass: 0.85 };
 
