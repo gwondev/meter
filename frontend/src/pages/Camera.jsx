@@ -12,7 +12,6 @@ import CheckroomRoundedIcon from "@mui/icons-material/CheckroomRounded";
 import LocalDrinkRoundedIcon from "@mui/icons-material/LocalDrinkRounded";
 import DeleteSweepRoundedIcon from "@mui/icons-material/DeleteSweepRounded";
 import MedicalServicesRoundedIcon from "@mui/icons-material/MedicalServicesRounded";
-import PlaceRoundedIcon from "@mui/icons-material/PlaceRounded";
 import { getUser } from "../services/auth";
 import { apiFetchMultipart } from "../services/api";
 import { compressImage } from "../utils/compressImage";
@@ -150,7 +149,7 @@ const Camera = () => {
     ? { label: "사진 촬영", onClick: () => cameraInputRef.current?.click(), disabled: false }
     : !result
       ? { label: loading ? "분석 중…" : "AI 분석 시작", onClick: analyze, disabled: loading }
-      : { label: "지도에서 거점 보기", onClick: confirmAndGoMap, disabled: !finalType };
+      : { label: "지도로 돌아가기", onClick: confirmAndGoMap, disabled: !finalType };
 
   const predictedMeta = result ? TYPE_META[result.predictedType] : null;
 
@@ -203,7 +202,7 @@ const Camera = () => {
             <Box sx={{ flex: 1, height: "1px", bgcolor: "rgba(255,255,255,0.15)" }} />
             <StepDot index={2} label="분석" state={stepState(2)} />
             <Box sx={{ flex: 1, height: "1px", bgcolor: "rgba(255,255,255,0.15)" }} />
-            <StepDot index={3} label="거점" state={stepState(3)} />
+            <StepDot index={3} label="결과" state={stepState(3)} />
           </Stack>
         </Box>
       </Box>
@@ -344,12 +343,6 @@ const Camera = () => {
                     )}
                   </Box>
                 </Stack>
-                <Stack direction="row" spacing={1} alignItems="center" sx={{ mt: 1.8, pt: 1.6, borderTop: "1px dashed rgba(255,255,255,0.14)" }}>
-                  <PlaceRoundedIcon sx={{ fontSize: 18, color: meterColors.point }} />
-                  <Typography sx={{ fontSize: "0.82rem", color: "rgba(255,255,255,0.75)", wordBreak: "keep-all" }}>
-                    {TYPE_LABELS[finalType] ?? finalType} 모듈이 있는 가까운 거점을 지도에서 확인하세요.
-                  </Typography>
-                </Stack>
               </Box>
             ) : (
               <Box
@@ -362,7 +355,7 @@ const Camera = () => {
               >
                 <Typography sx={{ fontWeight: 800, fontSize: "0.95rem" }}>{file ? "사진이 준비됐습니다" : "사진을 먼저 올려주세요"}</Typography>
                 <Typography sx={{ fontSize: "0.82rem", color: meterColors.secondary, mt: 0.5, wordBreak: "keep-all" }}>
-                  {file ? "AI 분석을 시작하면 유형과 투입 거점을 알려드립니다." : "촬영하거나 앨범에서 고르면 AI가 유형을 판별합니다."}
+                  {file ? "AI 분석을 시작하면 폐기물 유형을 알려드립니다." : "촬영하거나 앨범에서 고르면 AI가 유형을 판별합니다."}
                 </Typography>
               </Box>
             )}
