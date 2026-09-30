@@ -19,13 +19,6 @@ import { AnimatePresence, motion as Motion } from "framer-motion";
 import { apiFetch } from "../services/api";
 import { meterColors } from "../theme/meterTheme";
 
-const SUGGESTIONS = [
-  "지금 수거해야 할 곳 있어?",
-  "신호 끊긴 모듈 있어?",
-  "페트병은 어떻게 버려?",
-  "폐의약품은 어디에 버려?",
-];
-
 const GREETING = "안녕하세요, METER AI입니다. 모듈 상태나 수거 우선순위, 분리배출 방법을 편하게 물어보세요.";
 
 const spring = { type: "spring", stiffness: 420, damping: 32, mass: 0.85 };
@@ -195,28 +188,6 @@ export default function MeterChatbot({ embed = false }) {
             )}
           </Stack>
         </Box>
-
-        <Stack direction="row" flexWrap="wrap" gap={0.6} sx={{ px: 1.5, pb: 0.8 }}>
-          {SUGGESTIONS.map((s) => (
-            <Button
-              key={s}
-              size="small"
-              onClick={() => send(s)}
-              sx={{
-                fontSize: "0.72rem",
-                textTransform: "none",
-                borderRadius: 1,
-                color: meterColors.secondary,
-                border: `1px solid ${meterColors.border}`,
-                px: 1.1,
-                py: 0.35,
-                whiteSpace: "nowrap",
-              }}
-            >
-              {s}
-            </Button>
-          ))}
-        </Stack>
 
         <Stack direction="row" spacing={0.8} sx={{ p: 1.2, borderTop: `1px solid ${meterColors.border}` }}>
           <TextField
